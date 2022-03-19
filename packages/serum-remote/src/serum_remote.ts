@@ -41,6 +41,11 @@ export type SerumRemote = {
           "isSigner": false
         },
         {
+          "name": "reclaimAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -119,6 +124,11 @@ export type SerumRemote = {
       "code": 6000,
       "name": "IncorrectSystemProgram",
       "msg": "Must use correct SystemProgram"
+    },
+    {
+      "code": 6001,
+      "name": "BadReclaimAddress",
+      "msg": "Reclaim account's Mint must match"
     }
   ]
 };
@@ -166,6 +176,11 @@ export const IDL: SerumRemote = {
           "isSigner": false
         },
         {
+          "name": "reclaimAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -244,6 +259,11 @@ export const IDL: SerumRemote = {
       "code": 6000,
       "name": "IncorrectSystemProgram",
       "msg": "Must use correct SystemProgram"
+    },
+    {
+      "code": 6001,
+      "name": "BadReclaimAddress",
+      "msg": "Reclaim account's Mint must match"
     }
   ]
 };

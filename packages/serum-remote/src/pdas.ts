@@ -1,5 +1,6 @@
 import { BN, Program, web3 } from "@project-serum/anchor";
 import { SerumRemote } from "./serum_remote";
+import { BoundedStrategyParams } from "./types";
 
 const textEncoder = new TextEncoder();
 
@@ -37,3 +38,21 @@ export const deriveAuthority = (
     [strategy.toBuffer(), textEncoder.encode("authority")],
     program.programId
   );
+
+export const deriveAllBoundedStrategyKeys = async (
+  program: Program<SerumRemote>,
+  serumMarket: web3.PublicKey,
+  mint: web3.PublicKey,
+  boundedStrategyParams: BoundedStrategyParams
+) => {
+  const { boundPrice, reclaimDate } = boundedStrategyParams;
+  const [orderPayer] = await deriveOrderPayer(program, serumMarket, mint);
+  const [boundedStrategy] = await deriveBoundedStrategy(
+    program,
+    orderPayer,
+    boundPrice,
+    reclaimDate
+  );
+  const [authority] = await deriveAuthority(program, boundedStrategy);
+  return { orderPayer, boundedStrategy, authority };
+};

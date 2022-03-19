@@ -1,16 +1,8 @@
 import { BN, Program, web3 } from "@project-serum/anchor";
 import { SerumRemote } from "../serum_remote";
-import {
-  deriveAuthority,
-  deriveBoundedStrategy,
-  deriveOrderPayer,
-} from "../pdas";
+import { deriveAllBoundedStrategyKeys } from "../pdas";
 import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
-
-type BoundedStrategyParams = {
-  boundPrice: BN;
-  reclaimDate: BN;
-};
+import { BoundedStrategyParams } from "../types";
 
 export const initBoundedStrategyIx = async (
   program: Program<SerumRemote>,
@@ -18,15 +10,14 @@ export const initBoundedStrategyIx = async (
   mint: web3.PublicKey,
   boundedStrategyParams: BoundedStrategyParams
 ) => {
-  const { boundPrice, reclaimDate } = boundedStrategyParams;
-  const [orderPayer] = await deriveOrderPayer(program, serumMarket, mint);
-  const [boundedStrategy] = await deriveBoundedStrategy(
-    program,
-    orderPayer,
-    boundPrice,
-    reclaimDate
-  );
-  const [authority] = await deriveAuthority(program, boundedStrategy);
+  const { boundPrice, reclaimDate, reclaimAddress } = boundedStrategyParams;
+  const { orderPayer, boundedStrategy, authority } =
+    await deriveAllBoundedStrategyKeys(
+      program,
+      serumMarket,
+      mint,
+      boundedStrategyParams
+    );
   return program.instruction.initBoundedStrategy(boundPrice, reclaimDate, {
     accounts: {
       payer: program.provider.wallet.publicKey,
@@ -35,6 +26,7 @@ export const initBoundedStrategyIx = async (
       serumMarket,
       orderPayer,
       boundedStrategy,
+      reclaimAccount: reclaimAddress,
       tokenProgram: TOKEN_PROGRAM_ID,
       systemProgram: web3.SystemProgram.programId,
       rent: web3.SYSVAR_RENT_PUBKEY,

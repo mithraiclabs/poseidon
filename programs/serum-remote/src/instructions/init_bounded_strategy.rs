@@ -52,6 +52,11 @@ pub struct InitBoundedStrategy<'info> {
     bump
   )]
   pub bounded_strategy: Account<'info, BoundedStrategy>,
+  #[account(
+    constraint = reclaim_account.mint == mint.key()
+      @ ErrorCode::BadReclaimAddress
+  )]
+  pub reclaim_account: Account<'info, TokenAccount>,
 
   pub token_program: Program<'info, Token>,
   #[account(
@@ -64,5 +69,13 @@ pub struct InitBoundedStrategy<'info> {
 }
 
 pub fn handler(ctx: Context<InitBoundedStrategy>, bound_price: u64, reclaim_date: i64) -> Result<()> {
+  let bounded_strategy = &mut ctx.accounts.bounded_strategy;
+  bounded_strategy.seurm_market = ctx.accounts.serum_market.key();
+  bounded_strategy.authority = ctx.accounts.authority.key();
+  bounded_strategy.order_payer = ctx.accounts.order_payer.key();
+  bounded_strategy.bounded_price = bound_price;
+  bounded_strategy.reclaim_date = reclaim_date;
+  bounded_strategy.reclaim_address = ctx.accounts.reclaim_account.key();
+  
   Ok(())
 }
