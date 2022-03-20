@@ -97,6 +97,11 @@ export type SerumRemote = {
         },
         {
           "name": "reclaimAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "depositAccount",
           "isMut": false,
           "isSigner": false
         },
@@ -182,6 +187,10 @@ export type SerumRemote = {
           },
           {
             "name": "reclaimAddress",
+            "type": "publicKey"
+          },
+          {
+            "name": "depositAddress",
             "type": "publicKey"
           },
           {
@@ -329,6 +338,11 @@ export const IDL: SerumRemote = {
         },
         {
           "name": "reclaimAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "depositAccount",
           "isMut": false,
           "isSigner": false
         },
@@ -414,6 +428,10 @@ export const IDL: SerumRemote = {
           },
           {
             "name": "reclaimAddress",
+            "type": "publicKey"
+          },
+          {
+            "name": "depositAddress",
             "type": "publicKey"
           },
           {

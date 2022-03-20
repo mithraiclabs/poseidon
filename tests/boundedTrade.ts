@@ -30,7 +30,8 @@ describe("BoundedTrade", () => {
 
   let boundPrice = new anchor.BN(957);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
-  let reclaimAddress;
+  let reclaimAddress: web3.PublicKey;
+  let depositAccount: web3.PublicKey;
   let orderSide = 1;
   let bound = 1;
   let serumMarket: Market;
@@ -41,16 +42,6 @@ describe("BoundedTrade", () => {
     orderPayer: web3.PublicKey;
 
   before(async () => {
-    // This TX may fail with concurrent tests
-    // TODO: Write more elegant solution
-    try {
-      const { instruction, associatedAddress } =
-        await createAssociatedTokenInstruction(program.provider, USDC_MINT);
-      reclaimAddress = associatedAddress;
-      const transaction = new web3.Transaction().add(instruction);
-      await program.provider.send(transaction);
-    } catch (err) {}
-
     // Load the market
     serumMarket = await Market.load(
       program.provider.connection,
@@ -64,7 +55,24 @@ describe("BoundedTrade", () => {
     ]);
     highestBid = bids.getL2(1)[0][2];
     lowestAsk = asks.getL2(1)[0][2];
-    console.log("**** highestBid", highestBid.toString(), lowestAsk.toString());
+
+    // This TX may fail with concurrent tests
+    // TODO: Write more elegant solution
+    const { instruction, associatedAddress } =
+      await createAssociatedTokenInstruction(program.provider, USDC_MINT);
+    reclaimAddress = associatedAddress;
+    const { instruction: baseMintAtaIx, associatedAddress: baseAta } =
+      await createAssociatedTokenInstruction(
+        program.provider,
+        serumMarket.baseMintAddress
+      );
+    depositAccount = baseAta;
+    const createAtaTx = new web3.Transaction()
+      .add(instruction)
+      .add(baseMintAtaIx);
+    try {
+      await program.provider.send(createAtaTx);
+    } catch (err) {}
   });
 
   describe("UpperBound", () => {

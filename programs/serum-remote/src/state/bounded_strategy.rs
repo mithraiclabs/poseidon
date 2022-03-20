@@ -18,6 +18,8 @@ pub struct BoundedStrategy {
     pub reclaim_date: i64,
     /// The address that the assets are transferred to when being reclaimed.
     pub reclaim_address: Pubkey,
+	/// The address where the swapped asset should be deposited
+    pub deposit_address: Pubkey,
     /// 0 for lower bound, 1 for upper bound
     pub bound: u8,
     /// The price of the base asset that governs the bound. The decimals are

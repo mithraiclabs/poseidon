@@ -1,7 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import { Spl } from "@project-serum/anchor";
 import { Program, web3 } from "@project-serum/anchor";
-import { OpenOrders } from "@project-serum/serum";
+import { Market, OpenOrders } from "@project-serum/serum";
 import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
@@ -31,26 +31,35 @@ describe("InitBoundedStrategy", () => {
 
   let boundPrice = new anchor.BN(957);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
-  let reclaimAddress;
+  let reclaimAddress: web3.PublicKey;
+  let depositAddress: web3.PublicKey;
   let orderSide = 1;
   let bound = 1;
   let transferAmount = new u64(10_000_000);
 
   before(async () => {
-    const transaction = new web3.Transaction();
-    const { instructions, mintAccount } = await initNewTokenMintInstructions(
-      program.provider,
-      program.provider.wallet.publicKey,
-      6
+    const serumMarket = await Market.load(
+      program.provider.connection,
+      SOL_USDC_SERUM_MARKET,
+      {},
+      DEX_ID
     );
-    instructions.forEach((ix) => transaction.add(ix));
+    const transaction = new web3.Transaction();
 
     // This TX may fail with concurrent tests
     // TODO: Write more elegant solution
     const { instruction, associatedAddress } =
       await createAssociatedTokenInstruction(program.provider, USDC_MINT);
     reclaimAddress = associatedAddress;
-    const createAtaTx = new web3.Transaction().add(instruction);
+    const { instruction: baseMintAtaIx, associatedAddress: baseAta } =
+      await createAssociatedTokenInstruction(
+        program.provider,
+        serumMarket.baseMintAddress
+      );
+    depositAddress = baseAta;
+    const createAtaTx = new web3.Transaction()
+      .add(instruction)
+      .add(baseMintAtaIx);
     try {
       await program.provider.send(createAtaTx);
     } catch (err) {}
@@ -64,7 +73,7 @@ describe("InitBoundedStrategy", () => {
       transferAmount.muln(10).toNumber()
     );
     transaction.add(mintToInstruction);
-    await program.provider.send(transaction, [mintAccount]);
+    await program.provider.send(transaction);
   });
   beforeEach(async () => {
     boundPrice = new anchor.BN(957);
@@ -101,6 +110,7 @@ describe("InitBoundedStrategy", () => {
         boundPrice,
         reclaimDate,
         reclaimAddress,
+        depositAddress,
         orderSide,
         bound,
       }
@@ -120,6 +130,7 @@ describe("InitBoundedStrategy", () => {
         boundPrice,
         reclaimDate,
         reclaimAddress,
+        depositAddress,
         orderSide,
         bound,
       }
@@ -132,8 +143,6 @@ describe("InitBoundedStrategy", () => {
       console.log("error: ", parsedError.msg);
       assert.ok(false);
     }
-
-    assert.ok(true);
 
     const boundedStrategy = await program.account.boundedStrategy.fetch(
       boundedStrategyKey
@@ -158,6 +167,10 @@ describe("InitBoundedStrategy", () => {
     assert.equal(
       boundedStrategy.reclaimAddress.toString(),
       reclaimAddress.toString()
+    );
+    assert.equal(
+      boundedStrategy.depositAddress.toString(),
+      depositAddress.toString()
     );
     assert.equal(boundedStrategy.orderSide, orderSide);
     assert.equal(boundedStrategy.bound, bound);
@@ -206,6 +219,7 @@ describe("InitBoundedStrategy", () => {
           boundPrice,
           reclaimDate,
           reclaimAddress,
+          depositAddress,
           orderSide,
           bound,
         }
@@ -238,6 +252,7 @@ describe("InitBoundedStrategy", () => {
           boundPrice,
           reclaimDate,
           reclaimAddress,
+          depositAddress,
           orderSide,
           bound,
         }
@@ -270,6 +285,7 @@ describe("InitBoundedStrategy", () => {
           boundPrice,
           reclaimDate,
           reclaimAddress,
+          depositAddress,
           orderSide,
           bound,
         }
@@ -301,6 +317,7 @@ describe("InitBoundedStrategy", () => {
           boundPrice,
           reclaimDate,
           reclaimAddress,
+          depositAddress,
           orderSide,
           bound,
         }

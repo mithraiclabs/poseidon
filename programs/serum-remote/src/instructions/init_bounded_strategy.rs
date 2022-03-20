@@ -51,6 +51,8 @@ pub struct InitBoundedStrategy<'info> {
       @ ErrorCode::BadReclaimAddress
   )]
     pub reclaim_account: Account<'info, TokenAccount>,
+    /// The account where swapped assets will be transferred to
+    pub deposit_account: Account<'info, TokenAccount>,
 
     /// The OpenOrders account to initialize
     /// CHECK: constraints handled
@@ -122,6 +124,7 @@ pub fn handler(
     bounded_strategy.bounded_price = bound_price;
     bounded_strategy.reclaim_date = reclaim_date;
     bounded_strategy.reclaim_address = ctx.accounts.reclaim_account.key();
+    bounded_strategy.deposit_address = ctx.accounts.deposit_account.key();
     bounded_strategy.order_side = order_side;
     bounded_strategy.bound = bound;
     bounded_strategy.open_orders = ctx.accounts.open_orders.key();
