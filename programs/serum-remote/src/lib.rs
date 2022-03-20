@@ -14,10 +14,6 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod serum_remote {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        Ok(())
-    }
-
     #[access_control(InitBoundedStrategy::valid_arguments(
         bound_price,
         reclaim_date,
@@ -40,6 +36,3 @@ pub mod serum_remote {
         )
     }
 }
-
-#[derive(Accounts)]
-pub struct Initialize {}
