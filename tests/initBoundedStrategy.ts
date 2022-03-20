@@ -18,7 +18,6 @@ const DEX_ID = new web3.PublicKey(
   "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
 );
 
-let usdcAccount: web3.PublicKey;
 let openOrdersAccount: web3.PublicKey;
 
 /**
@@ -29,14 +28,22 @@ let openOrdersAccount: web3.PublicKey;
 describe("InitBoundedStrategy", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.Provider.env());
-
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+
+  const boundPrice = new anchor.BN(957);
+  let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
+  let reclaimAddress;
+  const orderSide = 1;
+  const bound = 1;
 
   before(async () => {
     const { instruction, associatedAddress } =
       await createAssociatedTokenInstruction(program.provider, usdcMint);
-    usdcAccount = associatedAddress;
-
+    reclaimAddress = associatedAddress;
+    const transaction = new web3.Transaction().add(instruction);
+    await program.provider.send(transaction);
+  });
+  beforeEach(async () => {
     const openOrdersKey = new web3.Keypair();
     const ix = await OpenOrders.makeCreateAccountTransaction(
       program.provider.connection,
@@ -48,17 +55,12 @@ describe("InitBoundedStrategy", () => {
       DEX_ID
     );
     openOrdersAccount = openOrdersKey.publicKey;
-    const transaction = new web3.Transaction().add(instruction).add(ix);
+    const transaction = new web3.Transaction().add(ix);
     await program.provider.send(transaction, [openOrdersKey]);
   });
 
-  // TODO: Test the BoundedStrategy account is created with the right info
+  // Test the BoundedStrategy account is created with the right info
   it("Should store all the information for a BoundedStretegy", async () => {
-    const boundPrice = new anchor.BN(957);
-    const reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
-    const reclaimAddress = usdcAccount;
-    const orderSide = 1;
-    const bound = 1;
     const ix = await initBoundedStrategyIx(
       program,
       DEX_ID,
@@ -142,4 +144,34 @@ describe("InitBoundedStrategy", () => {
   });
 
   // TODO: Test reclaim date is in the future
+  describe("reclaimDate is in the past", () => {
+    beforeEach(() => {
+      reclaimDate = new anchor.BN(new Date().getTime() / 1_000 - 3600);
+    });
+    it("should error", async () => {
+      const ix = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        solUsdcSerumMarketKey,
+        usdcMint,
+        openOrdersAccount,
+        {
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          orderSide,
+          bound,
+        }
+      );
+      const transaction = new web3.Transaction().add(ix);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(parsedError.msg, "Reclaim date must be in the future");
+        assert.ok(true);
+      }
+    });
+  });
 });

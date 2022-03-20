@@ -6,4 +6,6 @@ pub enum ErrorCode {
     IncorrectSystemProgram,
     #[msg("Reclaim account's Mint must match")]
     BadReclaimAddress,
+    #[msg("Reclaim date must be in the future")]
+    ReclaimDateHasPassed,
 }

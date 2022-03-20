@@ -5,7 +5,7 @@ use anchor_spl::{
 };
 
 use crate::{
-    authority_signer_seeds, constants::AUTHORITY_SEED, errors::ErrorCode, state::BoundedStrategy,
+    authority_signer_seeds, constants::{ AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED }, errors::ErrorCode, state::BoundedStrategy,
 };
 
 #[derive(Accounts)]
@@ -28,7 +28,7 @@ pub struct InitBoundedStrategy<'info> {
     pub serum_market: AccountInfo<'info>,
     #[account(
     init,
-    seeds = [serum_market.key().as_ref(), mint.key().as_ref(), b"orderPayer"],
+    seeds = [strategy.key().as_ref(), ORDER_PAYER_SEED.as_bytes()],
     payer = payer,
     bump,
     token::mint = mint,
@@ -37,7 +37,7 @@ pub struct InitBoundedStrategy<'info> {
     pub order_payer: Box<Account<'info, TokenAccount>>,
     #[account(
     init,
-    seeds = [order_payer.key().as_ref(), &bound_price.to_le_bytes(), &reclaim_date.to_le_bytes(), b"boundedStrategy"],
+    seeds = [serum_market.key().as_ref(), mint.key().as_ref(), &bound_price.to_le_bytes(), &reclaim_date.to_le_bytes(), BOUNDED_STRATEGY_SEED.as_bytes()],
     payer = payer,
     bump
   )]
@@ -75,6 +75,10 @@ pub fn handler(
     order_side: u8,
     bound: u8,
 ) -> Result<()> {
+    // TODO: May want to create the account in the instruction to avoid client
+    //  errors when creating but not initializing.
+
+    // Initialize Serum OpenOrders account
     let mut init_open_orders_accounts = InitOpenOrders {
         open_orders: ctx.accounts.open_orders.to_account_info(),
         authority: ctx.accounts.authority.to_account_info(),
@@ -109,4 +113,20 @@ pub fn handler(
     bounded_strategy.open_orders = ctx.accounts.open_orders.key();
 
     Ok(())
+}
+
+impl<'info> InitBoundedStrategy<'info> {
+    pub fn valid_arguments(
+        bound_price: u64,
+        reclaim_date: i64,
+        order_side: u8,
+        bound: u8,
+    ) -> Result<()> {
+        // Validate reclaim date is in the future
+        msg!("reclaim_date {}, time {}", reclaim_date, Clock::get()?.unix_timestamp);
+        if reclaim_date < Clock::get()?.unix_timestamp {
+            return Err(error!(ErrorCode::ReclaimDateHasPassed));
+        }
+        Ok(())
+    }
 }

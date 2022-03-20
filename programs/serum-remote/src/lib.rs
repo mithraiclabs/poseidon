@@ -18,6 +18,12 @@ pub mod serum_remote {
         Ok(())
     }
 
+    #[access_control(InitBoundedStrategy::valid_arguments(
+        bound_price,
+        reclaim_date,
+        order_side,
+        bound
+    ))]
     pub fn init_bounded_strategy(
         ctx: Context<InitBoundedStrategy>,
         bound_price: u64,

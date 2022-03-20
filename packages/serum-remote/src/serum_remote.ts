@@ -162,6 +162,11 @@ export type SerumRemote = {
       "code": 6001,
       "name": "BadReclaimAddress",
       "msg": "Reclaim account's Mint must match"
+    },
+    {
+      "code": 6002,
+      "name": "ReclaimDateHasPassed",
+      "msg": "Reclaim date must be in the future"
     }
   ]
 };
@@ -330,6 +335,11 @@ export const IDL: SerumRemote = {
       "code": 6001,
       "name": "BadReclaimAddress",
       "msg": "Reclaim account's Mint must match"
+    },
+    {
+      "code": 6002,
+      "name": "ReclaimDateHasPassed",
+      "msg": "Reclaim date must be in the future"
     }
   ]
 };
