@@ -48,12 +48,57 @@ export type SerumRemote = {
         {
           "name": "orderPayer",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "BoundedStrategy",
+                "path": "strategy"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "orderPayer"
+              }
+            ]
+          }
         },
         {
           "name": "strategy",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "serum_market"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "bound_price"
+              },
+              {
+                "kind": "arg",
+                "type": "i64",
+                "path": "reclaim_date"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "boundedStrategy"
+              }
+            ]
+          }
         },
         {
           "name": "reclaimAccount",
@@ -167,6 +212,11 @@ export type SerumRemote = {
       "code": 6002,
       "name": "ReclaimDateHasPassed",
       "msg": "Reclaim date must be in the future"
+    },
+    {
+      "code": 6003,
+      "name": "BoundPriceIsZero",
+      "msg": "Bound price must be greater than 0"
     }
   ]
 };
@@ -221,12 +271,57 @@ export const IDL: SerumRemote = {
         {
           "name": "orderPayer",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "BoundedStrategy",
+                "path": "strategy"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "orderPayer"
+              }
+            ]
+          }
         },
         {
           "name": "strategy",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "serum_market"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "bound_price"
+              },
+              {
+                "kind": "arg",
+                "type": "i64",
+                "path": "reclaim_date"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "boundedStrategy"
+              }
+            ]
+          }
         },
         {
           "name": "reclaimAccount",
@@ -340,6 +435,11 @@ export const IDL: SerumRemote = {
       "code": 6002,
       "name": "ReclaimDateHasPassed",
       "msg": "Reclaim date must be in the future"
+    },
+    {
+      "code": 6003,
+      "name": "BoundPriceIsZero",
+      "msg": "Bound price must be greater than 0"
     }
   ]
 };

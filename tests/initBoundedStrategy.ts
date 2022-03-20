@@ -30,11 +30,11 @@ describe("InitBoundedStrategy", () => {
   anchor.setProvider(anchor.Provider.env());
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
 
-  const boundPrice = new anchor.BN(957);
+  let boundPrice = new anchor.BN(957);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
   let reclaimAddress;
-  const orderSide = 1;
-  const bound = 1;
+  let orderSide = 1;
+  let bound = 1;
 
   before(async () => {
     const { instruction, associatedAddress } =
@@ -44,6 +44,10 @@ describe("InitBoundedStrategy", () => {
     await program.provider.send(transaction);
   });
   beforeEach(async () => {
+    boundPrice = new anchor.BN(957);
+    reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
+    orderSide = 1;
+    bound = 1;
     const openOrdersKey = new web3.Keypair();
     const ix = await OpenOrders.makeCreateAccountTransaction(
       program.provider.connection,
@@ -170,6 +174,37 @@ describe("InitBoundedStrategy", () => {
       } catch (error) {
         const parsedError = parseTranactionError(error);
         assert.equal(parsedError.msg, "Reclaim date must be in the future");
+        assert.ok(true);
+      }
+    });
+  });
+
+  describe("bound price is 0", () => {
+    beforeEach(() => {
+      boundPrice = new anchor.BN(0);
+    });
+    it("should error", async () => {
+      const ix = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        solUsdcSerumMarketKey,
+        usdcMint,
+        openOrdersAccount,
+        {
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          orderSide,
+          bound,
+        }
+      );
+      const transaction = new web3.Transaction().add(ix);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(parsedError.msg, "Bound price must be greater than 0");
         assert.ok(true);
       }
     });

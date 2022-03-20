@@ -8,4 +8,6 @@ pub enum ErrorCode {
     BadReclaimAddress,
     #[msg("Reclaim date must be in the future")]
     ReclaimDateHasPassed,
+    #[msg("Bound price must be greater than 0")]
+    BoundPriceIsZero,
 }

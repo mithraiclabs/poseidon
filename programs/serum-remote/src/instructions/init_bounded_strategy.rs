@@ -123,9 +123,12 @@ impl<'info> InitBoundedStrategy<'info> {
         bound: u8,
     ) -> Result<()> {
         // Validate reclaim date is in the future
-        msg!("reclaim_date {}, time {}", reclaim_date, Clock::get()?.unix_timestamp);
         if reclaim_date < Clock::get()?.unix_timestamp {
-            return Err(error!(ErrorCode::ReclaimDateHasPassed));
+          return Err(error!(ErrorCode::ReclaimDateHasPassed));
+        }
+        // Validate bound price is greater than 0
+        if bound_price == 0 {
+          return Err(error!(ErrorCode::BoundPriceIsZero));
         }
         Ok(())
     }
