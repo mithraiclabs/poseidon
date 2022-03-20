@@ -128,6 +128,10 @@ export type SerumRemote = {
       ],
       "args": [
         {
+          "name": "transferAmount",
+          "type": "u64"
+        },
+        {
           "name": "boundPrice",
           "type": "u64"
         },
@@ -355,6 +359,10 @@ export const IDL: SerumRemote = {
         }
       ],
       "args": [
+        {
+          "name": "transferAmount",
+          "type": "u64"
+        },
         {
           "name": "boundPrice",
           "type": "u64"

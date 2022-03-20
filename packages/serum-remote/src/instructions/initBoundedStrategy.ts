@@ -13,8 +13,14 @@ export const initBoundedStrategyIx = async (
   openOrdersAccount: web3.PublicKey,
   boundedStrategyParams: BoundedStrategyParams
 ) => {
-  const { boundPrice, reclaimDate, reclaimAddress, orderSide, bound } =
-    boundedStrategyParams;
+  const {
+    boundPrice,
+    reclaimDate,
+    reclaimAddress,
+    orderSide,
+    bound,
+    transferAmount,
+  } = boundedStrategyParams;
   const { orderPayer, boundedStrategy, authority } =
     await deriveAllBoundedStrategyKeys(
       program,
@@ -23,6 +29,7 @@ export const initBoundedStrategyIx = async (
       boundedStrategyParams
     );
   return program.instruction.initBoundedStrategy(
+    transferAmount,
     boundPrice,
     reclaimDate,
     orderSide,
@@ -53,8 +60,14 @@ export const initializeBoundedStrategy = async (
   assetMint: web3.PublicKey,
   boundedStrategyParams: BoundedStrategyParams
 ) => {
-  const { boundPrice, reclaimDate, reclaimAddress, orderSide, bound } =
-    boundedStrategyParams;
+  const {
+    boundPrice,
+    reclaimDate,
+    reclaimAddress,
+    orderSide,
+    bound,
+    transferAmount,
+  } = boundedStrategyParams;
   const openOrdersKey = new web3.Keypair();
   const ix = await OpenOrders.makeCreateAccountTransaction(
     program.provider.connection,
@@ -73,6 +86,7 @@ export const initializeBoundedStrategy = async (
     assetMint,
     openOrdersKey.publicKey,
     {
+      transferAmount,
       boundPrice,
       reclaimDate,
       reclaimAddress,

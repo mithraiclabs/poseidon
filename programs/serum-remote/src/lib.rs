@@ -22,6 +22,7 @@ pub mod serum_remote {
     ))]
     pub fn init_bounded_strategy(
         ctx: Context<InitBoundedStrategy>,
+        transfer_amount: u64,
         bound_price: u64,
         reclaim_date: i64,
         order_side: u8,
@@ -29,6 +30,7 @@ pub mod serum_remote {
     ) -> Result<()> {
         instructions::init_bounded_strategy::handler(
             ctx,
+            transfer_amount,
             bound_price,
             reclaim_date,
             order_side,

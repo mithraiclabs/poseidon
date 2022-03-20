@@ -1,7 +1,8 @@
 import * as anchor from "@project-serum/anchor";
+import { Spl } from "@project-serum/anchor";
 import { Program, web3 } from "@project-serum/anchor";
 import { OpenOrders } from "@project-serum/serum";
-import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import { initBoundedStrategyIx } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
@@ -26,14 +27,14 @@ describe("InitBoundedStrategy", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.Provider.env());
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const splTokenProgram = Spl.token();
 
   let boundPrice = new anchor.BN(957);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
   let reclaimAddress;
   let orderSide = 1;
   let bound = 1;
-  let assetAmount = new anchor.BN(10_000_000);
-  let mint: web3.PublicKey;
+  let transferAmount = new u64(10_000_000);
 
   before(async () => {
     const transaction = new web3.Transaction();
@@ -42,7 +43,6 @@ describe("InitBoundedStrategy", () => {
       program.provider.wallet.publicKey,
       6
     );
-    mint = mintAccount.publicKey;
     instructions.forEach((ix) => transaction.add(ix));
 
     // This TX may fail with concurrent tests
@@ -61,7 +61,7 @@ describe("InitBoundedStrategy", () => {
       associatedAddress,
       program.provider.wallet.publicKey,
       [],
-      10_000_000
+      transferAmount.muln(10).toNumber()
     );
     transaction.add(mintToInstruction);
     await program.provider.send(transaction, [mintAccount]);
@@ -88,6 +88,27 @@ describe("InitBoundedStrategy", () => {
 
   // Test the BoundedStrategy account is created with the right info
   it("Should store all the information for a BoundedStretegy", async () => {
+    const {
+      boundedStrategy: boundedStrategyKey,
+      authority,
+      orderPayer,
+    } = await deriveAllBoundedStrategyKeys(
+      program,
+      SOL_USDC_SERUM_MARKET,
+      USDC_MINT,
+      {
+        transferAmount,
+        boundPrice,
+        reclaimDate,
+        reclaimAddress,
+        orderSide,
+        bound,
+      }
+    );
+    const reclaimTokenAccountBefore = await splTokenProgram.account.token.fetch(
+      reclaimAddress
+    );
+
     const ix = await initBoundedStrategyIx(
       program,
       DEX_ID,
@@ -95,6 +116,7 @@ describe("InitBoundedStrategy", () => {
       USDC_MINT,
       openOrdersAccount,
       {
+        transferAmount,
         boundPrice,
         reclaimDate,
         reclaimAddress,
@@ -110,23 +132,6 @@ describe("InitBoundedStrategy", () => {
       console.log("error: ", parsedError.msg);
       assert.ok(false);
     }
-
-    const {
-      boundedStrategy: boundedStrategyKey,
-      authority,
-      orderPayer,
-    } = await deriveAllBoundedStrategyKeys(
-      program,
-      SOL_USDC_SERUM_MARKET,
-      USDC_MINT,
-      {
-        boundPrice,
-        reclaimDate,
-        reclaimAddress,
-        orderSide,
-        bound,
-      }
-    );
 
     assert.ok(true);
 
@@ -168,9 +173,23 @@ describe("InitBoundedStrategy", () => {
       DEX_ID
     );
     assert.ok(openOrders);
+
+    // TODO: Check that the assets were transfered from the reclaimAddress to the orderPayer
+    const reclaimTokenAccountAfter = await splTokenProgram.account.token.fetch(
+      reclaimAddress
+    );
+    const reclaimTokenDiff = reclaimTokenAccountAfter.amount.sub(
+      reclaimTokenAccountBefore.amount
+    );
+    assert.equal(reclaimTokenDiff.toString(), transferAmount.neg().toString());
+
+    const orderPayerTokenAccountAfter =
+      await splTokenProgram.account.token.fetch(orderPayer);
+    const orderPayerTokenDiff = orderPayerTokenAccountAfter.amount;
+    assert.equal(orderPayerTokenDiff.toString(), transferAmount.toString());
   });
 
-  // TODO: Test reclaim date is in the future
+  // Test reclaim date is in the future
   describe("reclaimDate is in the past", () => {
     beforeEach(() => {
       reclaimDate = new anchor.BN(new Date().getTime() / 1_000 - 3600);
@@ -183,6 +202,7 @@ describe("InitBoundedStrategy", () => {
         USDC_MINT,
         openOrdersAccount,
         {
+          transferAmount,
           boundPrice,
           reclaimDate,
           reclaimAddress,
@@ -214,6 +234,7 @@ describe("InitBoundedStrategy", () => {
         USDC_MINT,
         openOrdersAccount,
         {
+          transferAmount,
           boundPrice,
           reclaimDate,
           reclaimAddress,
@@ -245,6 +266,7 @@ describe("InitBoundedStrategy", () => {
         USDC_MINT,
         openOrdersAccount,
         {
+          transferAmount,
           boundPrice,
           reclaimDate,
           reclaimAddress,
@@ -275,6 +297,7 @@ describe("InitBoundedStrategy", () => {
         USDC_MINT,
         openOrdersAccount,
         {
+          transferAmount,
           boundPrice,
           reclaimDate,
           reclaimAddress,

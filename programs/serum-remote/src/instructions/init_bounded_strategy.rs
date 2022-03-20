@@ -1,15 +1,18 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     dex::{self, InitOpenOrders},
-    token::{Mint, Token, TokenAccount},
+    token::{self, Mint, Token, TokenAccount, Transfer},
 };
 
 use crate::{
-    authority_signer_seeds, constants::{ AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED }, errors::ErrorCode, state::BoundedStrategy,
+    authority_signer_seeds,
+    constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
+    errors::ErrorCode,
+    state::BoundedStrategy,
 };
 
 #[derive(Accounts)]
-#[instruction(bound_price: u64, reclaim_date: i64)]
+#[instruction(transfer_amount: u64, bound_price: u64, reclaim_date: i64)]
 pub struct InitBoundedStrategy<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -43,6 +46,7 @@ pub struct InitBoundedStrategy<'info> {
   )]
     pub strategy: Box<Account<'info, BoundedStrategy>>,
     #[account(
+      mut,
     constraint = reclaim_account.mint == mint.key()
       @ ErrorCode::BadReclaimAddress
   )]
@@ -70,6 +74,7 @@ pub struct InitBoundedStrategy<'info> {
 
 pub fn handler(
     ctx: Context<InitBoundedStrategy>,
+    transfer_amount: u64,
     bound_price: u64,
     reclaim_date: i64,
     order_side: u8,
@@ -79,7 +84,7 @@ pub fn handler(
     //  errors when creating but not initializing.
 
     // Initialize Serum OpenOrders account
-    let mut init_open_orders_accounts = InitOpenOrders {
+    let init_open_orders_accounts = InitOpenOrders {
         open_orders: ctx.accounts.open_orders.to_account_info(),
         authority: ctx.accounts.authority.to_account_info(),
         market: ctx.accounts.serum_market.to_account_info(),
@@ -100,6 +105,15 @@ pub fn handler(
         signer_seeds: authority_signer_seeds!(&ctx, authority_bump),
     };
     dex::init_open_orders(init_ctx)?;
+
+    // Transfer the assets
+    let cpi_accounts = Transfer {
+        from: ctx.accounts.reclaim_account.to_account_info(),
+        to: ctx.accounts.order_payer.to_account_info(),
+        authority: ctx.accounts.payer.to_account_info().clone(),
+    };
+    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+    token::transfer(cpi_ctx, transfer_amount)?;
 
     let bounded_strategy = &mut ctx.accounts.strategy;
     bounded_strategy.seurm_market = ctx.accounts.serum_market.key();
@@ -124,20 +138,21 @@ impl<'info> InitBoundedStrategy<'info> {
     ) -> Result<()> {
         // Validate reclaim date is in the future
         if reclaim_date < Clock::get()?.unix_timestamp {
-          return Err(error!(ErrorCode::ReclaimDateHasPassed));
+            return Err(error!(ErrorCode::ReclaimDateHasPassed));
         }
         // Validate bound price is greater than 0
         if bound_price == 0 {
-          return Err(error!(ErrorCode::BoundPriceIsZero));
+            return Err(error!(ErrorCode::BoundPriceIsZero));
         }
-        // Validate the order side is 0 (Bid) or 1 (Ask) 
+        // Validate the order side is 0 (Bid) or 1 (Ask)
         if order_side != 0 && order_side != 1 {
-          return Err(error!(ErrorCode::NonBinaryOrderSide));
+            return Err(error!(ErrorCode::NonBinaryOrderSide));
         }
-        // Validate the Bound is 0 (Lower Bound) or 1 (Upper Bound) 
+        // Validate the Bound is 0 (Lower Bound) or 1 (Upper Bound)
         if bound != 0 && bound != 1 {
-          return Err(error!(ErrorCode::NonBinaryBound));
+            return Err(error!(ErrorCode::NonBinaryBound));
         }
+        // TODO: Validate transfer amount > 0
         Ok(())
     }
 }
