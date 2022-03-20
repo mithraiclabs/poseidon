@@ -1,6 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import { Program, web3 } from "@project-serum/anchor";
 import { OpenOrders } from "@project-serum/serum";
+import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import { initBoundedStrategyIx } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
@@ -9,6 +10,7 @@ import { SerumRemote } from "../target/types/serum_remote";
 import {
   createAssociatedTokenInstruction,
   DEX_ID,
+  initNewTokenMintInstructions,
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
 } from "./utils";
@@ -30,17 +32,39 @@ describe("InitBoundedStrategy", () => {
   let reclaimAddress;
   let orderSide = 1;
   let bound = 1;
+  let assetAmount = new anchor.BN(10_000_000);
+  let mint: web3.PublicKey;
 
   before(async () => {
+    const transaction = new web3.Transaction();
+    const { instructions, mintAccount } = await initNewTokenMintInstructions(
+      program.provider,
+      program.provider.wallet.publicKey,
+      6
+    );
+    mint = mintAccount.publicKey;
+    instructions.forEach((ix) => transaction.add(ix));
+
     // This TX may fail with concurrent tests
     // TODO: Write more elegant solution
+    const { instruction, associatedAddress } =
+      await createAssociatedTokenInstruction(program.provider, USDC_MINT);
+    reclaimAddress = associatedAddress;
+    const createAtaTx = new web3.Transaction().add(instruction);
     try {
-      const { instruction, associatedAddress } =
-        await createAssociatedTokenInstruction(program.provider, USDC_MINT);
-      reclaimAddress = associatedAddress;
-      const transaction = new web3.Transaction().add(instruction);
-      await program.provider.send(transaction);
+      await program.provider.send(createAtaTx);
     } catch (err) {}
+
+    const mintToInstruction = Token.createMintToInstruction(
+      TOKEN_PROGRAM_ID,
+      USDC_MINT,
+      associatedAddress,
+      program.provider.wallet.publicKey,
+      [],
+      10_000_000
+    );
+    transaction.add(mintToInstruction);
+    await program.provider.send(transaction, [mintAccount]);
   });
   beforeEach(async () => {
     boundPrice = new anchor.BN(957);

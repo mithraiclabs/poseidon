@@ -13,7 +13,7 @@ program = "tests/deps/serum_dex.so"
 
 [[test.validator.account]]
 address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-filename = "tests/seeds/usdc.json"
+filename = "tests/seeds/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v.json"
 
 [[test.validator.account]]
 address = "9wFFyRfZBsuAha4YcuxcXLKwMxJR43S7fPfQLusDBzvT"

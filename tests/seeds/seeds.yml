@@ -1,0 +1,8 @@
+splToken:
+  - accountType: mint
+    address: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+    mintAuthority: ANCHOR_WALLET
+    supply: "4785000017759681"
+    decimals: 6
+    isInitialized: true
+    freezeAuthority: 3sNBr7kMccME5D55xNgsmYpZnzPgP2g12CixAajXypn6
