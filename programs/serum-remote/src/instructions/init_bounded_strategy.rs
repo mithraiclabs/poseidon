@@ -130,9 +130,13 @@ impl<'info> InitBoundedStrategy<'info> {
         if bound_price == 0 {
           return Err(error!(ErrorCode::BoundPriceIsZero));
         }
-
+        // Validate the order side is 0 (Bid) or 1 (Ask) 
         if order_side != 0 && order_side != 1 {
           return Err(error!(ErrorCode::NonBinaryOrderSide));
+        }
+        // Validate the Bound is 0 (Lower Bound) or 1 (Upper Bound) 
+        if bound != 0 && bound != 1 {
+          return Err(error!(ErrorCode::NonBinaryBound));
         }
         Ok(())
     }

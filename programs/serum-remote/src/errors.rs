@@ -12,4 +12,6 @@ pub enum ErrorCode {
     BoundPriceIsZero,
     #[msg("Order side must be 0 or 1")]
     NonBinaryOrderSide,
+    #[msg("Bound must be 0 or 1")]
+    NonBinaryBound,
 }

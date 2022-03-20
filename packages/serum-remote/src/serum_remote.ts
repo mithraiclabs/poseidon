@@ -222,6 +222,11 @@ export type SerumRemote = {
       "code": 6004,
       "name": "NonBinaryOrderSide",
       "msg": "Order side must be 0 or 1"
+    },
+    {
+      "code": 6005,
+      "name": "NonBinaryBound",
+      "msg": "Bound must be 0 or 1"
     }
   ]
 };
@@ -450,6 +455,11 @@ export const IDL: SerumRemote = {
       "code": 6004,
       "name": "NonBinaryOrderSide",
       "msg": "Order side must be 0 or 1"
+    },
+    {
+      "code": 6005,
+      "name": "NonBinaryBound",
+      "msg": "Bound must be 0 or 1"
     }
   ]
 };

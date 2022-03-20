@@ -240,4 +240,34 @@ describe("InitBoundedStrategy", () => {
       }
     });
   });
+  describe("Bound is not 0 or 1", () => {
+    beforeEach(() => {
+      bound = 2;
+    });
+    it("should error", async () => {
+      const ix = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        solUsdcSerumMarketKey,
+        usdcMint,
+        openOrdersAccount,
+        {
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          orderSide,
+          bound,
+        }
+      );
+      const transaction = new web3.Transaction().add(ix);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(parsedError.msg, "Bound must be 0 or 1");
+        assert.ok(true);
+      }
+    });
+  });
 });
