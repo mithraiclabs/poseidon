@@ -364,6 +364,11 @@ export type SerumRemote = {
       "code": 6005,
       "name": "NonBinaryBound",
       "msg": "Bound must be 0 or 1"
+    },
+    {
+      "code": 6006,
+      "name": "MarketPriceIsOutOfBounds",
+      "msg": "Market price is out of bounds"
     }
   ]
 };
@@ -734,6 +739,11 @@ export const IDL: SerumRemote = {
       "code": 6005,
       "name": "NonBinaryBound",
       "msg": "Bound must be 0 or 1"
+    },
+    {
+      "code": 6006,
+      "name": "MarketPriceIsOutOfBounds",
+      "msg": "Market price is out of bounds"
     }
   ]
 };

@@ -185,11 +185,54 @@ describe("BoundedTrade", () => {
       });
 
       describe("Bounded price is lower than lowest ask", () => {
-        beforeEach(() => {
+        beforeEach(async () => {
           boundPrice = lowestAsk[2].subn(10);
+          const boundedParams = {
+            boundPrice,
+            reclaimDate,
+            reclaimAddress,
+            depositAddress,
+            orderSide,
+            bound,
+            transferAmount,
+          };
+          await initializeBoundedStrategy(
+            program,
+            DEX_ID,
+            SOL_USDC_SERUM_MARKET,
+            USDC_MINT,
+            boundedParams
+          );
+          ({
+            boundedStrategy: boundedStrategyKey,
+            authority,
+            orderPayer,
+          } = await deriveAllBoundedStrategyKeys(
+            program,
+            SOL_USDC_SERUM_MARKET,
+            USDC_MINT,
+            boundedParams
+          ));
+          boundedStrategy = await program.account.boundedStrategy.fetch(
+            boundedStrategyKey
+          );
         });
-        it("should error from bound validation", () => {
-          // TODO: Write the test
+        it("should error from bound validation", async () => {
+          const ix = await boundedTradeIx(
+            program,
+            boundedStrategyKey,
+            serumMarket,
+            boundedStrategy
+          );
+          const transaction = new web3.Transaction().add(ix);
+          try {
+            await program.provider.send(transaction);
+            assert.ok(false);
+          } catch (error) {
+            const parsedError = parseTranactionError(error);
+            assert.equal(parsedError.msg, "Market price is out of bounds");
+          }
+          assert.ok(true);
         });
       });
     });

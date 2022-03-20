@@ -14,7 +14,7 @@ use anchor_spl::{
 
 use crate::{authority_signer_seeds, settle_funds};
 use crate::{
-    constants::AUTHORITY_SEED, place_order, serum_utils::{get_best_bid_ask, FeeTier}, state::BoundedStrategy,
+    constants::AUTHORITY_SEED, errors::ErrorCode, place_order, serum_utils::{get_best_bid_ask, FeeTier}, state::BoundedStrategy,
 };
 
 #[derive(Accounts)]
@@ -157,7 +157,7 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
                 };
                 settle_funds!(&ctx, wallets, &[signer_seeds]);
             } else {
-                // TODO: Return error
+                return Err(error!(ErrorCode::MarketPriceIsOutOfBounds))
             }
         } else {
             // TODO: handle Lower Bound
