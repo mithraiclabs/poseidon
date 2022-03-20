@@ -1,7 +1,9 @@
 use anchor_lang::prelude::*;
 
+pub mod constants;
 pub mod errors;
 pub mod instructions;
+pub mod macros;
 pub mod state;
 
 use crate::instructions::*;
@@ -16,8 +18,20 @@ pub mod serum_remote {
         Ok(())
     }
 
-    pub fn init_bounded_strategy(ctx: Context<InitBoundedStrategy>, bound_price: u64, reclaim_date: i64) -> Result<()> {
-        instructions::init_bounded_strategy::handler(ctx, bound_price, reclaim_date)
+    pub fn init_bounded_strategy(
+        ctx: Context<InitBoundedStrategy>,
+        bound_price: u64,
+        reclaim_date: i64,
+        order_side: u8,
+        bound: u8,
+    ) -> Result<()> {
+        instructions::init_bounded_strategy::handler(
+            ctx,
+            bound_price,
+            reclaim_date,
+            order_side,
+            bound,
+        )
     }
 }
 

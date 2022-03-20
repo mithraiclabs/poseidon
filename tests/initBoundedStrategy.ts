@@ -1,5 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { Program, web3 } from "@project-serum/anchor";
+import { OpenOrders } from "@project-serum/serum";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import { initBoundedStrategyIx } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
@@ -18,6 +19,7 @@ const DEX_ID = new web3.PublicKey(
 );
 
 let usdcAccount: web3.PublicKey;
+let openOrdersAccount: web3.PublicKey;
 
 /**
  * SerumMarket is in the current state Bids and Asks
@@ -34,21 +36,21 @@ describe("InitBoundedStrategy", () => {
     const { instruction, associatedAddress } =
       await createAssociatedTokenInstruction(program.provider, usdcMint);
     usdcAccount = associatedAddress;
-    const transaction = new web3.Transaction().add(instruction);
-    await program.provider.send(transaction);
+
+    const openOrdersKey = new web3.Keypair();
+    const ix = await OpenOrders.makeCreateAccountTransaction(
+      program.provider.connection,
+      // This argument is pointless
+      web3.SystemProgram.programId,
+      // This argument is the payer for the rent
+      program.provider.wallet.publicKey,
+      openOrdersKey.publicKey,
+      DEX_ID
+    );
+    openOrdersAccount = openOrdersKey.publicKey;
+    const transaction = new web3.Transaction().add(instruction).add(ix);
+    await program.provider.send(transaction, [openOrdersKey]);
   });
-
-  // TODO: Test OpenOrders accounts is created
-  // it("Should create the OpenOrders account", async () => {
-  //   // TODO: Who should be the OpenOrders owner. Sh
-  //   // const tx = await program.rpc.initBoundedStrategy({
-  //   //   accounts: {
-  //   //     payer: program.provider.wallet.publicKey,
-
-  //   //   }
-  //   // });
-  //   console.log("Your transaction signature", tx);
-  // });
 
   // TODO: Test the BoundedStrategy account is created with the right info
   it("Should store all the information for a BoundedStretegy", async () => {
@@ -59,12 +61,16 @@ describe("InitBoundedStrategy", () => {
     const bound = 1;
     const ix = await initBoundedStrategyIx(
       program,
+      DEX_ID,
       solUsdcSerumMarketKey,
       usdcMint,
+      openOrdersAccount,
       {
         boundPrice,
         reclaimDate,
         reclaimAddress,
+        orderSide,
+        bound,
       }
     );
     const transaction = new web3.Transaction().add(ix);
@@ -88,6 +94,8 @@ describe("InitBoundedStrategy", () => {
         boundPrice,
         reclaimDate,
         reclaimAddress,
+        orderSide,
+        bound,
       }
     );
 
@@ -119,7 +127,18 @@ describe("InitBoundedStrategy", () => {
     );
     assert.equal(boundedStrategy.orderSide, orderSide);
     assert.equal(boundedStrategy.bound, bound);
-    // TODO: Check the OpenOrders address
+    // Check the OpenOrders address
+    assert.equal(
+      boundedStrategy.openOrders.toString(),
+      openOrdersAccount.toString()
+    );
+
+    const openOrders = await OpenOrders.load(
+      program.provider.connection,
+      openOrdersAccount,
+      DEX_ID
+    );
+    assert.ok(openOrders);
   });
 
   // TODO: Test reclaim date is in the future

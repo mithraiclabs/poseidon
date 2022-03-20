@@ -18,7 +18,22 @@ export type SerumRemote = {
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "BoundedStrategy",
+                "path": "strategy"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "authority"
+              }
+            ]
+          }
         },
         {
           "name": "mint",
@@ -36,12 +51,22 @@ export type SerumRemote = {
           "isSigner": false
         },
         {
-          "name": "boundedStrategy",
+          "name": "strategy",
           "isMut": true,
           "isSigner": false
         },
         {
           "name": "reclaimAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
           "isMut": false,
           "isSigner": false
         },
@@ -69,6 +94,14 @@ export type SerumRemote = {
         {
           "name": "reclaimDate",
           "type": "i64"
+        },
+        {
+          "name": "orderSide",
+          "type": "u8"
+        },
+        {
+          "name": "bound",
+          "type": "u8"
         }
       ]
     }
@@ -153,7 +186,22 @@ export const IDL: SerumRemote = {
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "BoundedStrategy",
+                "path": "strategy"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "authority"
+              }
+            ]
+          }
         },
         {
           "name": "mint",
@@ -171,12 +219,22 @@ export const IDL: SerumRemote = {
           "isSigner": false
         },
         {
-          "name": "boundedStrategy",
+          "name": "strategy",
           "isMut": true,
           "isSigner": false
         },
         {
           "name": "reclaimAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
           "isMut": false,
           "isSigner": false
         },
@@ -204,6 +262,14 @@ export const IDL: SerumRemote = {
         {
           "name": "reclaimDate",
           "type": "i64"
+        },
+        {
+          "name": "orderSide",
+          "type": "u8"
+        },
+        {
+          "name": "bound",
+          "type": "u8"
         }
       ]
     }

@@ -6,11 +6,14 @@ import { BoundedStrategyParams } from "../types";
 
 export const initBoundedStrategyIx = async (
   program: Program<SerumRemote>,
+  dexProgram: web3.PublicKey,
   serumMarket: web3.PublicKey,
   mint: web3.PublicKey,
+  openOrdersAccount: web3.PublicKey,
   boundedStrategyParams: BoundedStrategyParams
 ) => {
-  const { boundPrice, reclaimDate, reclaimAddress } = boundedStrategyParams;
+  const { boundPrice, reclaimDate, reclaimAddress, orderSide, bound } =
+    boundedStrategyParams;
   const { orderPayer, boundedStrategy, authority } =
     await deriveAllBoundedStrategyKeys(
       program,
@@ -18,18 +21,26 @@ export const initBoundedStrategyIx = async (
       mint,
       boundedStrategyParams
     );
-  return program.instruction.initBoundedStrategy(boundPrice, reclaimDate, {
-    accounts: {
-      payer: program.provider.wallet.publicKey,
-      authority,
-      mint,
-      serumMarket,
-      orderPayer,
-      boundedStrategy,
-      reclaimAccount: reclaimAddress,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      systemProgram: web3.SystemProgram.programId,
-      rent: web3.SYSVAR_RENT_PUBKEY,
-    },
-  });
+  return program.instruction.initBoundedStrategy(
+    boundPrice,
+    reclaimDate,
+    orderSide,
+    bound,
+    {
+      accounts: {
+        payer: program.provider.wallet.publicKey,
+        authority,
+        mint,
+        serumMarket,
+        orderPayer,
+        strategy: boundedStrategy,
+        reclaimAccount: reclaimAddress,
+        openOrders: openOrdersAccount,
+        dexProgram,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: web3.SystemProgram.programId,
+        rent: web3.SYSVAR_RENT_PUBKEY,
+      },
+    }
+  );
 };
