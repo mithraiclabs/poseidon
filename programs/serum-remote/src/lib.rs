@@ -4,6 +4,7 @@ pub mod constants;
 pub mod errors;
 pub mod instructions;
 pub mod macros;
+pub mod serum_utils;
 pub mod state;
 
 use crate::instructions::*;
@@ -36,5 +37,9 @@ pub mod serum_remote {
             order_side,
             bound,
         )
+    }
+
+    pub fn bounded_trade(ctx: Context<BoundedTrade>) -> Result<()> {
+        instructions::bounded_trade::handler(ctx)
     }
 }

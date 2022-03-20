@@ -2,7 +2,7 @@ import { BN, Program, web3 } from "@project-serum/anchor";
 import { SerumRemote } from "../serum_remote";
 import { deriveAllBoundedStrategyKeys } from "../pdas";
 import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
-import { BoundedStrategyParams } from "../types";
+import { BoundedStrategy, BoundedStrategyParams } from "../types";
 import { OpenOrders } from "@project-serum/serum";
 
 export const initBoundedStrategyIx = async (
@@ -62,14 +62,6 @@ export const initializeBoundedStrategy = async (
   assetMint: web3.PublicKey,
   boundedStrategyParams: BoundedStrategyParams
 ) => {
-  const {
-    boundPrice,
-    reclaimDate,
-    reclaimAddress,
-    orderSide,
-    bound,
-    transferAmount,
-  } = boundedStrategyParams;
   const openOrdersKey = new web3.Keypair();
   const ix = await OpenOrders.makeCreateAccountTransaction(
     program.provider.connection,
@@ -87,14 +79,7 @@ export const initializeBoundedStrategy = async (
     serumMarket,
     assetMint,
     openOrdersKey.publicKey,
-    {
-      transferAmount,
-      boundPrice,
-      reclaimDate,
-      reclaimAddress,
-      orderSide,
-      bound,
-    }
+    boundedStrategyParams
   );
   transaction.add(initBoundedStrategyInstruction);
   await program.provider.send(transaction, [openOrdersKey]);

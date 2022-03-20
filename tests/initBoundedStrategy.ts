@@ -151,7 +151,7 @@ describe("InitBoundedStrategy", () => {
     // Test that the information was stored on the BoundedStrategy account
 
     assert.equal(
-      boundedStrategy.seurmMarket.toString(),
+      boundedStrategy.serumMarket.toString(),
       SOL_USDC_SERUM_MARKET.toString()
     );
     assert.equal(boundedStrategy.authority.toString(), authority.toString());

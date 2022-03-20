@@ -104,7 +104,7 @@ pub fn handler(
         accounts: init_open_orders_accounts,
         program: ctx.accounts.dex_program.to_account_info(),
         remaining_accounts: vec![],
-        signer_seeds: authority_signer_seeds!(&ctx, authority_bump),
+        signer_seeds: &[authority_signer_seeds!(&ctx, authority_bump)],
     };
     dex::init_open_orders(init_ctx)?;
 
@@ -118,7 +118,7 @@ pub fn handler(
     token::transfer(cpi_ctx, transfer_amount)?;
 
     let bounded_strategy = &mut ctx.accounts.strategy;
-    bounded_strategy.seurm_market = ctx.accounts.serum_market.key();
+    bounded_strategy.serum_market = ctx.accounts.serum_market.key();
     bounded_strategy.authority = ctx.accounts.authority.key();
     bounded_strategy.order_payer = ctx.accounts.order_payer.key();
     bounded_strategy.bounded_price = bound_price;
@@ -128,6 +128,7 @@ pub fn handler(
     bounded_strategy.order_side = order_side;
     bounded_strategy.bound = bound;
     bounded_strategy.open_orders = ctx.accounts.open_orders.key();
+    bounded_strategy.authority_bump = authority_bump;
 
     Ok(())
 }
