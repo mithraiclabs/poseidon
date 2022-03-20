@@ -10,4 +10,6 @@ pub enum ErrorCode {
     ReclaimDateHasPassed,
     #[msg("Bound price must be greater than 0")]
     BoundPriceIsZero,
+    #[msg("Order side must be 0 or 1")]
+    NonBinaryOrderSide,
 }
