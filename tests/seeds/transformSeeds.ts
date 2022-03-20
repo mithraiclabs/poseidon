@@ -4,10 +4,6 @@ import { BN, Idl, Spl, web3 } from "@project-serum/anchor";
 import { IdlField, IdlType } from "./idlTypes";
 import { u64 } from "@solana/spl-token";
 
-// TODO: Test and get working with a ATA
-
-// TODO: Remove this when handled via the anchor CLI
-process.env.ANCHOR_WALLET = "~/.config/solana/id.json";
 const SEEDS_DIR = "tests/seeds";
 
 // read the seed file
