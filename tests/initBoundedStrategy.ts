@@ -6,17 +6,12 @@ import { parseTranactionError } from "../packages/serum-remote/src";
 import { initBoundedStrategyIx } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
 import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
-import { createAssociatedTokenInstruction } from "./utils";
-
-const usdcMint = new web3.PublicKey(
-  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-);
-const solUsdcSerumMarketKey = new web3.PublicKey(
-  "9wFFyRfZBsuAha4YcuxcXLKwMxJR43S7fPfQLusDBzvT"
-);
-const DEX_ID = new web3.PublicKey(
-  "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
-);
+import {
+  createAssociatedTokenInstruction,
+  DEX_ID,
+  SOL_USDC_SERUM_MARKET,
+  USDC_MINT,
+} from "./utils";
 
 let openOrdersAccount: web3.PublicKey;
 
@@ -37,11 +32,15 @@ describe("InitBoundedStrategy", () => {
   let bound = 1;
 
   before(async () => {
-    const { instruction, associatedAddress } =
-      await createAssociatedTokenInstruction(program.provider, usdcMint);
-    reclaimAddress = associatedAddress;
-    const transaction = new web3.Transaction().add(instruction);
-    await program.provider.send(transaction);
+    // This TX may fail with concurrent tests
+    // TODO: Write more elegant solution
+    try {
+      const { instruction, associatedAddress } =
+        await createAssociatedTokenInstruction(program.provider, USDC_MINT);
+      reclaimAddress = associatedAddress;
+      const transaction = new web3.Transaction().add(instruction);
+      await program.provider.send(transaction);
+    } catch (err) {}
   });
   beforeEach(async () => {
     boundPrice = new anchor.BN(957);
@@ -68,8 +67,8 @@ describe("InitBoundedStrategy", () => {
     const ix = await initBoundedStrategyIx(
       program,
       DEX_ID,
-      solUsdcSerumMarketKey,
-      usdcMint,
+      SOL_USDC_SERUM_MARKET,
+      USDC_MINT,
       openOrdersAccount,
       {
         boundPrice,
@@ -94,8 +93,8 @@ describe("InitBoundedStrategy", () => {
       orderPayer,
     } = await deriveAllBoundedStrategyKeys(
       program,
-      solUsdcSerumMarketKey,
-      usdcMint,
+      SOL_USDC_SERUM_MARKET,
+      USDC_MINT,
       {
         boundPrice,
         reclaimDate,
@@ -115,7 +114,7 @@ describe("InitBoundedStrategy", () => {
 
     assert.equal(
       boundedStrategy.seurmMarket.toString(),
-      solUsdcSerumMarketKey.toString()
+      SOL_USDC_SERUM_MARKET.toString()
     );
     assert.equal(boundedStrategy.authority.toString(), authority.toString());
     assert.equal(boundedStrategy.orderPayer.toString(), orderPayer.toString());
@@ -156,8 +155,8 @@ describe("InitBoundedStrategy", () => {
       const ix = await initBoundedStrategyIx(
         program,
         DEX_ID,
-        solUsdcSerumMarketKey,
-        usdcMint,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
         openOrdersAccount,
         {
           boundPrice,
@@ -187,8 +186,8 @@ describe("InitBoundedStrategy", () => {
       const ix = await initBoundedStrategyIx(
         program,
         DEX_ID,
-        solUsdcSerumMarketKey,
-        usdcMint,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
         openOrdersAccount,
         {
           boundPrice,
@@ -218,8 +217,8 @@ describe("InitBoundedStrategy", () => {
       const ix = await initBoundedStrategyIx(
         program,
         DEX_ID,
-        solUsdcSerumMarketKey,
-        usdcMint,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
         openOrdersAccount,
         {
           boundPrice,
@@ -248,8 +247,8 @@ describe("InitBoundedStrategy", () => {
       const ix = await initBoundedStrategyIx(
         program,
         DEX_ID,
-        solUsdcSerumMarketKey,
-        usdcMint,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
         openOrdersAccount,
         {
           boundPrice,

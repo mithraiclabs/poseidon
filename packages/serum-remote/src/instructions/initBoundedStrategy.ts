@@ -3,6 +3,7 @@ import { SerumRemote } from "../serum_remote";
 import { deriveAllBoundedStrategyKeys } from "../pdas";
 import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
 import { BoundedStrategyParams } from "../types";
+import { OpenOrders } from "@project-serum/serum";
 
 export const initBoundedStrategyIx = async (
   program: Program<SerumRemote>,
@@ -43,4 +44,42 @@ export const initBoundedStrategyIx = async (
       },
     }
   );
+};
+
+export const initializeBoundedStrategy = async (
+  program: Program<SerumRemote>,
+  dexProgramId: web3.PublicKey,
+  serumMarket: web3.PublicKey,
+  assetMint: web3.PublicKey,
+  boundedStrategyParams: BoundedStrategyParams
+) => {
+  const { boundPrice, reclaimDate, reclaimAddress, orderSide, bound } =
+    boundedStrategyParams;
+  const openOrdersKey = new web3.Keypair();
+  const ix = await OpenOrders.makeCreateAccountTransaction(
+    program.provider.connection,
+    // This argument is pointless
+    web3.SystemProgram.programId,
+    // This argument is the payer for the rent
+    program.provider.wallet.publicKey,
+    openOrdersKey.publicKey,
+    dexProgramId
+  );
+  const transaction = new web3.Transaction().add(ix);
+  const initBoundedStrategyInstruction = await initBoundedStrategyIx(
+    program,
+    dexProgramId,
+    serumMarket,
+    assetMint,
+    openOrdersKey.publicKey,
+    {
+      boundPrice,
+      reclaimDate,
+      reclaimAddress,
+      orderSide,
+      bound,
+    }
+  );
+  transaction.add(initBoundedStrategyInstruction);
+  await program.provider.send(transaction, [openOrdersKey]);
 };

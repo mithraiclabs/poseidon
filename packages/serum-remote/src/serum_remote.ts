@@ -3,11 +3,6 @@ export type SerumRemote = {
   "name": "serum_remote",
   "instructions": [
     {
-      "name": "initialize",
-      "accounts": [],
-      "args": []
-    },
-    {
       "name": "initBoundedStrategy",
       "accounts": [
         {
@@ -235,11 +230,6 @@ export const IDL: SerumRemote = {
   "version": "0.1.0",
   "name": "serum_remote",
   "instructions": [
-    {
-      "name": "initialize",
-      "accounts": [],
-      "args": []
-    },
     {
       "name": "initBoundedStrategy",
       "accounts": [

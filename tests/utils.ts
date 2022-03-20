@@ -6,6 +6,16 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
+export const USDC_MINT = new web3.PublicKey(
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+);
+export const SOL_USDC_SERUM_MARKET = new web3.PublicKey(
+  "9wFFyRfZBsuAha4YcuxcXLKwMxJR43S7fPfQLusDBzvT"
+);
+export const DEX_ID = new web3.PublicKey(
+  "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
+);
+
 export const initNewTokenMintInstructions = async (
   provider: Provider,
   /** The owner for the new mint account */
