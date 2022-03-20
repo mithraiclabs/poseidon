@@ -155,7 +155,7 @@ describe("BoundedTrade", () => {
             console.log("error: ", parsedError.msg);
             assert.ok(false);
           }
-          // Calculate the maxmium amount of SOL that can be bought
+          // Calculate the maxmium amount of SOL that can be bought)
           const transferNum =
             transferAmount.toNumber() /
             // @ts-ignore
@@ -165,7 +165,12 @@ describe("BoundedTrade", () => {
             Math.min(maxPurchaseAmt, lowestAsk[1]) *
               // @ts-ignore
               serumMarket._baseSplTokenMultiplier.toNumber()
-          );
+          ) // The div and mul below are to chop off the precision that cannot trade with the market's lot size
+            // @ts-ignore
+            .div(serumMarket._decoded.baseLotSize)
+            // @ts-ignore
+            .mul(serumMarket._decoded.baseLotSize);
+
           // Validate that the deposit received the amount of SOL
           const depositTokenAccountAfter =
             await splTokenProgram.account.token.fetch(depositAddress);

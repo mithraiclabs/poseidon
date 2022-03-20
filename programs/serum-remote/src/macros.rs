@@ -1,7 +1,3 @@
-use anchor_lang::prelude::Pubkey;
-
-use crate::constants::AUTHORITY_SEED;
-
 #[macro_export]
 macro_rules! authority_signer_seeds {
     ($ctx:expr, $bump:ident) => {
@@ -33,7 +29,7 @@ macro_rules! place_order {
         let new_order_ctx = CpiContext {
             accounts: new_order_accounts,
             program: $ctx.accounts.dex_program.to_account_info(),
-            remaining_accounts: vec![],
+            remaining_accounts: Vec::new(),
             signer_seeds: $signer_seeds,
         };
         new_order_v3(
@@ -43,7 +39,7 @@ macro_rules! place_order {
             $order_info.max_coin_qty,
             $order_info.max_pc_qty,
             SelfTradeBehavior::DecrementTake,
-            OrderType::Limit,
+            OrderType::ImmediateOrCancel,
             420,
             u16::MAX,
         )?;
@@ -52,7 +48,7 @@ macro_rules! place_order {
 
 #[macro_export]
 macro_rules! settle_funds {
-    ($ctx:expr, $wallets:expr) => {
+    ($ctx:expr, $wallets:expr, $signer_seeds:expr) => {
         let settle_funds_accounts = SettleFunds {
             market: $ctx.accounts.serum_market.to_account_info(),
             open_orders: $ctx.accounts.open_orders.to_account_info(),
@@ -64,10 +60,12 @@ macro_rules! settle_funds {
             vault_signer: $ctx.accounts.serum_vault_signer.to_account_info(),
             token_program: $ctx.accounts.token_program_id.to_account_info(),
         };
-        let settle_funds_ctx = CpiContext::new(
-            $ctx.accounts.dex_program.to_account_info(),
-            settle_funds_accounts,
-        );
-        serum_settle_funds(settle_funds_ctx)
+        let settle_funds_ctx = CpiContext {
+            program: $ctx.accounts.dex_program.to_account_info(),
+            accounts: settle_funds_accounts,
+            remaining_accounts: Vec::new(),
+            signer_seeds: $signer_seeds,
+        };
+        settle_funds(settle_funds_ctx)?;
     };
 }

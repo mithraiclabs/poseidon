@@ -291,6 +291,10 @@ export type SerumRemote = {
           {
             "name": "boundedPrice",
             "type": "u64"
+          },
+          {
+            "name": "authorityBump",
+            "type": "u8"
           }
         ]
       }
@@ -657,6 +661,10 @@ export const IDL: SerumRemote = {
           {
             "name": "boundedPrice",
             "type": "u64"
+          },
+          {
+            "name": "authorityBump",
+            "type": "u8"
           }
         ]
       }

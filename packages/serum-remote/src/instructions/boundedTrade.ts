@@ -23,36 +23,6 @@ export const boundedTradeIx = async (
     boundedStrategy.openOrders,
     serumMarket.programId
   );
-  console.log(
-    "***open Orders",
-    openOrders.market.toString(),
-    openOrders.owner.toString()
-  );
-  console.log({
-    accounts: {
-      payer: program.provider.wallet.publicKey.toString(),
-      strategy: strategyKey.toString(),
-      serumMarket: serumMarket.address.toString(),
-      bids: serumMarket.bidsAddress.toString(),
-      asks: serumMarket.asksAddress.toString(),
-      openOrders: boundedStrategy.openOrders.toString(),
-      orderPayer: boundedStrategy.orderPayer.toString(),
-      authority: boundedStrategy.authority.toString(),
-      // @ts-ignore
-      requestQueue: serumMarket._decoded.requestQueue.toString(),
-      // @ts-ignore
-      eventQueue: serumMarket._decoded.eventQueue.toString(),
-      // @ts-ignore
-      coinVault: serumMarket._decoded.baseVault.toString(),
-      // @ts-ignore
-      pcVault: serumMarket._decoded.quoteVault.toString(),
-      serumVaultSigner: vaultSigner.toString(),
-      depositAccount: boundedStrategy.depositAddress.toString(),
-      dexProgram: serumMarket.programId.toString(),
-      tokenProgramId: TOKEN_PROGRAM_ID.toString(),
-      rent: web3.SYSVAR_RENT_PUBKEY.toString(),
-    },
-  });
   return program.instruction.boundedTrade({
     accounts: {
       payer: program.provider.wallet.publicKey,

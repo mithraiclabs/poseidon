@@ -7,14 +7,14 @@ use anchor_spl::{
     dex::{
         self, new_order_v3,
         serum_dex::{declare_check_assert_macros, instruction::SelfTradeBehavior, state::Market},
-        settle_funds as serum_settle_funds, Dex, NewOrderV3, SettleFunds,
+        settle_funds, NewOrderV3, SettleFunds,
     },
     token::{Token, TokenAccount},
 };
 
 use crate::{authority_signer_seeds, settle_funds};
 use crate::{
-    constants::AUTHORITY_SEED, place_order, serum_utils::get_best_bid_ask, state::BoundedStrategy,
+    constants::AUTHORITY_SEED, place_order, serum_utils::{get_best_bid_ask, FeeTier}, state::BoundedStrategy,
 };
 
 #[derive(Accounts)]
@@ -110,7 +110,7 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
         if bounded_strategy.bound == 1 {
             // Check if the ask is below the upper bound
             if best_ask_u64 < bounded_strategy.bounded_price {
-                // TODO: Calculate the max base amount that can be bought. The
+                // Calculate the max base amount that can be bought. The
                 // limiting factors are the quantity and the assets available in the TokenAccount
                 let max_base_from_payer = ctx
                     .accounts
@@ -126,31 +126,36 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
                 let max_base_purchase_amt = cmp::min(max_base_from_payer, max_ask_qty);
                 let max_base_purchase_lots =
                     max_base_purchase_amt.checked_div(coin_lot_size).unwrap();
-
-                let max_pc_qty =
-                    NonZeroU64::new(max_base_purchase_lots.checked_mul(best_ask_u64).unwrap())
+                let max_pc_qty = 
+                    max_base_purchase_lots
+                        .checked_mul(best_ask_u64)
+                        .unwrap()
+                        .checked_mul(pc_lot_size)
                         .unwrap();
+                let serum_fees = FeeTier::Base.taker_fee(max_pc_qty);
+                let max_pc_qty = serum_fees.checked_add(max_pc_qty).unwrap();
+                msg!(
+                  "max_base_from_payer {}, max_ask_qty {}, max_base_purchase_amt {}, max_base_purchase_lots {}, max_pc_qty {}", 
+                  max_base_from_payer, max_ask_qty, max_base_purchase_amt, max_base_purchase_lots, max_pc_qty
+                );
                 // Execute the trade!
                 let order = OrderInfo {
                     side: Side::Bid,
                     price: best_ask_price,
                     max_coin_qty: NonZeroU64::new(max_base_purchase_lots).unwrap(),
-                    max_pc_qty,
+                    max_pc_qty: NonZeroU64::new(max_pc_qty).unwrap(),
                 };
+                msg!("order info {:?}", order);
                 let bump = bounded_strategy.authority_bump;
-                let signer_seeds: &[&[u8]] =  authority_signer_seeds!(&ctx, bump);
-                place_order!(
-                    ctx,
-                    order,
-                    &[signer_seeds]
-                );
+                let signer_seeds: &[&[u8]] = authority_signer_seeds!(&ctx, bump);
+                place_order!(ctx, order, &[signer_seeds]);
 
                 // Settle the trade!
                 let wallets = SettleWallets {
                     pc_wallet: ctx.accounts.order_payer.to_account_info(),
                     coin_wallet: ctx.accounts.deposit_account.to_account_info(),
                 };
-                settle_funds!(&ctx, wallets);
+                settle_funds!(&ctx, wallets, &[signer_seeds]);
             } else {
                 // TODO: Return error
             }
@@ -165,6 +170,7 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug)]
 struct OrderInfo {
     side: Side,
     price: NonZeroU64,
