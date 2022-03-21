@@ -16,6 +16,7 @@ pub mod serum_remote {
     use super::*;
 
     #[access_control(InitBoundedStrategy::valid_arguments(
+        transfer_amount,
         bound_price,
         reclaim_date,
         order_side,

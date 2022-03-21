@@ -21,5 +21,7 @@ pub enum ErrorCode {
     #[msg("Upper bounded asks are blocked")]
     NoUpperBoundedAsks,
     #[msg("Cannot reclaim assets before the reclaim date")]
-    ReclaimDateHasNotPassed
+    ReclaimDateHasNotPassed,
+    #[msg("Transfer amount cannot be 0")]
+    TransferAmountCantBe0,
 }

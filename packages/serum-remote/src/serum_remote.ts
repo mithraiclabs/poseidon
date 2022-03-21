@@ -435,6 +435,11 @@ export type SerumRemote = {
       "code": 6009,
       "name": "ReclaimDateHasNotPassed",
       "msg": "Cannot reclaim assets before the reclaim date"
+    },
+    {
+      "code": 6010,
+      "name": "TransferAmountCantBe0",
+      "msg": "Transfer amount cannot be 0"
     }
   ]
 };
@@ -876,6 +881,11 @@ export const IDL: SerumRemote = {
       "code": 6009,
       "name": "ReclaimDateHasNotPassed",
       "msg": "Cannot reclaim assets before the reclaim date"
+    },
+    {
+      "code": 6010,
+      "name": "TransferAmountCantBe0",
+      "msg": "Transfer amount cannot be 0"
     }
   ]
 };

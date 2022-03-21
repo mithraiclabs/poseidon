@@ -135,6 +135,7 @@ pub fn handler(
 
 impl<'info> InitBoundedStrategy<'info> {
     pub fn valid_arguments(
+        transfer_amount: u64,
         bound_price: u64,
         reclaim_date: i64,
         order_side: u8,
@@ -162,7 +163,10 @@ impl<'info> InitBoundedStrategy<'info> {
         if bound == 1 && order_side == 1 {
             return Err(error!(ErrorCode::NoUpperBoundedAsks))
         }
-        // TODO: Validate transfer amount > 0
+        // Validate transfer amount > 0
+        if transfer_amount == 0 {
+            return Err(error!(ErrorCode::TransferAmountCantBe0))
+        }
         Ok(())
     }
 }

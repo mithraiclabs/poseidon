@@ -1,5 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { Spl } from "@project-serum/anchor";
+import { BN } from "@project-serum/anchor";
 import { Program, web3 } from "@project-serum/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
 import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
@@ -403,5 +404,37 @@ describe("InitBoundedStrategy", () => {
   });
 
   // TODO: Validate transfer amount > 0
+  describe("Transfer Amount is 0", () => {
+    beforeEach(() => {
+      transferAmount = new BN(0);
+    });
+    it("should error", async () => {
+      const ix = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        openOrdersAccount,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          depositAddress,
+          orderSide,
+          bound,
+        }
+      );
+      const transaction = new web3.Transaction().add(ix);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(parsedError.msg, "Transfer amount cannot be 0");
+        assert.ok(true);
+      }
+    });
+  });
   // TODO: Validate order side and mint match the Serum market information
 });
