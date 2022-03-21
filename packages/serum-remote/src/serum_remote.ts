@@ -244,6 +244,37 @@ export type SerumRemote = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "reclaim",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "orderPayer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "strategy",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "reclaimAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -369,6 +400,16 @@ export type SerumRemote = {
       "code": 6006,
       "name": "MarketPriceIsOutOfBounds",
       "msg": "Market price is out of bounds"
+    },
+    {
+      "code": 6007,
+      "name": "NoLowerBoundedBids",
+      "msg": "Lower bounded bids are blocked"
+    },
+    {
+      "code": 6008,
+      "name": "NoUpperBoundedAsks",
+      "msg": "Upper bounded asks are blocked"
     }
   ]
 };
@@ -619,6 +660,37 @@ export const IDL: SerumRemote = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "reclaim",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "orderPayer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "strategy",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "reclaimAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -744,6 +816,16 @@ export const IDL: SerumRemote = {
       "code": 6006,
       "name": "MarketPriceIsOutOfBounds",
       "msg": "Market price is out of bounds"
+    },
+    {
+      "code": 6007,
+      "name": "NoLowerBoundedBids",
+      "msg": "Lower bounded bids are blocked"
+    },
+    {
+      "code": 6008,
+      "name": "NoUpperBoundedAsks",
+      "msg": "Upper bounded asks are blocked"
     }
   ]
 };

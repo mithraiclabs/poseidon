@@ -42,4 +42,8 @@ pub mod serum_remote {
     pub fn bounded_trade(ctx: Context<BoundedTrade>) -> Result<()> {
         instructions::bounded_trade::handler(ctx)
     }
+
+    pub fn reclaim(ctx: Context<Reclaim>) -> Result<()> {
+        instructions::reclaim::handler(ctx)
+    }
 }
