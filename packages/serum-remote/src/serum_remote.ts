@@ -249,23 +249,23 @@ export type SerumRemote = {
       "name": "reclaim",
       "accounts": [
         {
+          "name": "strategy",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "authority",
           "isMut": false,
           "isSigner": false
         },
         {
           "name": "orderPayer",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "strategy",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "reclaimAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -410,6 +410,11 @@ export type SerumRemote = {
       "code": 6008,
       "name": "NoUpperBoundedAsks",
       "msg": "Upper bounded asks are blocked"
+    },
+    {
+      "code": 6009,
+      "name": "ReclaimDateHasNotPassed",
+      "msg": "Cannot reclaim assets before the reclaim date"
     }
   ]
 };
@@ -665,23 +670,23 @@ export const IDL: SerumRemote = {
       "name": "reclaim",
       "accounts": [
         {
+          "name": "strategy",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "authority",
           "isMut": false,
           "isSigner": false
         },
         {
           "name": "orderPayer",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "strategy",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "reclaimAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -826,6 +831,11 @@ export const IDL: SerumRemote = {
       "code": 6008,
       "name": "NoUpperBoundedAsks",
       "msg": "Upper bounded asks are blocked"
+    },
+    {
+      "code": 6009,
+      "name": "ReclaimDateHasNotPassed",
+      "msg": "Cannot reclaim assets before the reclaim date"
     }
   ]
 };

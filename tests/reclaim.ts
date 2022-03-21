@@ -126,7 +126,7 @@ describe("Reclaim", () => {
       boundedStrategy = await program.account.boundedStrategy.fetch(
         boundedStrategyKey
       );
-      await wait(1_000);
+      await wait(2_000);
     });
     it("should return the assets to the reclaim address", async () => {
       const reclaimAccountBefore = await splTokenProgram.account.token.fetch(
@@ -158,4 +158,50 @@ describe("Reclaim", () => {
   });
 
   // TODO: Reclaim Date has not passed
+  describe("Reclaim date has passed", () => {
+    beforeEach(async () => {
+      reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
+      const boundedParams = {
+        boundPrice,
+        reclaimDate,
+        reclaimAddress: quoteAddress,
+        depositAddress: baseAddress,
+        orderSide,
+        bound,
+        transferAmount: quoteTransferAmount,
+      };
+      await initializeBoundedStrategy(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        boundedParams
+      );
+      ({
+        boundedStrategy: boundedStrategyKey,
+        authority,
+        orderPayer,
+      } = await deriveAllBoundedStrategyKeys(
+        program,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        boundedParams
+      ));
+    });
+    it("should error", async () => {
+      const ix = reclaimIx(program, boundedStrategyKey, boundedStrategy);
+      const transaction = new web3.Transaction().add(ix);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(
+          parsedError.msg,
+          "Cannot reclaim assets before the reclaim date"
+        );
+      }
+      assert.ok(true);
+    });
+  });
 });

@@ -20,4 +20,6 @@ pub enum ErrorCode {
     NoLowerBoundedBids,
     #[msg("Upper bounded asks are blocked")]
     NoUpperBoundedAsks,
+    #[msg("Cannot reclaim assets before the reclaim date")]
+    ReclaimDateHasNotPassed
 }

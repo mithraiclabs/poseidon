@@ -1,7 +1,7 @@
 use anchor_lang::{accounts::program_account::ProgramAccount, prelude::*};
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-use crate::{authority_signer_seeds, constants::AUTHORITY_SEED, state::BoundedStrategy};
+use crate::{authority_signer_seeds, constants::AUTHORITY_SEED, errors::ErrorCode, state::BoundedStrategy};
 
 #[derive(Accounts)]
 pub struct Reclaim<'info> {
@@ -22,6 +22,11 @@ pub struct Reclaim<'info> {
 
 pub fn handler(ctx: Context<Reclaim>) -> Result<()> {
     let bounded_strategy = &ctx.accounts.strategy;
+    msg!("reclaim_date {}, clock {}", bounded_strategy.reclaim_date, Clock::get()?.unix_timestamp);
+    if bounded_strategy.reclaim_date > Clock::get()?.unix_timestamp {
+        return Err(ErrorCode::ReclaimDateHasNotPassed.into())
+    }
+
     let cpi_accounts = Transfer {
         from: ctx.accounts.order_payer.to_account_info(),
         to: ctx.accounts.reclaim_account.to_account_info(),
