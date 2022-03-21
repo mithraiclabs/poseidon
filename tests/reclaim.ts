@@ -34,7 +34,7 @@ describe("Reclaim", () => {
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
   let quoteAddress: web3.PublicKey;
   let baseAddress: web3.PublicKey;
-  let orderSide = 1;
+  let orderSide = 0;
   let bound = 1;
   let quoteTransferAmount = new u64(10_000_000);
   let baseTransferAmount = new u64(10_000_000_000);

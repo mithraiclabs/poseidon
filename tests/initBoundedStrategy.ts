@@ -33,7 +33,7 @@ describe("InitBoundedStrategy", () => {
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
   let reclaimAddress: web3.PublicKey;
   let depositAddress: web3.PublicKey;
-  let orderSide = 1;
+  let orderSide = 0;
   let bound = 1;
   let transferAmount = new u64(10_000_000);
 
@@ -78,7 +78,7 @@ describe("InitBoundedStrategy", () => {
   beforeEach(async () => {
     boundPrice = new anchor.BN(957);
     reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
-    orderSide = 1;
+    orderSide = 0;
     bound = 1;
     const openOrdersKey = new web3.Keypair();
     const ix = await OpenOrders.makeCreateAccountTransaction(
@@ -333,4 +333,75 @@ describe("InitBoundedStrategy", () => {
       }
     });
   });
+
+  describe("Bounded strategy is Lower Bounded Bid", () => {
+    beforeEach(() => {
+      bound = 0;
+      orderSide = 0;
+    });
+    it("should error", async () => {
+      const ix = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        openOrdersAccount,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          depositAddress,
+          orderSide,
+          bound,
+        }
+      );
+      const transaction = new web3.Transaction().add(ix);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(parsedError.msg, "Lower bounded bids are blocked");
+        assert.ok(true);
+      }
+    });
+  });
+
+  describe("Bounded strategy is Upper Bounded Ask", () => {
+    beforeEach(() => {
+      bound = 1;
+      orderSide = 1;
+    });
+    it("should error", async () => {
+      const ix = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        openOrdersAccount,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          depositAddress,
+          orderSide,
+          bound,
+        }
+      );
+      const transaction = new web3.Transaction().add(ix);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(parsedError.msg, "Upper bounded asks are blocked");
+        assert.ok(true);
+      }
+    });
+  });
+
+  // TODO: Validate transfer amount > 0
+  // TODO: Validate order side and mint match the Serum market information
 });

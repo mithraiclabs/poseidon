@@ -156,6 +156,12 @@ impl<'info> InitBoundedStrategy<'info> {
         if bound != 0 && bound != 1 {
             return Err(error!(ErrorCode::NonBinaryBound));
         }
+        if bound == 0 && order_side == 0 {
+            return Err(error!(ErrorCode::NoLowerBoundedBids))
+        }
+        if bound == 1 && order_side == 1 {
+            return Err(error!(ErrorCode::NoUpperBoundedAsks))
+        }
         // TODO: Validate transfer amount > 0
         Ok(())
     }
