@@ -186,13 +186,6 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
                     .unwrap();
                 let serum_fees = FeeTier::Base.taker_fee(max_pc_qty);
                 let max_pc_qty = serum_fees.checked_add(max_pc_qty).unwrap();
-                msg!(
-                    "amt {}, payer_base_in_lots {}, max_base_in_lots {}, max_pc_qty {}",
-                    ctx.accounts.order_payer.amount,
-                    payer_base_in_lots,
-                    max_base_in_lots,
-                    max_pc_qty
-                );
                 // Execute the trade!
                 let order = OrderInfo {
                     side: Side::Ask,

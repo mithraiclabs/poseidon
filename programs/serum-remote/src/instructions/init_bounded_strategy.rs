@@ -44,7 +44,8 @@ pub struct InitBoundedStrategy<'info> {
     init,
     seeds = [serum_market.key().as_ref(), mint.key().as_ref(), &bound_price.to_le_bytes(), &reclaim_date.to_le_bytes(), BOUNDED_STRATEGY_SEED.as_bytes()],
     payer = payer,
-    bump
+    bump,
+    space = std::mem::size_of::<BoundedStrategy>() + 608
   )]
     pub strategy: Box<Account<'info, BoundedStrategy>>,
     #[account(
