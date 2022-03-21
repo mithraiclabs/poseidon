@@ -24,4 +24,8 @@ pub enum ErrorCode {
     ReclaimDateHasNotPassed,
     #[msg("Transfer amount cannot be 0")]
     TransferAmountCantBe0,
+    #[msg("Strategy requires the quote currency to place bids")]
+    BidsRequireQuoteCurrency,
+    #[msg("Strategy requires the base currency to place asks")]
+    AsksRequireBaseCurrency,
 }

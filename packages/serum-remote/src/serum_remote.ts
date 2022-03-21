@@ -440,6 +440,16 @@ export type SerumRemote = {
       "code": 6010,
       "name": "TransferAmountCantBe0",
       "msg": "Transfer amount cannot be 0"
+    },
+    {
+      "code": 6011,
+      "name": "BidsRequireQuoteCurrency",
+      "msg": "Strategy requires the quote currency to place bids"
+    },
+    {
+      "code": 6012,
+      "name": "AsksRequireBaseCurrency",
+      "msg": "Strategy requires the base currency to place asks"
     }
   ]
 };
@@ -886,6 +896,16 @@ export const IDL: SerumRemote = {
       "code": 6010,
       "name": "TransferAmountCantBe0",
       "msg": "Transfer amount cannot be 0"
+    },
+    {
+      "code": 6011,
+      "name": "BidsRequireQuoteCurrency",
+      "msg": "Strategy requires the quote currency to place bids"
+    },
+    {
+      "code": 6012,
+      "name": "AsksRequireBaseCurrency",
+      "msg": "Strategy requires the base currency to place asks"
     }
   ]
 };

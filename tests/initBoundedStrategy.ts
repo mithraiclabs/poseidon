@@ -3,6 +3,7 @@ import { Spl } from "@project-serum/anchor";
 import { BN } from "@project-serum/anchor";
 import { Program, web3 } from "@project-serum/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
+import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
@@ -81,6 +82,7 @@ describe("InitBoundedStrategy", () => {
     reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
     orderSide = 0;
     bound = 1;
+    transferAmount = new u64(10_000_000);
     const openOrdersKey = new web3.Keypair();
     const ix = await OpenOrders.makeCreateAccountTransaction(
       program.provider.connection,
@@ -403,7 +405,7 @@ describe("InitBoundedStrategy", () => {
     });
   });
 
-  // TODO: Validate transfer amount > 0
+  // Validate transfer amount > 0
   describe("Transfer Amount is 0", () => {
     beforeEach(() => {
       transferAmount = new BN(0);
@@ -436,5 +438,76 @@ describe("InitBoundedStrategy", () => {
       }
     });
   });
-  // TODO: Validate order side and mint match the Serum market information
+  // Validate order side and mint match the Serum market information
+  describe("Order Side is Bid but mint is the base currency", () => {
+    beforeEach(() => {
+      orderSide = 0;
+    });
+    it("should error", async () => {
+      const ix = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        WRAPPED_SOL_MINT,
+        openOrdersAccount,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress: depositAddress,
+          depositAddress: reclaimAddress,
+          orderSide,
+          bound,
+        }
+      );
+      const transaction = new web3.Transaction().add(ix);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(
+          parsedError.msg,
+          "Strategy requires the quote currency to place bids"
+        );
+        assert.ok(true);
+      }
+    });
+  });
+  describe("Order Side is Ask but mint is the quote currency", () => {
+    beforeEach(() => {
+      orderSide = 1;
+      bound = 0;
+    });
+    it("should error", async () => {
+      const ix = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        openOrdersAccount,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          depositAddress,
+          orderSide,
+          bound,
+        }
+      );
+      const transaction = new web3.Transaction().add(ix);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(
+          parsedError.msg,
+          "Strategy requires the base currency to place asks"
+        );
+        assert.ok(true);
+      }
+    });
+  });
 });

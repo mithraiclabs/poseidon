@@ -1,8 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    dex::{self, InitOpenOrders},
+    dex::{self, InitOpenOrders, serum_dex::state::Market},
     token::{self, Mint, Token, TokenAccount, Transfer},
 };
+use std::convert::identity;
+use safe_transmute::to_bytes::transmute_to_bytes;
 
 use crate::{
     authority_signer_seeds,
@@ -82,8 +84,23 @@ pub fn handler(
     order_side: u8,
     bound: u8,
 ) -> Result<()> {
+    {
+        // Validate market and mint information
+        let market =
+            Market::load(&ctx.accounts.serum_market, &ctx.accounts.dex_program.key()).unwrap();
+        let coin_mint = Pubkey::new(&transmute_to_bytes(&identity(market.coin_mint)));
+        let pc_mint = Pubkey::new(&transmute_to_bytes(&identity(market.pc_mint)));
+        if order_side == 0 && ctx.accounts.mint.key() != pc_mint {
+            // If Bidding the assets to transfer must the the price currency mint
+            return Err(error!(ErrorCode::BidsRequireQuoteCurrency))
+        } else if order_side == 1 && ctx.accounts.mint.key() != coin_mint {
+            return Err(error!(ErrorCode::AsksRequireBaseCurrency))
+        }
+        
+    }
+
     // TODO: May want to create the account in the instruction to avoid client
-    //  errors when creating but not initializing.
+    //  bugs when creating but not initializing.
 
     // Initialize Serum OpenOrders account
     let init_open_orders_accounts = InitOpenOrders {
