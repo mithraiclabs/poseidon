@@ -44,6 +44,10 @@ describe("Reclaim", () => {
     orderPayer: web3.PublicKey;
 
   before(async () => {
+    await program.provider.connection.requestAirdrop(
+      program.provider.wallet.publicKey,
+      baseTransferAmount.muln(10).toNumber()
+    );
     // This TX may fail with concurrent tests
     // TODO: Write more elegant solution
     const { instruction, associatedAddress } =
@@ -61,11 +65,6 @@ describe("Reclaim", () => {
     try {
       await program.provider.send(createAtaTx);
     } catch (err) {}
-
-    await program.provider.connection.requestAirdrop(
-      program.provider.wallet.publicKey,
-      baseTransferAmount.muln(10).toNumber()
-    );
 
     const transaction = new web3.Transaction();
     const mintToInstruction = Token.createMintToInstruction(
@@ -92,6 +91,62 @@ describe("Reclaim", () => {
     });
     transaction.add(syncNativeIx);
     await program.provider.send(transaction);
+  });
+
+  // Reclaim Date has not passed
+  describe("Reclaim date has passed", () => {
+    beforeEach(async () => {
+      reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
+      const boundedParams = {
+        boundPrice,
+        reclaimDate,
+        reclaimAddress: quoteAddress,
+        depositAddress: baseAddress,
+        orderSide,
+        bound,
+        transferAmount: quoteTransferAmount,
+      };
+      await initializeBoundedStrategy(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        boundedParams
+      );
+      ({
+        boundedStrategy: boundedStrategyKey,
+        authority,
+        orderPayer,
+      } = await deriveAllBoundedStrategyKeys(
+        program,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        boundedParams
+      ));
+      boundedStrategy = await program.account.boundedStrategy.fetch(
+        boundedStrategyKey
+      );
+    });
+    it("should error", async () => {
+      const ix = reclaimIx(
+        program,
+        boundedStrategyKey,
+        boundedStrategy,
+        DEX_ID
+      );
+      const transaction = new web3.Transaction().add(ix);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(
+          parsedError.msg,
+          "Cannot reclaim assets before the reclaim date"
+        );
+      }
+      assert.ok(true);
+    });
   });
 
   describe("Reclaim date has passed", () => {
@@ -136,7 +191,12 @@ describe("Reclaim", () => {
         orderPayer
       );
 
-      const ix = reclaimIx(program, boundedStrategyKey, boundedStrategy);
+      const ix = reclaimIx(
+        program,
+        boundedStrategyKey,
+        boundedStrategy,
+        DEX_ID
+      );
       const transaction = new web3.Transaction().add(ix);
       try {
         await program.provider.send(transaction);
@@ -154,54 +214,21 @@ describe("Reclaim", () => {
         reclaimAccountBefore.amount
       );
       assert.equal(reclaimDiff.toString(), orderPayerBefore.amount.toString());
-    });
-  });
 
-  // TODO: Reclaim Date has not passed
-  describe("Reclaim date has passed", () => {
-    beforeEach(async () => {
-      reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
-      const boundedParams = {
-        boundPrice,
-        reclaimDate,
-        reclaimAddress: quoteAddress,
-        depositAddress: baseAddress,
-        orderSide,
-        bound,
-        transferAmount: quoteTransferAmount,
-      };
-      await initializeBoundedStrategy(
-        program,
-        DEX_ID,
-        SOL_USDC_SERUM_MARKET,
-        USDC_MINT,
-        boundedParams
+      // Test that the OrderPayer was closed
+      const orderPayerInfo = await program.provider.connection.getAccountInfo(
+        orderPayer
       );
-      ({
-        boundedStrategy: boundedStrategyKey,
-        authority,
-        orderPayer,
-      } = await deriveAllBoundedStrategyKeys(
-        program,
-        SOL_USDC_SERUM_MARKET,
-        USDC_MINT,
-        boundedParams
-      ));
-    });
-    it("should error", async () => {
-      const ix = reclaimIx(program, boundedStrategyKey, boundedStrategy);
-      const transaction = new web3.Transaction().add(ix);
-      try {
-        await program.provider.send(transaction);
-        assert.ok(false);
-      } catch (error) {
-        const parsedError = parseTranactionError(error);
-        assert.equal(
-          parsedError.msg,
-          "Cannot reclaim assets before the reclaim date"
-        );
-      }
-      assert.ok(true);
+      assert.ok(!orderPayerInfo);
+      // Test the OpenOrders account was closed
+      const openOrdersInfo = await program.provider.connection.getAccountInfo(
+        boundedStrategy.openOrders
+      );
+      assert.ok(!openOrdersInfo);
+      // Test the strategy account was closed
+      const boundedStrategyInfo =
+        await program.provider.connection.getAccountInfo(boundedStrategyKey);
+      assert.ok(!boundedStrategyInfo);
     });
   });
 });

@@ -187,7 +187,7 @@ describe("InitBoundedStrategy", () => {
     );
     assert.ok(openOrders);
 
-    // TODO: Check that the assets were transfered from the reclaimAddress to the orderPayer
+    // Check that the assets were transfered from the reclaimAddress to the orderPayer
     const reclaimTokenAccountAfter = await splTokenProgram.account.token.fetch(
       reclaimAddress
     );

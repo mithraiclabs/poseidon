@@ -1,28 +1,42 @@
 use anchor_lang::{accounts::program_account::ProgramAccount, prelude::*};
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::{token::{self, Token, TokenAccount, Transfer, CloseAccount}, dex::{close_open_orders, CloseOpenOrders, Dex}};
 
 use crate::{authority_signer_seeds, constants::AUTHORITY_SEED, errors::ErrorCode, state::BoundedStrategy};
 
 #[derive(Accounts)]
 pub struct Reclaim<'info> {
+    /// The account that will receive the SOL
+    /// CHECK: no need for checks
+    #[account(mut)]
+    pub receiver: UncheckedAccount<'info>,
     /// The BoundedStrategy account
-    strategy: Account<'info, BoundedStrategy>,
+    #[account(
+        mut,
+        close = receiver
+    )]
+    pub strategy: Account<'info, BoundedStrategy>,
     /// The PDA that has authority over the order payer
     /// CHECK: TODO: add check
-    authority: AccountInfo<'info>,
+    pub authority: UncheckedAccount<'info>,
     /// The account where the assets to trade with are
     #[account(mut)]
-    order_payer: Account<'info, TokenAccount>,
+    pub order_payer: Account<'info, TokenAccount>,
+    #[account(mut)]
+    /// CHECK: Checks are handled by the Serum program
+    pub open_orders: UncheckedAccount<'info>,
+    /// CHECK: Check is handled by the Serum program
+    pub serum_market: UncheckedAccount<'info>,
     /// The account that will receive the assets
     #[account(mut)]
-    reclaim_account: Account<'info, TokenAccount>,
+    pub reclaim_account: Account<'info, TokenAccount>,
 
-    token_program: Program<'info, Token>,
+
+    pub token_program: Program<'info, Token>,
+    pub dex_program: Program<'info, Dex>
 }
 
 pub fn handler(ctx: Context<Reclaim>) -> Result<()> {
     let bounded_strategy = &ctx.accounts.strategy;
-    msg!("reclaim_date {}, clock {}", bounded_strategy.reclaim_date, Clock::get()?.unix_timestamp);
     if bounded_strategy.reclaim_date > Clock::get()?.unix_timestamp {
         return Err(ErrorCode::ReclaimDateHasNotPassed.into())
     }
@@ -41,5 +55,34 @@ pub fn handler(ctx: Context<Reclaim>) -> Result<()> {
         remaining_accounts: Vec::new(),
     };
     token::transfer(cpi_ctx, ctx.accounts.order_payer.amount)?;
+
+    // Close the OrderPayer account
+    let cpi_accounts = CloseAccount {
+        account: ctx.accounts.order_payer.to_account_info(),
+        destination: ctx.accounts.receiver.to_account_info(),
+        authority: ctx.accounts.authority.to_account_info(),
+    };
+    let cpi_ctx = CpiContext {
+        program: cpi_token_program.to_account_info(),
+        accounts: cpi_accounts,
+        signer_seeds: &[authority_signer_seeds!(ctx, bump)],
+        remaining_accounts: Vec::new(),
+    };
+    token::close_account(cpi_ctx)?;
+
+    // Close the OpenOrders account
+    let cpi_accounts = CloseOpenOrders {
+        open_orders: ctx.accounts.open_orders.to_account_info(),
+        authority: ctx.accounts.authority.to_account_info(),
+        destination: ctx.accounts.receiver.to_account_info(),
+        market: ctx.accounts.serum_market.to_account_info(),
+    };
+    let cpi_ctx = CpiContext {
+        program: ctx.accounts.dex_program.to_account_info(),
+        accounts: cpi_accounts,
+        signer_seeds: &[authority_signer_seeds!(ctx, bump)],
+        remaining_accounts: Vec::new()
+    };
+    close_open_orders(cpi_ctx)?;
     Ok(())
 }

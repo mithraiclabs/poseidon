@@ -249,8 +249,13 @@ export type SerumRemote = {
       "name": "reclaim",
       "accounts": [
         {
+          "name": "receiver",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "strategy",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -264,12 +269,27 @@ export type SerumRemote = {
           "isSigner": false
         },
         {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "reclaimAccount",
           "isMut": true,
           "isSigner": false
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
           "isMut": false,
           "isSigner": false
         }
@@ -670,8 +690,13 @@ export const IDL: SerumRemote = {
       "name": "reclaim",
       "accounts": [
         {
+          "name": "receiver",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "strategy",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -685,12 +710,27 @@ export const IDL: SerumRemote = {
           "isSigner": false
         },
         {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "reclaimAccount",
           "isMut": true,
           "isSigner": false
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
           "isMut": false,
           "isSigner": false
         }
