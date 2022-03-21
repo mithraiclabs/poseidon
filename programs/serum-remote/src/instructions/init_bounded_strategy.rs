@@ -100,7 +100,6 @@ pub fn handler(
             panic!("Wrong bump key")
         }
     };
-    msg!("authority_bump {}", authority_bump);
     let init_ctx = CpiContext {
         accounts: init_open_orders_accounts,
         program: ctx.accounts.dex_program.to_account_info(),

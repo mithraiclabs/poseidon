@@ -14,7 +14,11 @@ use anchor_spl::{
 
 use crate::{authority_signer_seeds, settle_funds};
 use crate::{
-    constants::AUTHORITY_SEED, errors::ErrorCode, place_order, serum_utils::{get_best_bid_ask, FeeTier}, state::BoundedStrategy,
+    constants::AUTHORITY_SEED,
+    errors::ErrorCode,
+    place_order,
+    serum_utils::{get_best_bid_ask, FeeTier},
+    state::BoundedStrategy,
 };
 
 #[derive(Accounts)]
@@ -102,7 +106,10 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
         (best_bid, best_ask, coin_lot_size, pc_lot_size)
     };
 
-    msg!("bounded_strategy.order_side {}", bounded_strategy.order_side);
+    msg!(
+        "bounded_strategy.order_side {}",
+        bounded_strategy.order_side
+    );
     // Order Side is BID
     if bounded_strategy.order_side == 0 {
         let best_ask_price = best_ask.price();
@@ -127,18 +134,13 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
                 let max_base_purchase_amt = cmp::min(max_base_from_payer, max_ask_qty);
                 let max_base_purchase_lots =
                     max_base_purchase_amt.checked_div(coin_lot_size).unwrap();
-                let max_pc_qty = 
-                    max_base_purchase_lots
-                        .checked_mul(best_ask_u64)
-                        .unwrap()
-                        .checked_mul(pc_lot_size)
-                        .unwrap();
+                let max_pc_qty = max_base_purchase_lots
+                    .checked_mul(best_ask_u64)
+                    .unwrap()
+                    .checked_mul(pc_lot_size)
+                    .unwrap();
                 let serum_fees = FeeTier::Base.taker_fee(max_pc_qty);
                 let max_pc_qty = serum_fees.checked_add(max_pc_qty).unwrap();
-                msg!(
-                  "max_base_from_payer {}, max_ask_qty {}, max_base_purchase_amt {}, max_base_purchase_lots {}, max_pc_qty {}", 
-                  max_base_from_payer, max_ask_qty, max_base_purchase_amt, max_base_purchase_lots, max_pc_qty
-                );
                 // Execute the trade!
                 let order = OrderInfo {
                     side: Side::Bid,
@@ -146,7 +148,6 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
                     max_coin_qty: NonZeroU64::new(max_base_purchase_lots).unwrap(),
                     max_pc_qty: NonZeroU64::new(max_pc_qty).unwrap(),
                 };
-                msg!("order info {:?}", order);
                 let bump = bounded_strategy.authority_bump;
                 let signer_seeds: &[&[u8]] = authority_signer_seeds!(&ctx, bump);
                 place_order!(ctx, order, &[signer_seeds]);
@@ -158,24 +159,62 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
                 };
                 settle_funds!(&ctx, wallets, &[signer_seeds]);
             } else {
-                return Err(error!(ErrorCode::MarketPriceIsOutOfBounds))
+                return Err(error!(ErrorCode::MarketPriceIsOutOfBounds));
             }
         } else {
-            return Err(error!(ErrorCode::NoLowerBoundedBids))
+            return Err(error!(ErrorCode::NoLowerBoundedBids));
         }
-    } else { // Order Side is ASK
-      let best_bid_price = best_bid.price();
-      let best_bid_u64 = u64::from(best_bid_price);
+    } else {
+        // Order Side is ASK
+        let best_bid_price = best_bid.price();
+        let best_bid_u64 = u64::from(best_bid_price);
         // Handle Selling the base asset
         if bounded_strategy.bound == 0 {
-          if best_bid_u64 > bounded_strategy.bounded_price {
-            // TODO: Calculate max trade amount
-            // TODO: Execute the trade!
-          } else {
-            return Err(error!(ErrorCode::MarketPriceIsOutOfBounds))
-          }
+            if best_bid_u64 > bounded_strategy.bounded_price {
+                // Calculate max trade amount
+                let payer_base_in_lots = ctx
+                    .accounts
+                    .order_payer
+                    .amount
+                    .checked_div(coin_lot_size)
+                    .unwrap();
+                let max_base_in_lots = cmp::min(payer_base_in_lots, best_bid.quantity());
+                let max_pc_qty = max_base_in_lots
+                    .checked_mul(best_bid_u64)
+                    .unwrap()
+                    .checked_mul(pc_lot_size)
+                    .unwrap();
+                let serum_fees = FeeTier::Base.taker_fee(max_pc_qty);
+                let max_pc_qty = serum_fees.checked_add(max_pc_qty).unwrap();
+                msg!(
+                    "amt {}, payer_base_in_lots {}, max_base_in_lots {}, max_pc_qty {}",
+                    ctx.accounts.order_payer.amount,
+                    payer_base_in_lots,
+                    max_base_in_lots,
+                    max_pc_qty
+                );
+                // Execute the trade!
+                let order = OrderInfo {
+                    side: Side::Ask,
+                    price: best_bid_price,
+                    max_coin_qty: NonZeroU64::new(max_base_in_lots).unwrap(),
+                    max_pc_qty: NonZeroU64::new(max_pc_qty).unwrap(),
+                };
+                let bump = bounded_strategy.authority_bump;
+                let signer_seeds: &[&[u8]] = authority_signer_seeds!(&ctx, bump);
+                place_order!(ctx, order, &[signer_seeds]);
+
+                // Settle the trade!
+                let wallets = SettleWallets {
+                    pc_wallet: ctx.accounts.deposit_account.to_account_info(),
+                    coin_wallet: ctx.accounts.order_payer.to_account_info(),
+                };
+                settle_funds!(&ctx, wallets, &[signer_seeds]);
+            } else {
+                return Err(error!(ErrorCode::MarketPriceIsOutOfBounds));
+            }
         } else {
-          return Err(error!(ErrorCode::NoUpperBoundedAsks))
+            return Err(error!(ErrorCode::NoUpperBoundedAsks));
         }
     }
     Ok(())

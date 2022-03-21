@@ -82,6 +82,7 @@ describe("BoundedTrade", () => {
     try {
       await program.provider.send(createAtaTx);
     } catch (err) {}
+
     await program.provider.connection.requestAirdrop(
       program.provider.wallet.publicKey,
       baseTransferAmount.muln(10).toNumber()
@@ -104,6 +105,13 @@ describe("BoundedTrade", () => {
       lamports: baseTransferAmount.muln(10).toNumber(),
     });
     transaction.add(transferBaseInstruction);
+    // Sync the native account after the transfer
+    const syncNativeIx = splTokenProgram.instruction.syncNative({
+      accounts: {
+        account: baseAddress,
+      },
+    });
+    transaction.add(syncNativeIx);
     await program.provider.send(transaction);
   });
 
@@ -318,9 +326,86 @@ describe("BoundedTrade", () => {
       describe("Bounded price is lower than highest bid", () => {
         beforeEach(async () => {
           boundPrice = highestBid[2].subn(10);
+          const boundedParams = {
+            boundPrice,
+            reclaimDate,
+            reclaimAddress: baseAddress,
+            depositAddress: quoteAddress,
+            orderSide,
+            bound,
+            transferAmount: baseTransferAmount,
+          };
+          await initializeBoundedStrategy(
+            program,
+            DEX_ID,
+            serumMarket.address,
+            serumMarket.baseMintAddress,
+            boundedParams
+          );
+          ({
+            boundedStrategy: boundedStrategyKey,
+            authority,
+            orderPayer,
+          } = await deriveAllBoundedStrategyKeys(
+            program,
+            serumMarket.address,
+            serumMarket.baseMintAddress,
+            boundedParams
+          ));
+          boundedStrategy = await program.account.boundedStrategy.fetch(
+            boundedStrategyKey
+          );
         });
         it("should execute the trade and settle the assets", async () => {
-          assert.ok(false);
+          const depositTokenAccountBefore =
+            await splTokenProgram.account.token.fetch(quoteAddress);
+          // Create and send the BoundedTrade transaction
+          const ix = await boundedTradeIx(
+            program,
+            boundedStrategyKey,
+            serumMarket,
+            boundedStrategy
+          );
+          const transaction = new web3.Transaction().add(ix);
+          try {
+            await program.provider.send(transaction);
+          } catch (error) {
+            const parsedError = parseTranactionError(error);
+            console.log("error: ", parsedError.msg);
+            assert.ok(false);
+          }
+          // Calculate the maxmium amount of SOL that can be sold
+          const transferNum =
+            baseTransferAmount.toNumber() /
+            // @ts-ignore
+            serumMarket._baseSplTokenMultiplier.toNumber();
+          const maxSaleAmt = Math.min(transferNum, highestBid[1]);
+          const maxSaleNative = new BN(
+            Math.min(maxSaleAmt, highestBid[1]) *
+              // @ts-ignore
+              serumMarket._baseSplTokenMultiplier.toNumber()
+          ) // The div and mul below are to chop off the precision that cannot trade with the market's lot size
+            // @ts-ignore
+            .div(serumMarket._decoded.baseLotSize)
+            // @ts-ignore
+            .mul(serumMarket._decoded.baseLotSize);
+          // convert the native SOL sale amount to native USDC value
+          const usdcBeforeFees = maxSaleNative
+            .mul(highestBid[2])
+            // @ts-ignore
+            .div(serumMarket._quoteSplTokenMultiplier);
+          // Subtract the Serum fees (hardcoded at 4bps for the base fee)
+          const usdcReceived = usdcBeforeFees.sub(
+            new BN(usdcBeforeFees.toNumber() * 0.0004)
+          );
+
+          // Validate that the deposit received the amount of USDC
+          const depositTokenAccountAfter =
+            await splTokenProgram.account.token.fetch(quoteAddress);
+          const depositTokenDiff = depositTokenAccountAfter.amount.sub(
+            depositTokenAccountBefore.amount
+          );
+          assert.equal(depositTokenDiff.toString(), usdcReceived.toString());
         });
       });
     });
