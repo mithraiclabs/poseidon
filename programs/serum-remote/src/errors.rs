@@ -15,5 +15,9 @@ pub enum ErrorCode {
     #[msg("Bound must be 0 or 1")]
     NonBinaryBound,
     #[msg("Market price is out of bounds")]
-    MarketPriceIsOutOfBounds
+    MarketPriceIsOutOfBounds,
+    #[msg("Lower bounded bids are blocked")]
+    NoLowerBoundedBids,
+    #[msg("Upper bounded asks are blocked")]
+    NoUpperBoundedAsks,
 }

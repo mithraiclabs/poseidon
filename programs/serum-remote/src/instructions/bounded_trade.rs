@@ -87,7 +87,7 @@ declare_check_assert_macros!(SourceFileId::State);
 pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
     let bounded_strategy = &ctx.accounts.strategy;
 
-    let (_best_bid, best_ask, coin_lot_size, pc_lot_size) = {
+    let (best_bid, best_ask, coin_lot_size, pc_lot_size) = {
         // load the Serum market
         let mut market =
             Market::load(&ctx.accounts.serum_market, &ctx.accounts.dex_program.key()).unwrap();
@@ -102,6 +102,7 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
         (best_bid, best_ask, coin_lot_size, pc_lot_size)
     };
 
+    msg!("bounded_strategy.order_side {}", bounded_strategy.order_side);
     // Order Side is BID
     if bounded_strategy.order_side == 0 {
         let best_ask_price = best_ask.price();
@@ -160,13 +161,23 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
                 return Err(error!(ErrorCode::MarketPriceIsOutOfBounds))
             }
         } else {
-            // TODO: handle Lower Bound
+            return Err(error!(ErrorCode::NoLowerBoundedBids))
         }
-    } else {
-        // ASK
-        // TODO: Handle Selling the base asset
+    } else { // Order Side is ASK
+      let best_bid_price = best_bid.price();
+      let best_bid_u64 = u64::from(best_bid_price);
+        // Handle Selling the base asset
+        if bounded_strategy.bound == 0 {
+          if best_bid_u64 > bounded_strategy.bounded_price {
+            // TODO: Calculate max trade amount
+            // TODO: Execute the trade!
+          } else {
+            return Err(error!(ErrorCode::MarketPriceIsOutOfBounds))
+          }
+        } else {
+          return Err(error!(ErrorCode::NoUpperBoundedAsks))
+        }
     }
-    // TODO:
     Ok(())
 }
 
