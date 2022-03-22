@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    dex::{self, InitOpenOrders, serum_dex::state::Market},
+    dex::{self, serum_dex::state::Market, InitOpenOrders},
     token::{self, Mint, Token, TokenAccount, Transfer},
 };
-use std::convert::identity;
 use safe_transmute::to_bytes::transmute_to_bytes;
+use std::convert::identity;
 
 use crate::{
     authority_signer_seeds,
@@ -59,11 +59,8 @@ pub struct InitBoundedStrategy<'info> {
 
     /// The OpenOrders account to initialize
     /// CHECK: constraints handled
-    #[account(
-      mut,
-      owner = dex::ID
-    )]
-    pub open_orders: AccountInfo<'info>,
+    #[account(mut)]
+    pub open_orders: Signer<'info>,
 
     /// The Serum program
     pub dex_program: Program<'info, dex::Dex>,
@@ -84,6 +81,7 @@ pub fn handler(
     reclaim_date: i64,
     order_side: u8,
     bound: u8,
+    open_orders_space: u64,
 ) -> Result<()> {
     {
         // Validate market and mint information
@@ -93,15 +91,26 @@ pub fn handler(
         let pc_mint = Pubkey::new(&transmute_to_bytes(&identity(market.pc_mint)));
         if order_side == 0 && ctx.accounts.mint.key() != pc_mint {
             // If Bidding the assets to transfer must the the price currency mint
-            return Err(error!(ErrorCode::BidsRequireQuoteCurrency))
+            return Err(error!(ErrorCode::BidsRequireQuoteCurrency));
         } else if order_side == 1 && ctx.accounts.mint.key() != coin_mint {
-            return Err(error!(ErrorCode::AsksRequireBaseCurrency))
+            return Err(error!(ErrorCode::AsksRequireBaseCurrency));
         }
-        
     }
 
-    // TODO: May want to create the account in the instruction to avoid client
-    //  bugs when creating but not initializing.
+    // Create the account in the instruction to avoid client bugs when 
+    //  creating but not initializing.
+    let cpi_accounts = anchor_lang::system_program::CreateAccount {
+        from: ctx.accounts.payer.to_account_info(),
+        to: ctx.accounts.open_orders.to_account_info(),
+    };
+    let cpi_ctx = CpiContext::new(ctx.accounts.dex_program.to_account_info(), cpi_accounts);
+
+    anchor_lang::system_program::create_account(
+        cpi_ctx,
+        Rent::get()?.minimum_balance(open_orders_space as usize),
+        open_orders_space,
+        ctx.accounts.dex_program.key,
+    )?;
 
     // Initialize Serum OpenOrders account
     let init_open_orders_accounts = InitOpenOrders {
@@ -176,14 +185,14 @@ impl<'info> InitBoundedStrategy<'info> {
             return Err(error!(ErrorCode::NonBinaryBound));
         }
         if bound == 0 && order_side == 0 {
-            return Err(error!(ErrorCode::NoLowerBoundedBids))
+            return Err(error!(ErrorCode::NoLowerBoundedBids));
         }
         if bound == 1 && order_side == 1 {
-            return Err(error!(ErrorCode::NoUpperBoundedAsks))
+            return Err(error!(ErrorCode::NoUpperBoundedAsks));
         }
         // Validate transfer amount > 0
         if transfer_amount == 0 {
-            return Err(error!(ErrorCode::TransferAmountCantBe0))
+            return Err(error!(ErrorCode::TransferAmountCantBe0));
         }
         Ok(())
     }

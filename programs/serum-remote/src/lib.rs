@@ -29,6 +29,7 @@ pub mod serum_remote {
         reclaim_date: i64,
         order_side: u8,
         bound: u8,
+        open_orders_space: u64,
     ) -> Result<()> {
         instructions::init_bounded_strategy::handler(
             ctx,
@@ -37,6 +38,7 @@ pub mod serum_remote {
             reclaim_date,
             order_side,
             bound,
+            open_orders_space,
         )
     }
 

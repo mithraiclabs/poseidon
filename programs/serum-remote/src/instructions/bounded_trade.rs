@@ -106,10 +106,6 @@ pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
         (best_bid, best_ask, coin_lot_size, pc_lot_size)
     };
 
-    msg!(
-        "bounded_strategy.order_side {}",
-        bounded_strategy.order_side
-    );
     // Order Side is BID
     if bounded_strategy.order_side == 0 {
         let best_ask_price = best_ask.price();

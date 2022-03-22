@@ -1,7 +1,12 @@
-use anchor_lang::{accounts::program_account::ProgramAccount, prelude::*};
-use anchor_spl::{token::{self, Token, TokenAccount, Transfer, CloseAccount}, dex::{close_open_orders, CloseOpenOrders, Dex}};
+use anchor_lang::prelude::*;
+use anchor_spl::{
+    dex::{close_open_orders, CloseOpenOrders, Dex},
+    token::{self, CloseAccount, Token, TokenAccount, Transfer},
+};
 
-use crate::{authority_signer_seeds, constants::AUTHORITY_SEED, errors::ErrorCode, state::BoundedStrategy};
+use crate::{
+    authority_signer_seeds, constants::AUTHORITY_SEED, errors::ErrorCode, state::BoundedStrategy,
+};
 
 #[derive(Accounts)]
 pub struct Reclaim<'info> {
@@ -30,15 +35,14 @@ pub struct Reclaim<'info> {
     #[account(mut)]
     pub reclaim_account: Account<'info, TokenAccount>,
 
-
     pub token_program: Program<'info, Token>,
-    pub dex_program: Program<'info, Dex>
+    pub dex_program: Program<'info, Dex>,
 }
 
 pub fn handler(ctx: Context<Reclaim>) -> Result<()> {
     let bounded_strategy = &ctx.accounts.strategy;
     if bounded_strategy.reclaim_date > Clock::get()?.unix_timestamp {
-        return Err(ErrorCode::ReclaimDateHasNotPassed.into())
+        return Err(ErrorCode::ReclaimDateHasNotPassed.into());
     }
 
     let cpi_accounts = Transfer {
@@ -81,7 +85,7 @@ pub fn handler(ctx: Context<Reclaim>) -> Result<()> {
         program: ctx.accounts.dex_program.to_account_info(),
         accounts: cpi_accounts,
         signer_seeds: &[authority_signer_seeds!(ctx, bump)],
-        remaining_accounts: Vec::new()
+        remaining_accounts: Vec::new(),
     };
     close_open_orders(cpi_ctx)?;
     Ok(())

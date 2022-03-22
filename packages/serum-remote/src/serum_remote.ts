@@ -108,7 +108,7 @@ export type SerumRemote = {
         {
           "name": "openOrders",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "dexProgram",
@@ -151,6 +151,10 @@ export type SerumRemote = {
         {
           "name": "bound",
           "type": "u8"
+        },
+        {
+          "name": "openOrdersSpace",
+          "type": "u64"
         }
       ]
     },
@@ -564,7 +568,7 @@ export const IDL: SerumRemote = {
         {
           "name": "openOrders",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "dexProgram",
@@ -607,6 +611,10 @@ export const IDL: SerumRemote = {
         {
           "name": "bound",
           "type": "u8"
+        },
+        {
+          "name": "openOrdersSpace",
+          "type": "u64"
         }
       ]
     },

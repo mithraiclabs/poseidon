@@ -19,10 +19,7 @@ import {
   wait,
 } from "./utils";
 
-/**
- * SerumMarket is in the current state Bids and Asks
- * [ [ 92.687, 300, <BN: 16a0f>, <BN: bb8> ] ] [ [ 92.75, 191.5, <BN: 16a4e>, <BN: 77b> ] ]
- */
+let timesRun = 0;
 
 describe("Reclaim", () => {
   // Configure the client to use the local cluster.
@@ -92,11 +89,17 @@ describe("Reclaim", () => {
     transaction.add(syncNativeIx);
     await program.provider.send(transaction);
   });
+  beforeEach(() => {
+    timesRun += 1;
+    reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600 + timesRun);
+  });
 
   // Reclaim Date has not passed
   describe("Reclaim date has passed", () => {
     beforeEach(async () => {
-      reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
+      reclaimDate = new anchor.BN(
+        new Date().getTime() / 1_000 + 3600 + timesRun
+      );
       const boundedParams = {
         boundPrice,
         reclaimDate,
