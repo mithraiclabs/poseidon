@@ -21,7 +21,11 @@ pub struct Reclaim<'info> {
     )]
     pub strategy: Account<'info, BoundedStrategy>,
     /// The PDA that has authority over the order payer
-    /// CHECK: TODO: add check
+    /// CHECK: Checks made
+    #[account(
+        constraint = authority.key() == strategy.authority 
+            @ ErrorCode::AuthorityMisMatch,
+    )]
     pub authority: UncheckedAccount<'info>,
     /// The account where the assets to trade with are
     #[account(mut)]

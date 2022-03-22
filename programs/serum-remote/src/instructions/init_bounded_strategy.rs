@@ -23,14 +23,14 @@ pub struct InitBoundedStrategy<'info> {
     seeds = [strategy.key().as_ref(), AUTHORITY_SEED.as_bytes()],
     bump,
   )]
-    pub authority: AccountInfo<'info>,
+    pub authority: UncheckedAccount<'info>,
 
     pub mint: Account<'info, Mint>,
     /// CHECK: Constraints are handled
     #[account(
     owner = dex::ID
   )]
-    pub serum_market: AccountInfo<'info>,
+    pub serum_market: UncheckedAccount<'info>,
     #[account(
     init,
     seeds = [strategy.key().as_ref(), ORDER_PAYER_SEED.as_bytes()],
@@ -69,8 +69,7 @@ pub struct InitBoundedStrategy<'info> {
     constraint = system_program.key() == anchor_lang::solana_program::system_program::ID
             @ ErrorCode::IncorrectSystemProgram,
   )]
-    /// CHECK: Handled
-    pub system_program: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
 

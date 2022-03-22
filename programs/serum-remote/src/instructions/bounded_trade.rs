@@ -27,56 +27,67 @@ pub struct BoundedTrade<'info> {
     payer: Signer<'info>,
     /// The BoundedStrategy account
     strategy: Box<Account<'info, BoundedStrategy>>,
-    /// CHECK: Constraints are handled
+    /// CHECK: Checks are made when loading and interacting with the market
     #[account(
       mut,
     owner = dex::ID
   )]
-    pub serum_market: AccountInfo<'info>,
-    /// The Serum Market's bids accoutn
-    /// CHECK: TODO: Add check against market key
+    pub serum_market: UncheckedAccount<'info>,
+    /// The Serum Market's bids account
+    /// CHECK: Market checks are made when loading from the Market
     #[account(
       mut,
       owner = dex::ID
     )]
-    pub bids: AccountInfo<'info>,
+    pub bids: UncheckedAccount<'info>,
     /// The Serum Market's asks accoutn
-    /// CHECK: TODO: Add check against market key
+    /// CHECK: Market checks are made when loading from the Market
     #[account(
       mut,
       owner = dex::ID
     )]
-    pub asks: AccountInfo<'info>,
+    pub asks: UncheckedAccount<'info>,
     #[account(
       mut,
       owner = dex::ID
     )]
-    /// CHECK: TODO: Add constraint against BoundedStrategy
-    pub open_orders: AccountInfo<'info>,
-    /// CHECK: TODO: Add constraints
-    #[account(mut)]
+    /// CHECK: Serum checks the OpenOrders owners
+    pub open_orders: UncheckedAccount<'info>,
+    #[account(
+        mut,
+        constraint = order_payer.key() == strategy.order_payer
+            @ ErrorCode::OrderPayerMisMatch,
+    )]
     pub order_payer: Box<Account<'info, TokenAccount>>,
-    /// CHECK: TODO: Add constraints
-    pub authority: AccountInfo<'info>,
+    /// CHECK: Constraints are added
+    #[account(
+        constraint = authority.key() == strategy.authority 
+            @ ErrorCode::AuthorityMisMatch,
+    )]
+    pub authority: UncheckedAccount<'info>,
     #[account(mut,
       owner = dex::ID)]
-    /// CHECK: TODO: Add constraints
-    pub request_queue: AccountInfo<'info>,
+    /// CHECK: Serum handles checks
+    pub request_queue: UncheckedAccount<'info>,
     #[account(mut,
       owner = dex::ID)]
-    /// CHECK: TODO: Add constraints
-    pub event_queue: AccountInfo<'info>,
+    /// CHECK: Serum handles checkss
+    pub event_queue: UncheckedAccount<'info>,
     #[account(mut)]
-    /// CHECK: TODO: Add constraints
-    pub coin_vault: AccountInfo<'info>,
+    /// CHECK: Serum handles checks
+    pub coin_vault: UncheckedAccount<'info>,
     #[account(mut)]
-    /// CHECK: TODO: Add constraints
-    pub pc_vault: AccountInfo<'info>,
-    /// CHECK: TODO: Add constraints
-    pub serum_vault_signer: AccountInfo<'info>,
+    /// CHECK: Serum handles checks
+    pub pc_vault: UncheckedAccount<'info>,
+    /// CHECK: Serum handles checks
+    pub serum_vault_signer: UncheckedAccount<'info>,
 
-    // TODO: Validate the key matches BoundedStrategy
-    #[account(mut)]
+    // Validate the key matches BoundedStrategy
+    #[account(
+        mut,
+        constraint = deposit_account.key() == strategy.deposit_address
+            @ ErrorCode::DepositAddressMisMatch
+    )]
     pub deposit_account: Box<Account<'info, TokenAccount>>,
 
     /// The Serum program

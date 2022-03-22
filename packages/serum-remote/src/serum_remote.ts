@@ -454,6 +454,21 @@ export type SerumRemote = {
       "code": 6012,
       "name": "AsksRequireBaseCurrency",
       "msg": "Strategy requires the base currency to place asks"
+    },
+    {
+      "code": 6013,
+      "name": "OrderPayerMisMatch",
+      "msg": "Order payer does not match the strategy"
+    },
+    {
+      "code": 6014,
+      "name": "AuthorityMisMatch",
+      "msg": "Authority does not match the strategy"
+    },
+    {
+      "code": 6015,
+      "name": "DepositAddressMisMatch",
+      "msg": "Depsoit address does not match the strategy"
     }
   ]
 };
@@ -914,6 +929,21 @@ export const IDL: SerumRemote = {
       "code": 6012,
       "name": "AsksRequireBaseCurrency",
       "msg": "Strategy requires the base currency to place asks"
+    },
+    {
+      "code": 6013,
+      "name": "OrderPayerMisMatch",
+      "msg": "Order payer does not match the strategy"
+    },
+    {
+      "code": 6014,
+      "name": "AuthorityMisMatch",
+      "msg": "Authority does not match the strategy"
+    },
+    {
+      "code": 6015,
+      "name": "DepositAddressMisMatch",
+      "msg": "Depsoit address does not match the strategy"
     }
   ]
 };

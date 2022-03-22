@@ -28,4 +28,10 @@ pub enum ErrorCode {
     BidsRequireQuoteCurrency,
     #[msg("Strategy requires the base currency to place asks")]
     AsksRequireBaseCurrency,
+    #[msg("Order payer does not match the strategy")]
+    OrderPayerMisMatch,
+    #[msg("Authority does not match the strategy")]
+    AuthorityMisMatch,
+    #[msg("Depsoit address does not match the strategy")]
+    DepositAddressMisMatch,
 }
