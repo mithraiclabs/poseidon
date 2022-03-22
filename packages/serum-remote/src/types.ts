@@ -1,5 +1,15 @@
 import { BN, web3 } from "@project-serum/anchor";
 
+export enum Bound {
+  "Lower" = 0,
+  "Upper" = 1,
+}
+
+export enum OrderSide {
+  "Bid" = 0,
+  "Ask" = 1,
+}
+
 export type BoundedStrategy = {
   authority: web3.PublicKey;
   serumMarket: web3.PublicKey;

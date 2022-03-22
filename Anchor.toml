@@ -49,3 +49,6 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[programs.devnet]
+serum_remote = "8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs"
