@@ -1,8 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    dex::{self, InitOpenOrders},
+    dex::{self, serum_dex::state::Market, InitOpenOrders},
     token::{self, Mint, Token, TokenAccount, Transfer},
 };
+use safe_transmute::to_bytes::transmute_to_bytes;
+use std::convert::identity;
 
 use crate::{
     authority_signer_seeds,
@@ -21,14 +23,14 @@ pub struct InitBoundedStrategy<'info> {
     seeds = [strategy.key().as_ref(), AUTHORITY_SEED.as_bytes()],
     bump,
   )]
-    pub authority: AccountInfo<'info>,
+    pub authority: UncheckedAccount<'info>,
 
     pub mint: Account<'info, Mint>,
     /// CHECK: Constraints are handled
     #[account(
     owner = dex::ID
   )]
-    pub serum_market: AccountInfo<'info>,
+    pub serum_market: UncheckedAccount<'info>,
     #[account(
     init,
     seeds = [strategy.key().as_ref(), ORDER_PAYER_SEED.as_bytes()],
@@ -42,7 +44,8 @@ pub struct InitBoundedStrategy<'info> {
     init,
     seeds = [serum_market.key().as_ref(), mint.key().as_ref(), &bound_price.to_le_bytes(), &reclaim_date.to_le_bytes(), BOUNDED_STRATEGY_SEED.as_bytes()],
     payer = payer,
-    bump
+    bump,
+    space = std::mem::size_of::<BoundedStrategy>() + 608
   )]
     pub strategy: Box<Account<'info, BoundedStrategy>>,
     #[account(
@@ -56,11 +59,8 @@ pub struct InitBoundedStrategy<'info> {
 
     /// The OpenOrders account to initialize
     /// CHECK: constraints handled
-    #[account(
-      mut,
-      owner = dex::ID
-    )]
-    pub open_orders: AccountInfo<'info>,
+    #[account(mut)]
+    pub open_orders: Signer<'info>,
 
     /// The Serum program
     pub dex_program: Program<'info, dex::Dex>,
@@ -69,8 +69,7 @@ pub struct InitBoundedStrategy<'info> {
     constraint = system_program.key() == anchor_lang::solana_program::system_program::ID
             @ ErrorCode::IncorrectSystemProgram,
   )]
-    /// CHECK: Handled
-    pub system_program: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
 
@@ -81,9 +80,36 @@ pub fn handler(
     reclaim_date: i64,
     order_side: u8,
     bound: u8,
+    open_orders_space: u64,
 ) -> Result<()> {
-    // TODO: May want to create the account in the instruction to avoid client
-    //  errors when creating but not initializing.
+    {
+        // Validate market and mint information
+        let market =
+            Market::load(&ctx.accounts.serum_market, &ctx.accounts.dex_program.key()).unwrap();
+        let coin_mint = Pubkey::new(&transmute_to_bytes(&identity(market.coin_mint)));
+        let pc_mint = Pubkey::new(&transmute_to_bytes(&identity(market.pc_mint)));
+        if order_side == 0 && ctx.accounts.mint.key() != pc_mint {
+            // If Bidding the assets to transfer must the the price currency mint
+            return Err(error!(ErrorCode::BidsRequireQuoteCurrency));
+        } else if order_side == 1 && ctx.accounts.mint.key() != coin_mint {
+            return Err(error!(ErrorCode::AsksRequireBaseCurrency));
+        }
+    }
+
+    // Create the account in the instruction to avoid client bugs when 
+    //  creating but not initializing.
+    let cpi_accounts = anchor_lang::system_program::CreateAccount {
+        from: ctx.accounts.payer.to_account_info(),
+        to: ctx.accounts.open_orders.to_account_info(),
+    };
+    let cpi_ctx = CpiContext::new(ctx.accounts.dex_program.to_account_info(), cpi_accounts);
+
+    anchor_lang::system_program::create_account(
+        cpi_ctx,
+        Rent::get()?.minimum_balance(open_orders_space as usize),
+        open_orders_space,
+        ctx.accounts.dex_program.key,
+    )?;
 
     // Initialize Serum OpenOrders account
     let init_open_orders_accounts = InitOpenOrders {
@@ -135,6 +161,7 @@ pub fn handler(
 
 impl<'info> InitBoundedStrategy<'info> {
     pub fn valid_arguments(
+        transfer_amount: u64,
         bound_price: u64,
         reclaim_date: i64,
         order_side: u8,
@@ -156,7 +183,16 @@ impl<'info> InitBoundedStrategy<'info> {
         if bound != 0 && bound != 1 {
             return Err(error!(ErrorCode::NonBinaryBound));
         }
-        // TODO: Validate transfer amount > 0
+        if bound == 0 && order_side == 0 {
+            return Err(error!(ErrorCode::NoLowerBoundedBids));
+        }
+        if bound == 1 && order_side == 1 {
+            return Err(error!(ErrorCode::NoUpperBoundedAsks));
+        }
+        // Validate transfer amount > 0
+        if transfer_amount == 0 {
+            return Err(error!(ErrorCode::TransferAmountCantBe0));
+        }
         Ok(())
     }
 }

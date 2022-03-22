@@ -16,6 +16,7 @@ pub mod serum_remote {
     use super::*;
 
     #[access_control(InitBoundedStrategy::valid_arguments(
+        transfer_amount,
         bound_price,
         reclaim_date,
         order_side,
@@ -28,6 +29,7 @@ pub mod serum_remote {
         reclaim_date: i64,
         order_side: u8,
         bound: u8,
+        open_orders_space: u64,
     ) -> Result<()> {
         instructions::init_bounded_strategy::handler(
             ctx,
@@ -36,10 +38,15 @@ pub mod serum_remote {
             reclaim_date,
             order_side,
             bound,
+            open_orders_space,
         )
     }
 
     pub fn bounded_trade(ctx: Context<BoundedTrade>) -> Result<()> {
         instructions::bounded_trade::handler(ctx)
+    }
+
+    pub fn reclaim(ctx: Context<Reclaim>) -> Result<()> {
+        instructions::reclaim::handler(ctx)
     }
 }

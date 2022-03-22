@@ -1,7 +1,9 @@
 import * as anchor from "@project-serum/anchor";
 import { Spl } from "@project-serum/anchor";
+import { BN } from "@project-serum/anchor";
 import { Program, web3 } from "@project-serum/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
+import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
@@ -11,18 +13,11 @@ import { SerumRemote } from "../target/types/serum_remote";
 import {
   createAssociatedTokenInstruction,
   DEX_ID,
-  initNewTokenMintInstructions,
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
 } from "./utils";
 
-let openOrdersAccount: web3.PublicKey;
-
-/**
- * SerumMarket is in the current state Bids and Asks
- * [ [ 92.687, 300, <BN: 16a0f>, <BN: bb8> ] ] [ [ 92.75, 191.5, <BN: 16a4e>, <BN: 77b> ] ]
- */
-
+let timesRun = 0;
 describe("InitBoundedStrategy", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.Provider.env());
@@ -33,7 +28,7 @@ describe("InitBoundedStrategy", () => {
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
   let reclaimAddress: web3.PublicKey;
   let depositAddress: web3.PublicKey;
-  let orderSide = 1;
+  let orderSide = 0;
   let bound = 1;
   let transferAmount = new u64(10_000_000);
 
@@ -76,23 +71,14 @@ describe("InitBoundedStrategy", () => {
     await program.provider.send(transaction);
   });
   beforeEach(async () => {
+    // timesRun is used to generate unique seeds for the strategy, otherwise
+    //  the tests can fail with accounts already in use.
+    timesRun += 1;
     boundPrice = new anchor.BN(957);
-    reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
-    orderSide = 1;
+    reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600 + timesRun);
+    orderSide = 0;
     bound = 1;
-    const openOrdersKey = new web3.Keypair();
-    const ix = await OpenOrders.makeCreateAccountTransaction(
-      program.provider.connection,
-      // This argument is pointless
-      web3.SystemProgram.programId,
-      // This argument is the payer for the rent
-      program.provider.wallet.publicKey,
-      openOrdersKey.publicKey,
-      DEX_ID
-    );
-    openOrdersAccount = openOrdersKey.publicKey;
-    const transaction = new web3.Transaction().add(ix);
-    await program.provider.send(transaction, [openOrdersKey]);
+    transferAmount = new u64(10_000_000);
   });
 
   // Test the BoundedStrategy account is created with the right info
@@ -119,12 +105,11 @@ describe("InitBoundedStrategy", () => {
       reclaimAddress
     );
 
-    const ix = await initBoundedStrategyIx(
+    const { transaction, signers, openOrdersKey } = await initBoundedStrategyIx(
       program,
       DEX_ID,
       SOL_USDC_SERUM_MARKET,
       USDC_MINT,
-      openOrdersAccount,
       {
         transferAmount,
         boundPrice,
@@ -135,9 +120,8 @@ describe("InitBoundedStrategy", () => {
         bound,
       }
     );
-    const transaction = new web3.Transaction().add(ix);
     try {
-      await program.provider.send(transaction);
+      await program.provider.send(transaction, signers);
     } catch (error) {
       const parsedError = parseTranactionError(error);
       console.log("error: ", parsedError.msg);
@@ -177,17 +161,17 @@ describe("InitBoundedStrategy", () => {
     // Check the OpenOrders address
     assert.equal(
       boundedStrategy.openOrders.toString(),
-      openOrdersAccount.toString()
+      openOrdersKey.publicKey.toString()
     );
 
     const openOrders = await OpenOrders.load(
       program.provider.connection,
-      openOrdersAccount,
+      openOrdersKey.publicKey,
       DEX_ID
     );
     assert.ok(openOrders);
 
-    // TODO: Check that the assets were transfered from the reclaimAddress to the orderPayer
+    // Check that the assets were transfered from the reclaimAddress to the orderPayer
     const reclaimTokenAccountAfter = await splTokenProgram.account.token.fetch(
       reclaimAddress
     );
@@ -208,12 +192,11 @@ describe("InitBoundedStrategy", () => {
       reclaimDate = new anchor.BN(new Date().getTime() / 1_000 - 3600);
     });
     it("should error", async () => {
-      const ix = await initBoundedStrategyIx(
+      const { transaction, signers } = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
         USDC_MINT,
-        openOrdersAccount,
         {
           transferAmount,
           boundPrice,
@@ -224,9 +207,8 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
-      const transaction = new web3.Transaction().add(ix);
       try {
-        await program.provider.send(transaction);
+        await program.provider.send(transaction, signers);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -241,12 +223,11 @@ describe("InitBoundedStrategy", () => {
       boundPrice = new anchor.BN(0);
     });
     it("should error", async () => {
-      const ix = await initBoundedStrategyIx(
+      const { transaction, signers } = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
         USDC_MINT,
-        openOrdersAccount,
         {
           transferAmount,
           boundPrice,
@@ -257,9 +238,8 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
-      const transaction = new web3.Transaction().add(ix);
       try {
-        await program.provider.send(transaction);
+        await program.provider.send(transaction, signers);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -274,12 +254,11 @@ describe("InitBoundedStrategy", () => {
       orderSide = 2;
     });
     it("should error", async () => {
-      const ix = await initBoundedStrategyIx(
+      const { transaction, signers } = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
         USDC_MINT,
-        openOrdersAccount,
         {
           transferAmount,
           boundPrice,
@@ -290,11 +269,11 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
-      const transaction = new web3.Transaction().add(ix);
       try {
-        await program.provider.send(transaction);
+        await program.provider.send(transaction, signers);
         assert.ok(false);
       } catch (error) {
+        console.log("*** error", error);
         const parsedError = parseTranactionError(error);
         assert.equal(parsedError.msg, "Order side must be 0 or 1");
         assert.ok(true);
@@ -306,12 +285,11 @@ describe("InitBoundedStrategy", () => {
       bound = 2;
     });
     it("should error", async () => {
-      const ix = await initBoundedStrategyIx(
+      const { transaction, signers } = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
         USDC_MINT,
-        openOrdersAccount,
         {
           transferAmount,
           boundPrice,
@@ -322,13 +300,176 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
-      const transaction = new web3.Transaction().add(ix);
       try {
-        await program.provider.send(transaction);
+        await program.provider.send(transaction, signers);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
         assert.equal(parsedError.msg, "Bound must be 0 or 1");
+        assert.ok(true);
+      }
+    });
+  });
+
+  describe("Bounded strategy is Lower Bounded Bid", () => {
+    beforeEach(() => {
+      bound = 0;
+      orderSide = 0;
+    });
+    it("should error", async () => {
+      const { transaction, signers } = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          depositAddress,
+          orderSide,
+          bound,
+        }
+      );
+      try {
+        await program.provider.send(transaction, signers);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(parsedError.msg, "Lower bounded bids are blocked");
+        assert.ok(true);
+      }
+    });
+  });
+
+  describe("Bounded strategy is Upper Bounded Ask", () => {
+    beforeEach(() => {
+      bound = 1;
+      orderSide = 1;
+    });
+    it("should error", async () => {
+      const { transaction, signers } = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          depositAddress,
+          orderSide,
+          bound,
+        }
+      );
+      try {
+        await program.provider.send(transaction, signers);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(parsedError.msg, "Upper bounded asks are blocked");
+        assert.ok(true);
+      }
+    });
+  });
+
+  // Validate transfer amount > 0
+  describe("Transfer Amount is 0", () => {
+    beforeEach(() => {
+      transferAmount = new BN(0);
+    });
+    it("should error", async () => {
+      const { transaction, signers } = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          depositAddress,
+          orderSide,
+          bound,
+        }
+      );
+      try {
+        await program.provider.send(transaction, signers);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(parsedError.msg, "Transfer amount cannot be 0");
+        assert.ok(true);
+      }
+    });
+  });
+  // Validate order side and mint match the Serum market information
+  describe("Order Side is Bid but mint is the base currency", () => {
+    beforeEach(() => {
+      orderSide = 0;
+    });
+    it("should error", async () => {
+      const { transaction, signers } = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        WRAPPED_SOL_MINT,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress: depositAddress,
+          depositAddress: reclaimAddress,
+          orderSide,
+          bound,
+        }
+      );
+      try {
+        await program.provider.send(transaction, signers);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(
+          parsedError.msg,
+          "Strategy requires the quote currency to place bids"
+        );
+        assert.ok(true);
+      }
+    });
+  });
+  describe("Order Side is Ask but mint is the quote currency", () => {
+    beforeEach(() => {
+      orderSide = 1;
+      bound = 0;
+    });
+    it("should error", async () => {
+      const { transaction, signers } = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          depositAddress,
+          orderSide,
+          bound,
+        }
+      );
+      try {
+        await program.provider.send(transaction, signers);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(
+          parsedError.msg,
+          "Strategy requires the base currency to place asks"
+        );
         assert.ok(true);
       }
     });

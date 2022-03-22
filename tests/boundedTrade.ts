@@ -8,10 +8,7 @@ import {
   parseTranactionError,
 } from "../packages/serum-remote/src";
 import { boundedTradeIx } from "../packages/serum-remote/src/instructions/boundedTrade";
-import {
-  initBoundedStrategyIx,
-  initializeBoundedStrategy,
-} from "../packages/serum-remote/src/instructions/initBoundedStrategy";
+import { initializeBoundedStrategy } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
 import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {

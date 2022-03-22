@@ -76,3 +76,6 @@ export const createAssociatedTokenInstruction = async (
   );
   return { instruction, associatedAddress };
 };
+
+export const wait = (delayMS: number) =>
+  new Promise((resolve) => setTimeout(resolve, delayMS));

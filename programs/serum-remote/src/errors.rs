@@ -20,4 +20,18 @@ pub enum ErrorCode {
     NoLowerBoundedBids,
     #[msg("Upper bounded asks are blocked")]
     NoUpperBoundedAsks,
+    #[msg("Cannot reclaim assets before the reclaim date")]
+    ReclaimDateHasNotPassed,
+    #[msg("Transfer amount cannot be 0")]
+    TransferAmountCantBe0,
+    #[msg("Strategy requires the quote currency to place bids")]
+    BidsRequireQuoteCurrency,
+    #[msg("Strategy requires the base currency to place asks")]
+    AsksRequireBaseCurrency,
+    #[msg("Order payer does not match the strategy")]
+    OrderPayerMisMatch,
+    #[msg("Authority does not match the strategy")]
+    AuthorityMisMatch,
+    #[msg("Depsoit address does not match the strategy")]
+    DepositAddressMisMatch,
 }
