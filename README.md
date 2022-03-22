@@ -50,12 +50,17 @@ Right now there’s no simple way for a member of a DAO to initiate a proposal t
   - ~~Validate the order side & mint information aligns with the Serum market. This should also validate the mint for the deposit address against the market state as well.~~
     - E.g. if the DAO is trying to Buy SOL from the SOL/USDC market, the program should error if the mint is set to SOL
 - ~~BoundedTrade~~
+
   Allow DAOs to set an upper limit where the execution of the trade will only happen if an upper or lower bound is not crossed.
+
   - Validate the asset price on the order book is within the bounds
   - Execute the trade
   - Settle the funds to the deposit address
+
 - ~~ReclaimAssets~~
+
   Some strategies may have parameters that could never be met. I.e. a BuyMarket could have a manipulated order book and never actually execute a trade. The assets shouldn’t sit in this protocol, the DAO should be able to reclaim and put the assets to work elsewhere.
+
   - ~~Validate that the current clock time is > the _reclaim_date_~~
   - ~~Initiate token transfer from the token account from _order_payer_ to the _reclaim_address_~~
   - ~~Close TokenAccount~~
