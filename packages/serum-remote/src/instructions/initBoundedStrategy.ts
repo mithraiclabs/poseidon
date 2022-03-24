@@ -12,7 +12,6 @@ export const initBoundedStrategyIx = async (
   mint: web3.PublicKey,
   boundedStrategyParams: BoundedStrategyParams
 ) => {
-  const openOrdersKey = new web3.Keypair();
   const {
     boundPrice,
     reclaimDate,
@@ -22,14 +21,14 @@ export const initBoundedStrategyIx = async (
     bound,
     transferAmount,
   } = boundedStrategyParams;
-  const { orderPayer, boundedStrategy, authority } =
+  const { orderPayer, boundedStrategy, authority, openOrders } =
     await deriveAllBoundedStrategyKeys(
       program,
       serumMarket,
       mint,
       boundedStrategyParams
     );
-  const instruction = program.instruction.initBoundedStrategy(
+  return program.instruction.initBoundedStrategy(
     transferAmount,
     boundPrice,
     reclaimDate,
@@ -46,7 +45,7 @@ export const initBoundedStrategyIx = async (
         strategy: boundedStrategy,
         reclaimAccount: reclaimAddress,
         depositAccount: depositAddress,
-        openOrders: openOrdersKey.publicKey,
+        openOrders: openOrders,
         dexProgram,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
@@ -54,8 +53,6 @@ export const initBoundedStrategyIx = async (
       },
     }
   );
-  const transaction = new web3.Transaction().add(instruction);
-  return { transaction, signers: [openOrdersKey], openOrdersKey };
 };
 
 export const initializeBoundedStrategy = async (
@@ -65,13 +62,13 @@ export const initializeBoundedStrategy = async (
   assetMint: web3.PublicKey,
   boundedStrategyParams: BoundedStrategyParams
 ) => {
-  const { transaction: initBoundedStrategyTx, signers } =
-    await initBoundedStrategyIx(
-      program,
-      dexProgramId,
-      serumMarket,
-      assetMint,
-      boundedStrategyParams
-    );
-  await program.provider.send(initBoundedStrategyTx, signers);
+  const instruction = await initBoundedStrategyIx(
+    program,
+    dexProgramId,
+    serumMarket,
+    assetMint,
+    boundedStrategyParams
+  );
+  const initBoundedStrategyTx = new web3.Transaction().add(instruction);
+  await program.provider.send(initBoundedStrategyTx);
 };
