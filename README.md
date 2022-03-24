@@ -112,3 +112,4 @@ struct BoundedStrategy {
 - Should **BoundedTrade** be separated into separate UpperBoundTrade and LowerBoundTrade to reduce control flow inside the instruction?
 - If there’s an oracle dependency, then only assets with oracle support can be bought. Those that do not have an oracle should only use the BoundedTrade instruction.
 - Should the Strategy payer be stored on chain so when accounts are closed the SOL is reclaimed?
+- Should the deposit address have the same owner as the reclaim address?

@@ -9,7 +9,7 @@ pub mod state;
 
 use crate::instructions::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
 
 #[program]
 pub mod serum_remote {
