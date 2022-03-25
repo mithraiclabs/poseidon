@@ -10,7 +10,8 @@ export const initBoundedStrategyIx = async (
   dexProgram: web3.PublicKey,
   serumMarket: web3.PublicKey,
   mint: web3.PublicKey,
-  boundedStrategyParams: BoundedStrategyParams
+  boundedStrategyParams: BoundedStrategyParams,
+  opts: { owner?: web3.PublicKey } = {}
 ) => {
   const {
     boundPrice,
@@ -37,7 +38,7 @@ export const initBoundedStrategyIx = async (
     new BN(OpenOrders.getLayout(dexProgram).span),
     {
       accounts: {
-        payer: program.provider.wallet.publicKey,
+        payer: opts.owner || program.provider.wallet.publicKey,
         authority,
         mint,
         serumMarket,
