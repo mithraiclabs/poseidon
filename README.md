@@ -31,6 +31,12 @@ Right now there’s no simple way for a member of a DAO to initiate a proposal t
 1. Serum Execution Protocol
 2. Governance UI integration
 
+## Program Deployments
+
+| Program                          | Devnet                                         | Mainnet Beta |
+| -------------------------------- | ---------------------------------------------- | ------------ |
+| [Remote](/programs/serum-remote) | `8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs` | N/a          |
+
 ## Development
 
 1. `export ANCHOR_WALLET=$HOME/.config/solana/id.json`
@@ -106,3 +112,4 @@ struct BoundedStrategy {
 - Should **BoundedTrade** be separated into separate UpperBoundTrade and LowerBoundTrade to reduce control flow inside the instruction?
 - If there’s an oracle dependency, then only assets with oracle support can be bought. Those that do not have an oracle should only use the BoundedTrade instruction.
 - Should the Strategy payer be stored on chain so when accounts are closed the SOL is reclaimed?
+- Should the deposit address have the same owner as the reclaim address?

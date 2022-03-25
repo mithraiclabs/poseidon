@@ -1,6 +1,6 @@
 {
   "name": "@mithraic-labs/serum-remote",
-  "version": "0.0.1-rc.1",
+  "version": "0.0.1-rc.7",
   "description": "",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -12,10 +12,10 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "build:package": "yarn clean && yarn copy-euro && rollup -c",
+    "build:package": "yarn clean && yarn copy-idl && rollup -c",
     "clean": "rm -rf ./dist",
     "copy-idl": "test -e ../../target/types/serum_remote.ts && cp ../../target/types/serum_remote.ts ./src || echo \"Run anchor build first\" >&2",
-    "prepublishOnly": "yarn copy-euro && rollup -c",
+    "prepublishOnly": "yarn copy-idl && rollup -c",
     "test": "echo \"Error: no test specified\" && exit 1",
     "type-check": "tsc --noEmit"
   },

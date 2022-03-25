@@ -33,6 +33,10 @@ describe("InitBoundedStrategy", () => {
   let transferAmount = new u64(10_000_000);
 
   before(async () => {
+    const accountInfo = await program.provider.connection.getAccountInfo(
+      SOL_USDC_SERUM_MARKET
+    );
+    console.log("*** market account info", accountInfo);
     const serumMarket = await Market.load(
       program.provider.connection,
       SOL_USDC_SERUM_MARKET,
@@ -87,6 +91,7 @@ describe("InitBoundedStrategy", () => {
       boundedStrategy: boundedStrategyKey,
       authority,
       orderPayer,
+      openOrders: openOrdersKey,
     } = await deriveAllBoundedStrategyKeys(
       program,
       SOL_USDC_SERUM_MARKET,
@@ -105,7 +110,7 @@ describe("InitBoundedStrategy", () => {
       reclaimAddress
     );
 
-    const { transaction, signers, openOrdersKey } = await initBoundedStrategyIx(
+    const instruction = await initBoundedStrategyIx(
       program,
       DEX_ID,
       SOL_USDC_SERUM_MARKET,
@@ -120,8 +125,9 @@ describe("InitBoundedStrategy", () => {
         bound,
       }
     );
+    const transaction = new web3.Transaction().add(instruction);
     try {
-      await program.provider.send(transaction, signers);
+      await program.provider.send(transaction);
     } catch (error) {
       const parsedError = parseTranactionError(error);
       console.log("error: ", parsedError.msg);
@@ -161,12 +167,12 @@ describe("InitBoundedStrategy", () => {
     // Check the OpenOrders address
     assert.equal(
       boundedStrategy.openOrders.toString(),
-      openOrdersKey.publicKey.toString()
+      openOrdersKey.toString()
     );
 
     const openOrders = await OpenOrders.load(
       program.provider.connection,
-      openOrdersKey.publicKey,
+      openOrdersKey,
       DEX_ID
     );
     assert.ok(openOrders);
@@ -192,7 +198,7 @@ describe("InitBoundedStrategy", () => {
       reclaimDate = new anchor.BN(new Date().getTime() / 1_000 - 3600);
     });
     it("should error", async () => {
-      const { transaction, signers } = await initBoundedStrategyIx(
+      const instruction = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
@@ -207,8 +213,9 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
+      const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction, signers);
+        await program.provider.send(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -223,7 +230,7 @@ describe("InitBoundedStrategy", () => {
       boundPrice = new anchor.BN(0);
     });
     it("should error", async () => {
-      const { transaction, signers } = await initBoundedStrategyIx(
+      const instruction = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
@@ -238,8 +245,9 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
+      const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction, signers);
+        await program.provider.send(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -254,7 +262,7 @@ describe("InitBoundedStrategy", () => {
       orderSide = 2;
     });
     it("should error", async () => {
-      const { transaction, signers } = await initBoundedStrategyIx(
+      const instruction = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
@@ -269,8 +277,9 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
+      const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction, signers);
+        await program.provider.send(transaction);
         assert.ok(false);
       } catch (error) {
         console.log("*** error", error);
@@ -285,7 +294,7 @@ describe("InitBoundedStrategy", () => {
       bound = 2;
     });
     it("should error", async () => {
-      const { transaction, signers } = await initBoundedStrategyIx(
+      const instruction = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
@@ -300,8 +309,9 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
+      const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction, signers);
+        await program.provider.send(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -317,7 +327,7 @@ describe("InitBoundedStrategy", () => {
       orderSide = 0;
     });
     it("should error", async () => {
-      const { transaction, signers } = await initBoundedStrategyIx(
+      const instruction = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
@@ -332,8 +342,9 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
+      const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction, signers);
+        await program.provider.send(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -349,7 +360,7 @@ describe("InitBoundedStrategy", () => {
       orderSide = 1;
     });
     it("should error", async () => {
-      const { transaction, signers } = await initBoundedStrategyIx(
+      const instruction = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
@@ -364,8 +375,9 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
+      const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction, signers);
+        await program.provider.send(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -381,7 +393,7 @@ describe("InitBoundedStrategy", () => {
       transferAmount = new BN(0);
     });
     it("should error", async () => {
-      const { transaction, signers } = await initBoundedStrategyIx(
+      const instruction = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
@@ -396,8 +408,9 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
+      const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction, signers);
+        await program.provider.send(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -412,7 +425,7 @@ describe("InitBoundedStrategy", () => {
       orderSide = 0;
     });
     it("should error", async () => {
-      const { transaction, signers } = await initBoundedStrategyIx(
+      const instruction = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
@@ -427,8 +440,9 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
+      const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction, signers);
+        await program.provider.send(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -446,7 +460,7 @@ describe("InitBoundedStrategy", () => {
       bound = 0;
     });
     it("should error", async () => {
-      const { transaction, signers } = await initBoundedStrategyIx(
+      const instruction = await initBoundedStrategyIx(
         program,
         DEX_ID,
         SOL_USDC_SERUM_MARKET,
@@ -461,8 +475,9 @@ describe("InitBoundedStrategy", () => {
           bound,
         }
       );
+      const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction, signers);
+        await program.provider.send(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);

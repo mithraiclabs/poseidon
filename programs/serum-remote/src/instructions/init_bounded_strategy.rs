@@ -8,9 +8,9 @@ use std::convert::identity;
 
 use crate::{
     authority_signer_seeds,
-    constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
+    constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED, OPEN_ORDERS_SEED},
     errors::ErrorCode,
-    state::BoundedStrategy,
+    state::BoundedStrategy, open_orders_seeds,
 };
 
 #[derive(Accounts)]
@@ -59,8 +59,12 @@ pub struct InitBoundedStrategy<'info> {
 
     /// The OpenOrders account to initialize
     /// CHECK: constraints handled
-    #[account(mut)]
-    pub open_orders: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [strategy.key().as_ref(), OPEN_ORDERS_SEED.as_bytes()],
+        bump
+    )]
+    pub open_orders: UncheckedAccount<'info>,
 
     /// The Serum program
     pub dex_program: Program<'info, dex::Dex>,
@@ -102,7 +106,19 @@ pub fn handler(
         from: ctx.accounts.payer.to_account_info(),
         to: ctx.accounts.open_orders.to_account_info(),
     };
-    let cpi_ctx = CpiContext::new(ctx.accounts.dex_program.to_account_info(), cpi_accounts);
+    let open_orders_bump = match ctx.bumps.get("open_orders") {
+        Some(bump) => *bump,
+        None => {
+            msg!("Wrong bump key. Available keys are {:?}", ctx.bumps.keys());
+            panic!("Wrong bump key")
+        }
+    };
+    let cpi_ctx = CpiContext {
+        program: ctx.accounts.dex_program.to_account_info(),
+        accounts: cpi_accounts,
+        remaining_accounts: Vec::new(),
+        signer_seeds: &[open_orders_seeds!(ctx, open_orders_bump)]
+    };
 
     anchor_lang::system_program::create_account(
         cpi_ctx,

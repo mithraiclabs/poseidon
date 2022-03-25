@@ -108,7 +108,22 @@ export type SerumRemote = {
         {
           "name": "openOrders",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "BoundedStrategy",
+                "path": "strategy"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "openOrders"
+              }
+            ]
+          }
         },
         {
           "name": "dexProgram",
@@ -583,7 +598,22 @@ export const IDL: SerumRemote = {
         {
           "name": "openOrders",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "BoundedStrategy",
+                "path": "strategy"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "openOrders"
+              }
+            ]
+          }
         },
         {
           "name": "dexProgram",

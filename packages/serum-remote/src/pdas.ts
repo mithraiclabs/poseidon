@@ -40,6 +40,15 @@ export const deriveAuthority = (
     program.programId
   );
 
+export const deriveOpenOrders = (
+  program: Program<SerumRemote>,
+  strategy: web3.PublicKey
+) =>
+  web3.PublicKey.findProgramAddress(
+    [strategy.toBuffer(), textEncoder.encode("openOrders")],
+    program.programId
+  );
+
 export const deriveAllBoundedStrategyKeys = async (
   program: Program<SerumRemote>,
   serumMarket: web3.PublicKey,
@@ -56,5 +65,6 @@ export const deriveAllBoundedStrategyKeys = async (
   );
   const [orderPayer] = await deriveOrderPayer(program, boundedStrategy);
   const [authority] = await deriveAuthority(program, boundedStrategy);
-  return { orderPayer, boundedStrategy, authority };
+  const [openOrders] = await deriveOpenOrders(program, boundedStrategy);
+  return { orderPayer, boundedStrategy, authority, openOrders };
 };

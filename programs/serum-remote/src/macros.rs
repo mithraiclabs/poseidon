@@ -10,6 +10,17 @@ macro_rules! authority_signer_seeds {
 }
 
 #[macro_export]
+macro_rules! open_orders_seeds {
+    ($ctx:expr, $bump:ident) => {
+        &[
+            &$ctx.accounts.strategy.key().to_bytes()[..],
+            OPEN_ORDERS_SEED.as_bytes(),
+            &[$bump],
+        ]
+    };
+}
+
+#[macro_export]
 macro_rules! place_order {
     ($ctx:expr, $order_info:expr, $signer_seeds:expr) => {
         let new_order_accounts = NewOrderV3 {
