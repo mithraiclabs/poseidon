@@ -99,16 +99,8 @@ struct BoundedStrategy {
 
 ### Open Questions & Concerns
 
-- Say the DAO only holds its native community token, it only has a Serum USDC based market and the proposer would like to buy SRM. How does the execution get routed optimally? Price impact or slippage on the native token sale should be taken into careful consideration as well.
-  - If this is the case the DAO could be forced to have multiple proposals that execute over time. I.e. say the DAO wants to get from TokenA to TokenB, off chain they need to find the route like _TokenA → USDC → TokenB_ because there is a TokenA/USDC Serum market and a TokenB/USDC Serum market.
-    - Proposal 1) convert TokenA to USDC using **TradeMarket**
-    - Some period of time happens where proposal is passed, executed and then the Serum transactions are executed by the crank
-    - Proposal 2) convert USDC to TokenB using **TradeMarket**
-- Should the _reclaim_address_ always be the Treasury account address that originally transferred the assets? Is there any reason to allow the unused assets to be transferred elsewhere?
-- Should **BoundedTrade** be separated into separate UpperBoundTrade and LowerBoundTrade to reduce control flow inside the instruction?
-- If there’s an oracle dependency, then only assets with oracle support can be bought. Those that do not have an oracle should only use the BoundedTrade instruction.
 - Should the Strategy payer be stored on chain so when accounts are closed the SOL is reclaimed?
-- Should the deposit address have the same owner as the reclaim address?
+- Should the protocol ensure the deposit address has the same owner as the reclaim address?
 
 ## Governance UI integration
 
