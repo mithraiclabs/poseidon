@@ -484,6 +484,11 @@ export type SerumRemote = {
       "code": 6015,
       "name": "DepositAddressMisMatch",
       "msg": "Depsoit address does not match the strategy"
+    },
+    {
+      "code": 6016,
+      "name": "WrongReclaimAddress",
+      "msg": "Cannot rclaim to different address"
     }
   ]
 };
@@ -974,6 +979,11 @@ export const IDL: SerumRemote = {
       "code": 6015,
       "name": "DepositAddressMisMatch",
       "msg": "Depsoit address does not match the strategy"
+    },
+    {
+      "code": 6016,
+      "name": "WrongReclaimAddress",
+      "msg": "Cannot rclaim to different address"
     }
   ]
 };

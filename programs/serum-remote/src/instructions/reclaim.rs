@@ -36,7 +36,11 @@ pub struct Reclaim<'info> {
     /// CHECK: Check is handled by the Serum program
     pub serum_market: UncheckedAccount<'info>,
     /// The account that will receive the assets
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = reclaim_account.key() == strategy.reclaim_address
+            @ ErrorCode::WrongReclaimAddress
+    )]
     pub reclaim_account: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,

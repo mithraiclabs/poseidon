@@ -233,5 +233,42 @@ describe("Reclaim", () => {
         await program.provider.connection.getAccountInfo(boundedStrategyKey);
       assert.ok(!boundedStrategyInfo);
     });
+
+    describe("Bad reclaim address", () => {
+      let badReclaimAddress: web3.PublicKey;
+      beforeEach(async () => {
+        const { instruction, associatedAddress } =
+          await createAssociatedTokenInstruction(
+            program.provider,
+            USDC_MINT,
+            new web3.Keypair().publicKey
+          );
+        badReclaimAddress = associatedAddress;
+        const createAtaTx = new web3.Transaction().add(instruction);
+        try {
+          await program.provider.send(createAtaTx);
+        } catch (err) {}
+      });
+      it("should error", async () => {
+        const ix = reclaimIx(
+          program,
+          boundedStrategyKey,
+          {
+            ...boundedStrategy,
+            reclaimAddress: badReclaimAddress,
+          },
+          DEX_ID
+        );
+        const transaction = new web3.Transaction().add(ix);
+        try {
+          await program.provider.send(transaction);
+          assert.ok(false);
+        } catch (error) {
+          const parsedError = parseTranactionError(error);
+          assert.equal(parsedError.msg, "Cannot rclaim to different address");
+        }
+        assert.ok(true);
+      });
+    });
   });
 });
