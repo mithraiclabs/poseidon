@@ -119,3 +119,5 @@ With a direct integration into the Solana Realms UI, any member of a DAO can pro
 **Bound**: If Order Side is \*Bid **\***then the bound must be set to Upper. The protocol takes into account the BoundPrice, so an upper bounded bid would translate to “Execute a bid for token B as long as the lowest ask is below the bound price”. When the Order Side is _Ask_ then the bound must be set to Lower. This would translate to “Execute an ask or sell A for token B as long as the highest bid is above the bound price”. Bids cannot be lower bound and asks cannot be upper bound.
 
 **Bounded Price**: The price that governs the bound and is used to determine if the protocol should execute trades or not. (See **Bound** for more information).
+
+**Reclaim Date**: The date that the strategy can be closed and any unused trading funds returned to the Reclaim Address (which is always set to the address the transferred the assets initially)
