@@ -327,6 +327,10 @@ export type SerumRemote = {
             "type": "publicKey"
           },
           {
+            "name": "serumDexId",
+            "type": "publicKey"
+          },
+          {
             "name": "serumMarket",
             "type": "publicKey"
           },
@@ -824,6 +828,10 @@ export const IDL: SerumRemote = {
         "fields": [
           {
             "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "serumDexId",
             "type": "publicKey"
           },
           {

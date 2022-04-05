@@ -165,6 +165,7 @@ describe("InitBoundedStrategy", () => {
     );
     assert.equal(boundedStrategy.orderSide, orderSide);
     assert.equal(boundedStrategy.bound, bound);
+    assert.equal(boundedStrategy.serumDexId.toString(), DEX_ID.toString());
     // Check the OpenOrders address
     assert.equal(
       boundedStrategy.openOrders.toString(),

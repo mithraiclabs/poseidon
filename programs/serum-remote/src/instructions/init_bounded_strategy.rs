@@ -175,6 +175,7 @@ pub fn handler(
     bounded_strategy.bound = bound;
     bounded_strategy.open_orders = ctx.accounts.open_orders.key();
     bounded_strategy.authority_bump = authority_bump;
+    bounded_strategy.serum_dex_id = ctx.accounts.dex_program.key();
 
     Ok(())
 }
