@@ -265,7 +265,7 @@ describe("Reclaim", () => {
           assert.ok(false);
         } catch (error) {
           const parsedError = parseTranactionError(error);
-          assert.equal(parsedError.msg, "Cannot rclaim to different address");
+          assert.equal(parsedError.msg, "Cannot reclaim to different address");
         }
         assert.ok(true);
       });

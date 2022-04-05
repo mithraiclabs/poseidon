@@ -55,6 +55,10 @@ pub struct InitBoundedStrategy<'info> {
   )]
     pub reclaim_account: Account<'info, TokenAccount>,
     /// The account where swapped assets will be transferred to
+    #[account(
+        constraint = deposit_account.owner == reclaim_account.owner
+        @ ErrorCode::BadDepositAddress 
+    )]
     pub deposit_account: Account<'info, TokenAccount>,
 
     /// The OpenOrders account to initialize

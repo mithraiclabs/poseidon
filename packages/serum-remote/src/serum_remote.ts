@@ -488,7 +488,12 @@ export type SerumRemote = {
     {
       "code": 6016,
       "name": "WrongReclaimAddress",
-      "msg": "Cannot rclaim to different address"
+      "msg": "Cannot reclaim to different address"
+    },
+    {
+      "code": 6017,
+      "name": "BadDepositAddress",
+      "msg": "Deposit address must have same owner as reclaim address"
     }
   ]
 };
@@ -983,7 +988,12 @@ export const IDL: SerumRemote = {
     {
       "code": 6016,
       "name": "WrongReclaimAddress",
-      "msg": "Cannot rclaim to different address"
+      "msg": "Cannot reclaim to different address"
+    },
+    {
+      "code": 6017,
+      "name": "BadDepositAddress",
+      "msg": "Deposit address must have same owner as reclaim address"
     }
   ]
 };
