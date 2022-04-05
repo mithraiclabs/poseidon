@@ -1,6 +1,6 @@
 import { parseIdlErrors, ProgramError, web3 } from "@project-serum/anchor";
 import { IDL } from "./serum_remote";
-import { Bound, OrderSide } from "./types";
+import { Bound, OrderSide, SolCluster } from "./types";
 
 type EndpointTypes = "mainnet" | "devnet" | "localnet";
 
@@ -15,6 +15,25 @@ export const getProgramId = (cluster: EndpointTypes) => {
       return new web3.PublicKey("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
     default:
       throw new Error("Unsupported cluster version");
+  }
+};
+
+/**
+ * Given a connection to any node, return the cluster name
+ */
+export const getClusterNameFromConnection = async (
+  connection: web3.Connection
+): Promise<SolCluster> => {
+  const genesisHash = await connection.getGenesisHash();
+  switch (genesisHash) {
+    case "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d":
+      return "mainnet-beta";
+    case "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG":
+      return "devnet";
+    case "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY":
+      return "testnet";
+    default:
+      return "localnet";
   }
 };
 

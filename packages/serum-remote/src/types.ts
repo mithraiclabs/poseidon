@@ -1,5 +1,7 @@
 import { BN, web3 } from "@project-serum/anchor";
 
+export type SolCluster = web3.Cluster | "localnet";
+
 export enum Bound {
   "Lower" = 0,
   "Upper" = 1,

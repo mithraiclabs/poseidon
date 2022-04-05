@@ -1,0 +1,16 @@
+version: "3.7"
+
+secrets:
+  solana_priv_key:
+    file: ~/.config/solana/id.json
+
+services:
+  executor_bot:
+    build:
+      context: .
+      dockerfile: .
+    secrets:
+      - solana_priv_key
+    environment:
+      JSON_RPC_URL: https://api.devnet.solana.com
+      SOLANA_KEYPAIR_PATH: /run/secrets/solana_priv_key

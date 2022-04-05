@@ -1,0 +1,217 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  JsonRpcUrl:
+    Description: Solana JSON RPC URL
+    Type: String
+    Default: https://api.devnet.solana.com
+  VPC:
+    Description: The VPC ID to deploy to
+    Type: String
+
+Resources:
+  Cluster:
+    Properties:
+      ClusterName: !Ref AWS::StackName
+      Tags:
+        - Key: com.docker.compose.project
+          Value: !Ref AWS::StackName
+    Type: AWS::ECS::Cluster
+
+  DefaultNetwork:
+    Properties:
+      GroupDescription: executor-bot Security Group for default network
+      Tags:
+        - Key: com.docker.compose.project
+          Value: !Ref AWS::StackName
+        - Key: com.docker.compose.network
+          Value: !Join ["", [!Ref AWS::StackName, "_default"]]
+      VpcId: !Ref VPC
+    Type: AWS::EC2::SecurityGroup
+  DefaultNetworkIngress:
+    Properties:
+      Description: Allow communication within network default
+      GroupId:
+        Ref: DefaultNetwork
+      IpProtocol: "-1"
+      SourceSecurityGroupId:
+        Ref: DefaultNetwork
+    Type: AWS::EC2::SecurityGroupIngress
+  ExecutorbotService:
+    DependsOn:
+      - PostgresdbService
+    Properties:
+      Cluster:
+        Fn::GetAtt:
+          - Cluster
+          - Arn
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DeploymentController:
+        Type: ECS
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - Ref: DefaultNetwork
+          Subnets:
+            - !Ref SubnetA
+            - !Ref SubnetB
+            - !Ref SubnetC
+      PlatformVersion: 1.4.0
+      PropagateTags: SERVICE
+      SchedulingStrategy: REPLICA
+      ServiceRegistries:
+        - RegistryArn:
+            Fn::GetAtt:
+              - ExecutorbotServiceDiscoveryEntry
+              - Arn
+      Tags:
+        - Key: com.docker.compose.project
+          Value: !Ref AWS::StackName
+        - Key: com.docker.compose.service
+          Value: executor_bot
+      TaskDefinition:
+        Ref: ExecutorbotTaskDefinition
+    Type: AWS::ECS::Service
+  ExecutorbotServiceDiscoveryEntry:
+    Properties:
+      Description: '"executor_bot" service discovery entry in Cloud Map'
+      DnsConfig:
+        DnsRecords:
+          - TTL: 60
+            Type: A
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      Name: executor_bot
+      NamespaceId:
+        Ref: CloudMap
+    Type: AWS::ServiceDiscovery::Service
+  ExecutorbotTaskDefinition:
+    Properties:
+      ContainerDefinitions:
+        - Command:
+            - '[{"Name":"solana_priv_key","Keys":null}]'
+          Essential: false
+          Image: docker/ecs-secrets-sidecar:1.0
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Ref: LogGroup
+              awslogs-region:
+                Ref: AWS::Region
+              awslogs-stream-prefix: !Ref AWS::StackName
+          MountPoints:
+            - ContainerPath: /run/secrets/
+              SourceVolume: secrets
+          Name: Executorbot_Secrets_InitContainer
+          Secrets:
+            - Name: solana_priv_key
+              ValueFrom: arn:aws:secretsmanager:us-east-1:167913859544:secret:solana_key_1-vaLZq5
+        - Command:
+            - us-east-1.compute.internal
+            - !Join ["", [!Ref AWS::StackName, ".local"]]
+          Essential: false
+          Image: docker/ecs-searchdomain-sidecar:1.0
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Ref: LogGroup
+              awslogs-region:
+                Ref: AWS::Region
+              awslogs-stream-prefix: !Ref AWS::StackName
+          Name: Executorbot_ResolvConf_InitContainer
+        - DependsOn:
+            - Condition: SUCCESS
+              ContainerName: Executorbot_Secrets_InitContainer
+            - Condition: SUCCESS
+              ContainerName: Executorbot_ResolvConf_InitContainer
+          Environment:
+            - Name: DATABASE_URL
+              Value:
+                !Join [
+                  "",
+                  [
+                    "postgres://",
+                    !Sub "{{resolve:secretsmanager:${PostgresSecret}::username}}",
+                    ":",
+                    !Sub "{{resolve:secretsmanager:${PostgresSecret}::password}}",
+                    "@postgresdb/executor_bot",
+                  ],
+                ]
+            - Name: JSON_RPC_URL
+              Value: !Ref JsonRpcUrl
+            - Name: GRAPHILE_LOGGER_DEBUG
+              Value: !Ref GraphileLoggerDebug
+            - Name: HONEY_BADGER_KEY
+              Value: !Ref HoneybadgerKey
+          Essential: true
+          Image: docker.io/psyoptions/executor_bot:latest@sha256:08f6686ff6507b9f431595fd92a55e31ea7b40cf9cb8201b5dbf44a43c0d97d1
+          LinuxParameters: {}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Ref: LogGroup
+              awslogs-region:
+                Ref: AWS::Region
+              awslogs-stream-prefix: !Ref AWS::StackName
+          MountPoints:
+            - ContainerPath: /run/secrets/
+              ReadOnly: true
+              SourceVolume: secrets
+          Name: executor_bot
+      Cpu: "256"
+      ExecutionRoleArn:
+        Ref: ExecutorbotTaskExecutionRole
+      Family: !Join ["-", [!Ref AWS::StackName, "executor_bot"]]
+      Memory: "512"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Volumes:
+        - Name: secrets
+    Type: AWS::ECS::TaskDefinition
+  ExecutorbotTaskExecutionRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Condition: {}
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - secretsmanager:GetSecretValue
+                  - ssm:GetParameters
+                  - kms:Decrypt
+                Condition: {}
+                Effect: Allow
+                Principal: {}
+                Resource:
+                  - arn:aws:secretsmanager:us-east-1:167913859544:secret:solana_key_1-vaLZq5
+          PolicyName: executor_botGrantAccessToSecrets
+      Tags:
+        - Key: com.docker.compose.project
+          Value: !Ref AWS::StackName
+        - Key: com.docker.compose.service
+          Value: executor_bot
+    Type: AWS::IAM::Role
+
+  LogGroup:
+    Properties:
+      LogGroupName: !Join ["", ["/docker-compose/", !Ref AWS::StackName]]
+    Type: AWS::Logs::LogGroup

@@ -4,7 +4,7 @@
   <h1>Serum Remote</h1>
 
   <p>
-    <strong>Project Serum Rust Monorepo</strong>
+    <strong>Project Serum Serum Remote Repo</strong>
   </p>
 
   <p>

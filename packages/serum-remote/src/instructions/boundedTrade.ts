@@ -1,5 +1,5 @@
 import { Program, web3 } from "@project-serum/anchor";
-import { Market, OpenOrders } from "@project-serum/serum";
+import { Market } from "@project-serum/serum";
 import { BoundedStrategy } from "../types";
 import { SerumRemote } from "../serum_remote";
 import { TOKEN_PROGRAM_ID } from "@project-serum/serum/lib/token-instructions";
@@ -16,11 +16,6 @@ export const boundedTradeIx = async (
       // @ts-ignore
       serumMarket._decoded.vaultSignerNonce.toArrayLike(Buffer, "le", 8),
     ],
-    serumMarket.programId
-  );
-  const openOrders = await OpenOrders.load(
-    program.provider.connection,
-    boundedStrategy.openOrders,
     serumMarket.programId
   );
   return program.instruction.boundedTrade({
