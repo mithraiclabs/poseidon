@@ -38,5 +38,6 @@ pub enum ErrorCode {
     WrongReclaimAddress,
     #[msg("Deposit address must have same owner as reclaim address")]
     BadDepositAddress,
-
+    #[msg("open orders does not match strategy")]
+    WrongOpenOrdersKey,
 }

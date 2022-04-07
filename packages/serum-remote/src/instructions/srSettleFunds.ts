@@ -4,7 +4,7 @@ import { BoundedStrategy } from "../types";
 import { SerumRemote } from "../serum_remote";
 import { TOKEN_PROGRAM_ID } from "@project-serum/serum/lib/token-instructions";
 
-export const boundedTradeIx = async (
+export const srSettleFundsIx = async (
   program: Program<SerumRemote>,
   strategyKey: web3.PublicKey,
   serumMarket: Market,
@@ -19,20 +19,13 @@ export const boundedTradeIx = async (
     ],
     serumMarket.programId
   );
-  return program.instruction.boundedTrade({
+  return program.instruction.srSettleFunds({
     accounts: {
-      payer: program.provider.wallet.publicKey,
       strategy: strategyKey,
+      reclaimAccount: boundedStrategy.reclaimAddress,
       serumMarket: serumMarket.address,
-      bids: serumMarket.bidsAddress,
-      asks: serumMarket.asksAddress,
       openOrders: boundedStrategy.openOrders,
-      orderPayer: boundedStrategy.orderPayer,
       authority: boundedStrategy.authority,
-      // @ts-ignore
-      requestQueue: serumMarket._decoded.requestQueue,
-      // @ts-ignore
-      eventQueue: serumMarket._decoded.eventQueue,
       // @ts-ignore
       coinVault: serumMarket._decoded.baseVault,
       // @ts-ignore
@@ -41,7 +34,6 @@ export const boundedTradeIx = async (
       depositAccount: boundedStrategy.depositAddress,
       dexProgram: serumMarket.programId,
       tokenProgramId: TOKEN_PROGRAM_ID,
-      rent: web3.SYSVAR_RENT_PUBKEY,
     },
     remainingAccounts: serumReferral
       ? [{ pubkey: serumReferral, isSigner: false, isWritable: true }]

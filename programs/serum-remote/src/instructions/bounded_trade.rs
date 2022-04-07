@@ -47,9 +47,12 @@ pub struct BoundedTrade<'info> {
       owner = dex::ID
     )]
     pub asks: UncheckedAccount<'info>,
+    
     #[account(
       mut,
-      owner = dex::ID
+      owner = dex::ID,
+      constraint = open_orders.key() == strategy.open_orders
+          @ ErrorCode::WrongOpenOrdersKey
     )]
     /// CHECK: Serum checks the OpenOrders owners
     pub open_orders: UncheckedAccount<'info>,
@@ -99,7 +102,7 @@ pub struct BoundedTrade<'info> {
 
 declare_check_assert_macros!(SourceFileId::State);
 
-pub fn handler(ctx: Context<BoundedTrade>) -> Result<()> {
+pub fn handler<'a, 'b, 'c, 'info>(ctx: Context<'a, 'b, 'c, 'info, BoundedTrade<'info>>) -> Result<()> {
     let bounded_strategy = &ctx.accounts.strategy;
 
     let (best_bid, best_ask, coin_lot_size, pc_lot_size) = {
@@ -228,9 +231,9 @@ struct OrderInfo {
     max_pc_qty: NonZeroU64,
 }
 
-struct SettleWallets<'info> {
+pub struct SettleWallets<'info> {
     /// CHECK: blah
-    coin_wallet: AccountInfo<'info>,
+    pub coin_wallet: AccountInfo<'info>,
     /// CHECK: blah
-    pc_wallet: AccountInfo<'info>,
+    pub pc_wallet: AccountInfo<'info>
 }

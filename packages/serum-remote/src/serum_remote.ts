@@ -314,6 +314,67 @@ export type SerumRemote = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "srSettleFunds",
+      "accounts": [
+        {
+          "name": "reclaimAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "strategy",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "serumMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "coinVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pcVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumVaultSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "depositAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgramId",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -498,6 +559,11 @@ export type SerumRemote = {
       "code": 6017,
       "name": "BadDepositAddress",
       "msg": "Deposit address must have same owner as reclaim address"
+    },
+    {
+      "code": 6018,
+      "name": "WrongOpenOrdersKey",
+      "msg": "open orders does not match strategy"
     }
   ]
 };
@@ -818,6 +884,67 @@ export const IDL: SerumRemote = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "srSettleFunds",
+      "accounts": [
+        {
+          "name": "reclaimAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "strategy",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "serumMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "coinVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pcVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumVaultSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "depositAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgramId",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -1002,6 +1129,11 @@ export const IDL: SerumRemote = {
       "code": 6017,
       "name": "BadDepositAddress",
       "msg": "Deposit address must have same owner as reclaim address"
+    },
+    {
+      "code": 6018,
+      "name": "WrongOpenOrdersKey",
+      "msg": "open orders does not match strategy"
     }
   ]
 };

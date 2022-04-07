@@ -1,7 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import { BN, Program, Spl, web3 } from "@project-serum/anchor";
-import { Market, OpenOrders } from "@project-serum/serum";
-import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
+import { Market, DexInstructions } from "@project-serum/serum";
+import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
 import {
   BoundedStrategy,
@@ -9,6 +9,7 @@ import {
 } from "../packages/serum-remote/src";
 import { boundedTradeIx } from "../packages/serum-remote/src/instructions/boundedTrade";
 import { initializeBoundedStrategy } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
+import { srSettleFundsIx } from "../packages/serum-remote/src/instructions/srSettleFunds";
 import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {
@@ -40,9 +41,11 @@ describe("BoundedTrade", () => {
   let serumMarket: Market;
   let highestBid: [number, number, anchor.BN, anchor.BN];
   let lowestAsk: [number, number, anchor.BN, anchor.BN];
-  let quoteTransferAmount = new u64(10_000_000);
-  let baseTransferAmount = new u64(10_000_000_000);
+  let quoteTransferAmount = new BN(10_000_000);
+  let baseTransferAmount = new BN(10_000_000_000);
   let boundedStrategy: BoundedStrategy;
+  let serumReferralKey: web3.PublicKey;
+  let nonce = 1;
   let boundedStrategyKey: web3.PublicKey,
     authority: web3.PublicKey,
     orderPayer: web3.PublicKey;
@@ -62,6 +65,7 @@ describe("BoundedTrade", () => {
     highestBid = bids.getL2(1)[0];
     lowestAsk = asks.getL2(1)[0];
 
+    const referralOwner = new web3.Keypair();
     // This TX may fail with concurrent tests
     // TODO: Write more elegant solution
     const { instruction, associatedAddress } =
@@ -73,9 +77,17 @@ describe("BoundedTrade", () => {
         serumMarket.baseMintAddress
       );
     baseAddress = baseAta;
+    const { instruction: createReferralIx, associatedAddress: referralAta } =
+      await createAssociatedTokenInstruction(
+        program.provider,
+        USDC_MINT,
+        referralOwner.publicKey
+      );
+    serumReferralKey = referralAta;
     const createAtaTx = new web3.Transaction()
       .add(instruction)
-      .add(baseMintAtaIx);
+      .add(baseMintAtaIx)
+      .add(createReferralIx);
     try {
       await program.provider.send(createAtaTx);
     } catch (err) {}
@@ -111,6 +123,9 @@ describe("BoundedTrade", () => {
     transaction.add(syncNativeIx);
     await program.provider.send(transaction);
   });
+  beforeEach(() => {
+    nonce += 1;
+  });
 
   describe("Order side is Bid", () => {
     beforeEach(async () => {
@@ -126,7 +141,9 @@ describe("BoundedTrade", () => {
           boundPrice = lowestAsk[2].addn(10);
           const boundedParams = {
             boundPrice,
-            reclaimDate,
+            reclaimDate: new anchor.BN(
+              new Date().getTime() / 1_000 + 3600 + nonce
+            ),
             reclaimAddress: quoteAddress,
             depositAddress: baseAddress,
             orderSide,
@@ -198,6 +215,58 @@ describe("BoundedTrade", () => {
             depositTokenDiff.toString(),
             maxPurcahseNative.toString()
           );
+        });
+        it("The referral account should receive a commission", async () => {
+          const referralAccountBefore =
+            await splTokenProgram.account.token.fetch(serumReferralKey);
+          // Create and send the BoundedTrade transaction
+          const ix = await boundedTradeIx(
+            program,
+            boundedStrategyKey,
+            serumMarket,
+            boundedStrategy,
+            serumReferralKey
+          );
+          const consumeEventsIx = DexInstructions.consumeEvents({
+            market: serumMarket.address,
+            eventQueue: serumMarket.decoded.eventQueue,
+            coinFee: baseAddress,
+            pcFee: serumReferralKey,
+            openOrdersAccounts: [boundedStrategy.openOrders],
+            limit: 10,
+            programId: DEX_ID,
+          });
+          const settleIx = await srSettleFundsIx(
+            program,
+            boundedStrategyKey,
+            serumMarket,
+            boundedStrategy,
+            serumReferralKey
+          );
+          const transaction = new web3.Transaction()
+            .add(ix)
+            .add(consumeEventsIx)
+            .add(settleIx);
+          try {
+            await program.provider.send(transaction);
+          } catch (error) {
+            console.log("*** error", error);
+            const parsedError = parseTranactionError(error);
+            console.log("error: ", parsedError.msg);
+            assert.ok(false);
+          }
+          const referralAccountAfter =
+            await splTokenProgram.account.token.fetch(serumReferralKey);
+
+          const referralAmtDiff = referralAccountAfter.amount.sub(
+            referralAccountBefore.amount
+          );
+          console.log(
+            "*** referralAmtDiff.toNumber()",
+            referralAmtDiff.toNumber()
+          );
+          // add the test for the referral account.
+          assert.ok(referralAmtDiff.toNumber() > 0);
         });
       });
 
