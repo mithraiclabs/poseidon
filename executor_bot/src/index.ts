@@ -1,11 +1,16 @@
 import * as fs from "fs";
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider, web3 } from "@project-serum/anchor";
-import { getProgramId, SerumRemote, IDL } from "@mithraic-labs/serum-remote";
+import {
+  getProgramId,
+  instructions,
+  SerumRemote,
+  IDL,
+} from "@mithraic-labs/serum-remote";
 import config from "./config";
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
+import { Market } from "@project-serum/serum";
 
-const AWS_SOLANA_KEY_FILE_PATH = "/run/secrets/solana_priv_key";
 // Poll the RPC node for new accounts every 10 min
 const POLL_INTERVAL = 600 * 1_000;
 
@@ -42,9 +47,65 @@ const connection = new web3.Connection(config.jsonRpcUrl);
 
   // Query get program accounts to all bounded strategies.
   const boundedStrategies = await program.account.boundedStrategy.all();
-  console.log("*** boundedStrategies", boundedStrategies);
 
-  // TODO: check & handle which are executable
+  const currentTime = new Date().getTime() / 1_000;
+  await Promise.all(
+    boundedStrategies.map(async (boundedStrategy) => {
+      // Backwards compatibility for old Devnet program. Can be removed April 12, 2022
+      if (
+        boundedStrategy.account.serumDexId.toString() ===
+        web3.SystemProgram.programId.toString()
+      ) {
+        return;
+      }
+      const transaction = new web3.Transaction();
+      // handle reclaiming assets for those that have expired
+      if (boundedStrategy.account.reclaimDate.toNumber() < currentTime) {
+        const ix = instructions.reclaimIx(
+          program,
+          boundedStrategy.publicKey,
+          boundedStrategy.account,
+          boundedStrategy.account.serumDexId
+        );
+        transaction.add(ix);
+      } else {
+        const serumMarket = await Market.load(
+          connection,
+          boundedStrategy.account.serumMarket,
+          {},
+          boundedStrategy.account.serumDexId
+        );
+        // TODO: Check the current price to see if the transaction should be sent
+        const [bids, asks] = await Promise.all([
+          serumMarket.loadBids(connection),
+          serumMarket.loadAsks(connection),
+        ]);
 
-  // TODO: check & handle reclaiming assets for those that have expired
+        const humanReadableBoundPrice = serumMarket.priceLotsToNumber(
+          boundedStrategy.account.boundedPrice
+        );
+        const lowestAsk = asks.getL2(1)[0];
+        const highestBid = bids.getL2(1)[0];
+
+        if (
+          (boundedStrategy.account.orderSide === 0 &&
+            lowestAsk[0] < humanReadableBoundPrice) ||
+          (boundedStrategy.account.orderSide === 1 &&
+            highestBid[0] > humanReadableBoundPrice)
+        ) {
+          const ix = await instructions.boundedTradeIx(
+            program,
+            boundedStrategy.publicKey,
+            serumMarket,
+            boundedStrategy.account
+          );
+          transaction.add(ix);
+        }
+
+        if (transaction.instructions.length) {
+          await program.provider.send(transaction);
+        }
+      }
+    })
+  );
 })();

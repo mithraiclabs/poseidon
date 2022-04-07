@@ -13,8 +13,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@mithraic-labs/serum-remote": "^0.0.1-rc.8",
-    "@project-serum/anchor": "^0.23.0"
+    "@mithraic-labs/serum-remote": "^0.0.1-rc.13",
+    "@project-serum/anchor": "^0.23.0",
+    "@project-serum/serum": "^0.13.61"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

@@ -23,6 +23,7 @@ export type BoundedStrategy = {
   depositAddress: web3.PublicKey;
   bound: number;
   boundedPrice: BN;
+  serumDexId: web3.PublicKey;
 };
 
 export type BoundedStrategyParams = {

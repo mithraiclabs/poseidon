@@ -327,10 +327,6 @@ export type SerumRemote = {
             "type": "publicKey"
           },
           {
-            "name": "serumDexId",
-            "type": "publicKey"
-          },
-          {
             "name": "serumMarket",
             "type": "publicKey"
           },
@@ -369,6 +365,10 @@ export type SerumRemote = {
           {
             "name": "authorityBump",
             "type": "u8"
+          },
+          {
+            "name": "serumDexId",
+            "type": "publicKey"
           }
         ]
       }
@@ -831,10 +831,6 @@ export const IDL: SerumRemote = {
             "type": "publicKey"
           },
           {
-            "name": "serumDexId",
-            "type": "publicKey"
-          },
-          {
             "name": "serumMarket",
             "type": "publicKey"
           },
@@ -873,6 +869,10 @@ export const IDL: SerumRemote = {
           {
             "name": "authorityBump",
             "type": "u8"
+          },
+          {
+            "name": "serumDexId",
+            "type": "publicKey"
           }
         ]
       }

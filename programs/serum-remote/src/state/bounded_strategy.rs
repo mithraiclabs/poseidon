@@ -5,8 +5,6 @@ use anchor_lang::prelude::*;
 pub struct BoundedStrategy {
     /// The PDA authority that owns the order_payer and open_orders account
     pub authority: Pubkey,
-    /// The address of the serum dex program this strategy trades on
-    pub serum_dex_id: Pubkey,
     /// The Serum market where the execution will take place
     pub serum_market: Pubkey,
     /// The open_orders account that is owned by the authority and used to place orders
@@ -28,4 +26,6 @@ pub struct BoundedStrategy {
     /// equivalent to the price on the Serum Market's order book
     pub bounded_price: u64,
     pub authority_bump: u8,
+    /// The address of the serum dex program this strategy trades on
+    pub serum_dex_id: Pubkey,
 }
