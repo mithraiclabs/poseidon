@@ -42,10 +42,10 @@
     "@ethersproject/logger" "^5.6.0"
     hash.js "1.1.7"
 
-"@mithraic-labs/serum-remote@^0.0.1-rc.13":
-  version "0.0.1-rc.13"
-  resolved "https://registry.yarnpkg.com/@mithraic-labs/serum-remote/-/serum-remote-0.0.1-rc.13.tgz#a8edaa187a7fba483fb4a2b193f172cc715b8762"
-  integrity sha512-aLY+zHHCEJ5eCiSOtOEgaBB/99qTeLmxx0Nn7NsW15OPamVsjJc59cmPAncqwwgdKW/pNlgw9lHrcjCIvJ0gLQ==
+"@mithraic-labs/serum-remote@^0.0.1-rc.14":
+  version "0.0.1-rc.14"
+  resolved "https://registry.yarnpkg.com/@mithraic-labs/serum-remote/-/serum-remote-0.0.1-rc.14.tgz#a354eb5eeedf4be88f0160e94f80ee535c984364"
+  integrity sha512-tpxpxoPsb9sR8RF7L0BqN/bJdzun2jr1/qT+MmEwphWV6PgrEOw/xjXMb3Aqsfw07lB4tAxfeDyX3XG2eZ4u/w==
 
 "@project-serum/anchor@^0.11.1":
   version "0.11.1"

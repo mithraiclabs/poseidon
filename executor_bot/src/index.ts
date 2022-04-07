@@ -11,7 +11,10 @@ import config from "./config";
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
 import { Market } from "@project-serum/serum";
 
-// Poll the RPC node for new accounts every 10 min
+export const wait = (delayMS: number) =>
+  new Promise((resolve) => setTimeout(resolve, delayMS));
+
+// Poll the RPC node for new accounts and execution every 10 min
 const POLL_INTERVAL = 600 * 1_000;
 
 export const loadPayer = (keypairPath: string): anchor.web3.Keypair => {
@@ -40,72 +43,74 @@ const connection = new web3.Connection(config.jsonRpcUrl);
 (async () => {
   const payer = loadPayer(config.solanaKeypairPath);
   const provider = new Provider(connection, new NodeWallet(payer), {});
-  // TODO: use dynamic cluster name
   // Create new Serum Remote program
-  const serumRemoteProgramId = getProgramId("devnet");
+  const serumRemoteProgramId = getProgramId(config.cluster);
   const program = new Program<SerumRemote>(IDL, serumRemoteProgramId, provider);
 
-  // Query get program accounts to all bounded strategies.
-  const boundedStrategies = await program.account.boundedStrategy.all();
+  while (true) {
+    // Query get program accounts to all bounded strategies.
+    const boundedStrategies = await program.account.boundedStrategy.all();
 
-  const currentTime = new Date().getTime() / 1_000;
-  await Promise.all(
-    boundedStrategies.map(async (boundedStrategy) => {
-      // Backwards compatibility for old Devnet program. Can be removed April 12, 2022
-      if (
-        boundedStrategy.account.serumDexId.toString() ===
-        web3.SystemProgram.programId.toString()
-      ) {
-        return;
-      }
-      const transaction = new web3.Transaction();
-      // handle reclaiming assets for those that have expired
-      if (boundedStrategy.account.reclaimDate.toNumber() < currentTime) {
-        const ix = instructions.reclaimIx(
-          program,
-          boundedStrategy.publicKey,
-          boundedStrategy.account,
-          boundedStrategy.account.serumDexId
-        );
-        transaction.add(ix);
-      } else {
-        const serumMarket = await Market.load(
-          connection,
-          boundedStrategy.account.serumMarket,
-          {},
-          boundedStrategy.account.serumDexId
-        );
-        // TODO: Check the current price to see if the transaction should be sent
-        const [bids, asks] = await Promise.all([
-          serumMarket.loadBids(connection),
-          serumMarket.loadAsks(connection),
-        ]);
-
-        const humanReadableBoundPrice = serumMarket.priceLotsToNumber(
-          boundedStrategy.account.boundedPrice
-        );
-        const lowestAsk = asks.getL2(1)[0];
-        const highestBid = bids.getL2(1)[0];
-
+    const currentTime = new Date().getTime() / 1_000;
+    await Promise.all(
+      boundedStrategies.map(async (boundedStrategy) => {
+        // Backwards compatibility for old Devnet program. Can be removed April 12, 2022
         if (
-          (boundedStrategy.account.orderSide === 0 &&
-            lowestAsk[0] < humanReadableBoundPrice) ||
-          (boundedStrategy.account.orderSide === 1 &&
-            highestBid[0] > humanReadableBoundPrice)
+          boundedStrategy.account.serumDexId.toString() ===
+          web3.SystemProgram.programId.toString()
         ) {
-          const ix = await instructions.boundedTradeIx(
+          return;
+        }
+        const transaction = new web3.Transaction();
+        // handle reclaiming assets for those that have expired
+        if (boundedStrategy.account.reclaimDate.toNumber() < currentTime) {
+          const ix = instructions.reclaimIx(
             program,
             boundedStrategy.publicKey,
-            serumMarket,
-            boundedStrategy.account
+            boundedStrategy.account,
+            boundedStrategy.account.serumDexId
           );
           transaction.add(ix);
-        }
+        } else {
+          const serumMarket = await Market.load(
+            connection,
+            boundedStrategy.account.serumMarket,
+            {},
+            boundedStrategy.account.serumDexId
+          );
+          // Check the current price to see if the transaction should be sent
+          const [bids, asks] = await Promise.all([
+            serumMarket.loadBids(connection),
+            serumMarket.loadAsks(connection),
+          ]);
 
-        if (transaction.instructions.length) {
-          await program.provider.send(transaction);
+          const humanReadableBoundPrice = serumMarket.priceLotsToNumber(
+            boundedStrategy.account.boundedPrice
+          );
+          const lowestAsk = asks.getL2(1)[0];
+          const highestBid = bids.getL2(1)[0];
+
+          if (
+            (boundedStrategy.account.orderSide === 0 &&
+              lowestAsk[0] < humanReadableBoundPrice) ||
+            (boundedStrategy.account.orderSide === 1 &&
+              highestBid[0] > humanReadableBoundPrice)
+          ) {
+            const ix = await instructions.boundedTradeIx(
+              program,
+              boundedStrategy.publicKey,
+              serumMarket,
+              boundedStrategy.account
+            );
+            transaction.add(ix);
+          }
+
+          if (transaction.instructions.length) {
+            await program.provider.send(transaction);
+          }
         }
-      }
-    })
-  );
+      })
+    );
+    await wait(POLL_INTERVAL);
+  }
 })();
