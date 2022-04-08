@@ -26,4 +26,6 @@ pub struct BoundedStrategy {
     /// equivalent to the price on the Serum Market's order book
     pub bounded_price: u64,
     pub authority_bump: u8,
+    /// The address of the serum dex program this strategy trades on
+    pub serum_dex_id: Pubkey,
 }

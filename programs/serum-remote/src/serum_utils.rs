@@ -31,6 +31,7 @@ pub fn get_best_bid_ask(
         asks: asks.deref_mut(),
         market_state: market.deref_mut(),
     };
+    // TODO: Gracefully handle a None value incase there is only single sided liquidity.
     let best_bid = get_best(order_book_state.bids, true).unwrap();
     let best_ask = get_best(order_book_state.asks, false).unwrap();
     (best_bid, best_ask)

@@ -34,6 +34,10 @@ pub enum ErrorCode {
     AuthorityMisMatch,
     #[msg("Depsoit address does not match the strategy")]
     DepositAddressMisMatch,
-    #[msg("Cannot rclaim to different address")]
-    WrongReclaimAddress
+    #[msg("Cannot reclaim to different address")]
+    WrongReclaimAddress,
+    #[msg("Deposit address must have same owner as reclaim address")]
+    BadDepositAddress,
+    #[msg("open orders does not match strategy")]
+    WrongOpenOrdersKey,
 }

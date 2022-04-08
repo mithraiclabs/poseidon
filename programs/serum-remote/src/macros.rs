@@ -71,10 +71,11 @@ macro_rules! settle_funds {
             vault_signer: $ctx.accounts.serum_vault_signer.to_account_info(),
             token_program: $ctx.accounts.token_program_id.to_account_info(),
         };
+        // Support optional referral account in remaining accounts
         let settle_funds_ctx = CpiContext {
             program: $ctx.accounts.dex_program.to_account_info(),
             accounts: settle_funds_accounts,
-            remaining_accounts: Vec::new(),
+            remaining_accounts: $ctx.remaining_accounts.to_vec(),
             signer_seeds: $signer_seeds,
         };
         settle_funds(settle_funds_ctx)?;

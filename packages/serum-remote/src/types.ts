@@ -1,5 +1,7 @@
 import { BN, web3 } from "@project-serum/anchor";
 
+export type SolCluster = web3.Cluster | "localnet" | "mainnet";
+
 export enum Bound {
   "Lower" = 0,
   "Upper" = 1,
@@ -21,6 +23,7 @@ export type BoundedStrategy = {
   depositAddress: web3.PublicKey;
   bound: number;
   boundedPrice: BN;
+  serumDexId: web3.PublicKey;
 };
 
 export type BoundedStrategyParams = {

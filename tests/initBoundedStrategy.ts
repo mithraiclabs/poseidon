@@ -31,13 +31,14 @@ describe("InitBoundedStrategy", () => {
   let orderSide = 0;
   let bound = 1;
   let transferAmount = new u64(10_000_000);
+  let serumMarket: Market;
 
   before(async () => {
     const accountInfo = await program.provider.connection.getAccountInfo(
       SOL_USDC_SERUM_MARKET
     );
     console.log("*** market account info", accountInfo);
-    const serumMarket = await Market.load(
+    serumMarket = await Market.load(
       program.provider.connection,
       SOL_USDC_SERUM_MARKET,
       {},
@@ -164,6 +165,7 @@ describe("InitBoundedStrategy", () => {
     );
     assert.equal(boundedStrategy.orderSide, orderSide);
     assert.equal(boundedStrategy.bound, bound);
+    assert.equal(boundedStrategy.serumDexId.toString(), DEX_ID.toString());
     // Check the OpenOrders address
     assert.equal(
       boundedStrategy.openOrders.toString(),
@@ -190,6 +192,50 @@ describe("InitBoundedStrategy", () => {
       await splTokenProgram.account.token.fetch(orderPayer);
     const orderPayerTokenDiff = orderPayerTokenAccountAfter.amount;
     assert.equal(orderPayerTokenDiff.toString(), transferAmount.toString());
+  });
+
+  describe("Deposit address owner differs from reclaim address owner", () => {
+    let badDepositAddress: web3.PublicKey;
+    before(async () => {
+      const { instruction: baseMintAtaIx, associatedAddress: baseAta } =
+        await createAssociatedTokenInstruction(
+          program.provider,
+          serumMarket.baseMintAddress,
+          new web3.Keypair().publicKey
+        );
+      badDepositAddress = baseAta;
+      const tx = new web3.Transaction().add(baseMintAtaIx);
+      await program.provider.send(tx);
+    });
+    it("should error", async () => {
+      const instruction = await initBoundedStrategyIx(
+        program,
+        DEX_ID,
+        SOL_USDC_SERUM_MARKET,
+        USDC_MINT,
+        {
+          transferAmount,
+          boundPrice,
+          reclaimDate,
+          reclaimAddress,
+          depositAddress: badDepositAddress,
+          orderSide,
+          bound,
+        }
+      );
+      const transaction = new web3.Transaction().add(instruction);
+      try {
+        await program.provider.send(transaction);
+        assert.ok(false);
+      } catch (error) {
+        const parsedError = parseTranactionError(error);
+        assert.equal(
+          parsedError.msg,
+          "Deposit address must have same owner as reclaim address"
+        );
+        assert.ok(true);
+      }
+    });
   });
 
   // Test reclaim date is in the future

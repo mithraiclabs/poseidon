@@ -42,11 +42,15 @@ pub mod serum_remote {
         )
     }
 
-    pub fn bounded_trade(ctx: Context<BoundedTrade>) -> Result<()> {
+    pub fn bounded_trade<'a, 'b, 'c, 'info>(ctx: Context<'a, 'b, 'c, 'info, BoundedTrade<'info>>) -> Result<()> {
         instructions::bounded_trade::handler(ctx)
     }
 
     pub fn reclaim(ctx: Context<Reclaim>) -> Result<()> {
         instructions::reclaim::handler(ctx)
+    }
+
+    pub fn sr_settle_funds<'a, 'b, 'c, 'info>(ctx: Context<'a, 'b, 'c, 'info, SettleFundsAccounts<'info>>) -> Result<()> {
+        instructions::settle_funds::handler(ctx)
     }
 }

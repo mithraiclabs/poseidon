@@ -4,7 +4,7 @@
   <h1>Serum Remote</h1>
 
   <p>
-    <strong>Project Serum Rust Monorepo</strong>
+    <strong>Project Serum Serum Remote Repo</strong>
   </p>
 
   <p>
@@ -33,9 +33,9 @@ Right now there’s no simple way for a member of a DAO to initiate a proposal t
 
 ## Program Deployments
 
-| Program                          | Devnet                                         | Mainnet Beta |
-| -------------------------------- | ---------------------------------------------- | ------------ |
-| [Remote](/programs/serum-remote) | `8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs` | N/a          |
+| Program                          | Devnet                                         | Mainnet Beta                                   |
+| -------------------------------- | ---------------------------------------------- | ---------------------------------------------- |
+| [Remote](/programs/serum-remote) | `8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs` | `8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs` |
 
 ## Development
 
