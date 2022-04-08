@@ -8,11 +8,12 @@ export const parseTranactionError = (error: any) =>
   ProgramError.parse(error, idlErrors);
 
 export const getProgramId = (cluster: SolCluster) => {
-  switch (cluster) {
-    case "devnet":
-      return new web3.PublicKey("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
-    default:
-      throw new Error("Unsupported cluster version");
+  if (cluster === "devnet") {
+    return new web3.PublicKey("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
+  } else if (["mainnet", "mainnet-beta"].includes(cluster)) {
+    return new web3.PublicKey("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
+  } else {
+    throw new Error("Unsupported cluster version");
   }
 };
 
@@ -36,13 +37,12 @@ export const getClusterNameFromConnection = async (
 };
 
 export const getDexId = (cluster: SolCluster) => {
-  switch (cluster) {
-    case "devnet":
-      return new web3.PublicKey("DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY");
-    case "mainnet-beta":
-      return new web3.PublicKey("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
-    default:
-      throw new Error("Unsupported cluster version");
+  if (cluster === "devnet") {
+    return new web3.PublicKey("DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY");
+  } else if (["mainnet", "mainnet-beta"].includes(cluster)) {
+    return new web3.PublicKey("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
+  } else {
+    throw new Error("Unsupported cluster version");
   }
 };
 

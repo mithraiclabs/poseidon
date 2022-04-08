@@ -10,6 +10,10 @@ import {
 import config from "./config";
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
 import { Market } from "@project-serum/serum";
+import {
+  createAssociatedTokenAccountInstruction,
+  getAssociatedTokenAddress,
+} from "@solana/spl-token";
 
 export const wait = (delayMS: number) =>
   new Promise((resolve) => setTimeout(resolve, delayMS));
@@ -96,11 +100,31 @@ const connection = new web3.Connection(config.jsonRpcUrl);
             (boundedStrategy.account.orderSide === 1 &&
               highestBid[0] > humanReadableBoundPrice)
           ) {
+            // Check if the referral account exists
+            const referralAddress = await getAssociatedTokenAddress(
+              serumMarket.quoteMintAddress,
+              payer.publicKey
+            );
+            const referralAccount = await connection.getAccountInfo(
+              referralAddress
+            );
+            // add transaction to create the referral account if it does not exist
+            if (!referralAccount) {
+              const createReferralAccountIx =
+                createAssociatedTokenAccountInstruction(
+                  payer.publicKey,
+                  referralAddress,
+                  payer.publicKey,
+                  serumMarket.quoteMintAddress
+                );
+              transaction.add(createReferralAccountIx);
+            }
             const ix = await instructions.boundedTradeIx(
               program,
               boundedStrategy.publicKey,
               serumMarket,
-              boundedStrategy.account
+              boundedStrategy.account,
+              referralAddress
             );
             transaction.add(ix);
           }
