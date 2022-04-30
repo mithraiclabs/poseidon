@@ -22,6 +22,8 @@ export const initNewTokenMintInstructions = async (
   owner: web3.PublicKey,
   decimals: number
 ) => {
+  // @ts-ignore: TODO: Remove after anchor npm upgrade
+  const payerKey = provider.wallet.publicKey;
   const mintAccount = new web3.Keypair();
   const instructions: web3.TransactionInstruction[] = [];
   // Create the Option Mint Account with rent exemption
@@ -33,7 +35,7 @@ export const initNewTokenMintInstructions = async (
 
   instructions.push(
     web3.SystemProgram.createAccount({
-      fromPubkey: provider.wallet.publicKey,
+      fromPubkey: payerKey,
       newAccountPubkey: mintAccount.publicKey,
       lamports: mintRentBalance,
       space: MintLayout.span,
@@ -60,19 +62,21 @@ export const createAssociatedTokenInstruction = async (
   mint: web3.PublicKey,
   owner: web3.PublicKey | undefined = undefined
 ) => {
+  // @ts-ignore: TODO: Remove after anchor npm upgrade
+  const payerKey = provider.wallet.publicKey;
   const associatedAddress = await Token.getAssociatedTokenAddress(
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     mint,
-    owner || provider.wallet.publicKey
+    owner || payerKey
   );
   const instruction = Token.createAssociatedTokenAccountInstruction(
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     mint,
     associatedAddress,
-    owner || provider.wallet.publicKey,
-    provider.wallet.publicKey
+    owner || payerKey,
+    payerKey
   );
   return { instruction, associatedAddress };
 };

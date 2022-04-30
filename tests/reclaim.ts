@@ -23,8 +23,9 @@ let timesRun = 0;
 
 describe("Reclaim", () => {
   // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.Provider.env());
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  // @ts-ignore: TODO: Remove after anchor npm upgrade
+  const payerKey = program.provider.wallet.publicKey;
   const splTokenProgram = Spl.token();
 
   let boundPrice = new anchor.BN(957);
@@ -33,8 +34,8 @@ describe("Reclaim", () => {
   let baseAddress: web3.PublicKey;
   let orderSide = 0;
   let bound = 1;
-  let quoteTransferAmount = new u64(10_000_000);
-  let baseTransferAmount = new u64(10_000_000_000);
+  let quoteTransferAmount = new BN(10_000_000);
+  let baseTransferAmount = new BN(10_000_000_000);
   let boundedStrategy: BoundedStrategy;
   let boundedStrategyKey: web3.PublicKey,
     authority: web3.PublicKey,
@@ -42,7 +43,7 @@ describe("Reclaim", () => {
 
   before(async () => {
     await program.provider.connection.requestAirdrop(
-      program.provider.wallet.publicKey,
+      payerKey,
       baseTransferAmount.muln(10).toNumber()
     );
     // This TX may fail with concurrent tests
@@ -60,7 +61,7 @@ describe("Reclaim", () => {
       .add(instruction)
       .add(baseMintAtaIx);
     try {
-      await program.provider.send(createAtaTx);
+      await program.provider.sendAndConfirm(createAtaTx);
     } catch (err) {}
 
     const transaction = new web3.Transaction();
@@ -68,14 +69,14 @@ describe("Reclaim", () => {
       TOKEN_PROGRAM_ID,
       USDC_MINT,
       associatedAddress,
-      program.provider.wallet.publicKey,
+      payerKey,
       [],
       quoteTransferAmount.muln(10).toNumber()
     );
     transaction.add(mintToInstruction);
     // Move SOL to wrapped SOL
     const transferBaseInstruction = web3.SystemProgram.transfer({
-      fromPubkey: program.provider.wallet.publicKey,
+      fromPubkey: payerKey,
       toPubkey: baseAta,
       lamports: baseTransferAmount.muln(10).toNumber(),
     });
@@ -87,7 +88,7 @@ describe("Reclaim", () => {
       },
     });
     transaction.add(syncNativeIx);
-    await program.provider.send(transaction);
+    await program.provider.sendAndConfirm(transaction);
   });
   beforeEach(() => {
     timesRun += 1;
@@ -139,7 +140,7 @@ describe("Reclaim", () => {
       );
       const transaction = new web3.Transaction().add(ix);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -202,7 +203,7 @@ describe("Reclaim", () => {
       );
       const transaction = new web3.Transaction().add(ix);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
       } catch (error) {
         console.log("*** error", error);
         const parsedError = parseTranactionError(error);
@@ -246,7 +247,7 @@ describe("Reclaim", () => {
         badReclaimAddress = associatedAddress;
         const createAtaTx = new web3.Transaction().add(instruction);
         try {
-          await program.provider.send(createAtaTx);
+          await program.provider.sendAndConfirm(createAtaTx);
         } catch (err) {}
       });
       it("should error", async () => {
@@ -261,7 +262,7 @@ describe("Reclaim", () => {
         );
         const transaction = new web3.Transaction().add(ix);
         try {
-          await program.provider.send(transaction);
+          await program.provider.sendAndConfirm(transaction);
           assert.ok(false);
         } catch (error) {
           const parsedError = parseTranactionError(error);

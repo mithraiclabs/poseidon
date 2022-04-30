@@ -13,6 +13,8 @@ export const initBoundedStrategyIx = async (
   boundedStrategyParams: BoundedStrategyParams,
   opts: { owner?: web3.PublicKey } = {}
 ) => {
+  // @ts-ignore: TODO: Remove after anchor npm upgrade
+  const payerKey = program.provider.wallet.publicKey;
   const {
     boundPrice,
     reclaimDate,
@@ -38,7 +40,7 @@ export const initBoundedStrategyIx = async (
     new BN(OpenOrders.getLayout(dexProgram).span),
     {
       accounts: {
-        payer: opts.owner || program.provider.wallet.publicKey,
+        payer: opts.owner || payerKey,
         authority,
         mint,
         serumMarket,
@@ -71,5 +73,5 @@ export const initializeBoundedStrategy = async (
     boundedStrategyParams
   );
   const initBoundedStrategyTx = new web3.Transaction().add(instruction);
-  await program.provider.send(initBoundedStrategyTx);
+  await program.provider.sendAndConfirm(initBoundedStrategyTx);
 };

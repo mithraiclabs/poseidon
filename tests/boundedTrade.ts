@@ -28,8 +28,10 @@ let openOrdersAccount: web3.PublicKey;
 
 describe("BoundedTrade", () => {
   // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.Provider.env());
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+
+  // @ts-ignore: TODO: Remove after anchor npm upgrade
+  const payerKey = program.provider.wallet.publicKey;
   const splTokenProgram = Spl.token();
 
   let boundPrice = new anchor.BN(957);
@@ -89,11 +91,11 @@ describe("BoundedTrade", () => {
       .add(baseMintAtaIx)
       .add(createReferralIx);
     try {
-      await program.provider.send(createAtaTx);
+      await program.provider.sendAndConfirm(createAtaTx);
     } catch (err) {}
 
     await program.provider.connection.requestAirdrop(
-      program.provider.wallet.publicKey,
+      payerKey,
       baseTransferAmount.muln(10).toNumber()
     );
 
@@ -102,14 +104,14 @@ describe("BoundedTrade", () => {
       TOKEN_PROGRAM_ID,
       USDC_MINT,
       associatedAddress,
-      program.provider.wallet.publicKey,
+      payerKey,
       [],
       quoteTransferAmount.muln(10).toNumber()
     );
     transaction.add(mintToInstruction);
     // Move SOL to wrapped SOL
     const transferBaseInstruction = web3.SystemProgram.transfer({
-      fromPubkey: program.provider.wallet.publicKey,
+      fromPubkey: payerKey,
       toPubkey: baseAta,
       lamports: baseTransferAmount.muln(10).toNumber(),
     });
@@ -121,7 +123,7 @@ describe("BoundedTrade", () => {
       },
     });
     transaction.add(syncNativeIx);
-    await program.provider.send(transaction);
+    await program.provider.sendAndConfirm(transaction);
   });
   beforeEach(() => {
     nonce += 1;
@@ -183,7 +185,7 @@ describe("BoundedTrade", () => {
           );
           const transaction = new web3.Transaction().add(ix);
           try {
-            await program.provider.send(transaction);
+            await program.provider.sendAndConfirm(transaction);
           } catch (error) {
             const parsedError = parseTranactionError(error);
             console.log("error: ", parsedError.msg);
@@ -248,7 +250,7 @@ describe("BoundedTrade", () => {
             .add(consumeEventsIx)
             .add(settleIx);
           try {
-            await program.provider.send(transaction);
+            await program.provider.sendAndConfirm(transaction);
           } catch (error) {
             console.log("*** error", error);
             const parsedError = parseTranactionError(error);
@@ -312,7 +314,7 @@ describe("BoundedTrade", () => {
           );
           const transaction = new web3.Transaction().add(ix);
           try {
-            await program.provider.send(transaction);
+            await program.provider.sendAndConfirm(transaction);
             assert.ok(false);
           } catch (error) {
             const parsedError = parseTranactionError(error);
@@ -379,7 +381,7 @@ describe("BoundedTrade", () => {
           );
           const transaction = new web3.Transaction().add(ix);
           try {
-            await program.provider.send(transaction);
+            await program.provider.sendAndConfirm(transaction);
             assert.ok(false);
           } catch (error) {
             const parsedError = parseTranactionError(error);
@@ -434,7 +436,7 @@ describe("BoundedTrade", () => {
           );
           const transaction = new web3.Transaction().add(ix);
           try {
-            await program.provider.send(transaction);
+            await program.provider.sendAndConfirm(transaction);
           } catch (error) {
             const parsedError = parseTranactionError(error);
             console.log("error: ", parsedError.msg);

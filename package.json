@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@project-serum/anchor": "^0.23.0",
+    "@project-serum/anchor": "^0.24.2",
     "@project-serum/serum": "^0.13.63"
   },
   "devDependencies": {
