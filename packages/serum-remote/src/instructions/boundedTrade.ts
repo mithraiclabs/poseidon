@@ -21,6 +21,7 @@ export const boundedTradeIx = async (
   );
   return program.instruction.boundedTrade({
     accounts: {
+      // @ts-ignore: TODO: Remove after anchor npm upgrade
       payer: program.provider.wallet.publicKey,
       strategy: strategyKey,
       serumMarket: serumMarket.address,

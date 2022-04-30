@@ -11,6 +11,7 @@ export const reclaimIx = (
 ) => {
   return program.instruction.reclaim({
     accounts: {
+      // @ts-ignore: TODO: Remove after anchor npm upgrade
       receiver: program.provider.wallet.publicKey,
       strategy: strategyKey,
       authority: boundedStrategy.authority,

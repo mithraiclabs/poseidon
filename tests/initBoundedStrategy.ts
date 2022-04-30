@@ -20,8 +20,9 @@ import {
 let timesRun = 0;
 describe("InitBoundedStrategy", () => {
   // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.Provider.env());
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  // @ts-ignore: TODO: Remove after anchor npm upgrade
+  const payerKey = program.provider.wallet.publicKey;
   const splTokenProgram = Spl.token();
 
   let boundPrice = new anchor.BN(957);
@@ -30,7 +31,7 @@ describe("InitBoundedStrategy", () => {
   let depositAddress: web3.PublicKey;
   let orderSide = 0;
   let bound = 1;
-  let transferAmount = new u64(10_000_000);
+  let transferAmount = new BN(10_000_000);
   let serumMarket: Market;
 
   before(async () => {
@@ -61,19 +62,19 @@ describe("InitBoundedStrategy", () => {
       .add(instruction)
       .add(baseMintAtaIx);
     try {
-      await program.provider.send(createAtaTx);
+      await program.provider.sendAndConfirm(createAtaTx);
     } catch (err) {}
 
     const mintToInstruction = Token.createMintToInstruction(
       TOKEN_PROGRAM_ID,
       USDC_MINT,
       associatedAddress,
-      program.provider.wallet.publicKey,
+      payerKey,
       [],
       transferAmount.muln(10).toNumber()
     );
     transaction.add(mintToInstruction);
-    await program.provider.send(transaction);
+    await program.provider.sendAndConfirm(transaction);
   });
   beforeEach(async () => {
     // timesRun is used to generate unique seeds for the strategy, otherwise
@@ -83,7 +84,7 @@ describe("InitBoundedStrategy", () => {
     reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600 + timesRun);
     orderSide = 0;
     bound = 1;
-    transferAmount = new u64(10_000_000);
+    transferAmount = new BN(10_000_000);
   });
 
   // Test the BoundedStrategy account is created with the right info
@@ -128,7 +129,7 @@ describe("InitBoundedStrategy", () => {
     );
     const transaction = new web3.Transaction().add(instruction);
     try {
-      await program.provider.send(transaction);
+      await program.provider.sendAndConfirm(transaction);
     } catch (error) {
       const parsedError = parseTranactionError(error);
       console.log("error: ", parsedError.msg);
@@ -205,7 +206,7 @@ describe("InitBoundedStrategy", () => {
         );
       badDepositAddress = baseAta;
       const tx = new web3.Transaction().add(baseMintAtaIx);
-      await program.provider.send(tx);
+      await program.provider.sendAndConfirm(tx);
     });
     it("should error", async () => {
       const instruction = await initBoundedStrategyIx(
@@ -225,7 +226,7 @@ describe("InitBoundedStrategy", () => {
       );
       const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -261,7 +262,7 @@ describe("InitBoundedStrategy", () => {
       );
       const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -293,7 +294,7 @@ describe("InitBoundedStrategy", () => {
       );
       const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -325,7 +326,7 @@ describe("InitBoundedStrategy", () => {
       );
       const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         console.log("*** error", error);
@@ -357,7 +358,7 @@ describe("InitBoundedStrategy", () => {
       );
       const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -390,7 +391,7 @@ describe("InitBoundedStrategy", () => {
       );
       const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -423,7 +424,7 @@ describe("InitBoundedStrategy", () => {
       );
       const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -456,7 +457,7 @@ describe("InitBoundedStrategy", () => {
       );
       const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -488,7 +489,7 @@ describe("InitBoundedStrategy", () => {
       );
       const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);
@@ -523,7 +524,7 @@ describe("InitBoundedStrategy", () => {
       );
       const transaction = new web3.Transaction().add(instruction);
       try {
-        await program.provider.send(transaction);
+        await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
         const parsedError = parseTranactionError(error);

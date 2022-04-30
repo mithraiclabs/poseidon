@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as anchor from "@project-serum/anchor";
-import { Program, Provider, web3 } from "@project-serum/anchor";
+import { AnchorProvider, Program, web3 } from "@project-serum/anchor";
 import {
   getProgramId,
   instructions,
@@ -46,7 +46,7 @@ export const loadPayer = (keypairPath: string): anchor.web3.Keypair => {
 const connection = new web3.Connection(config.jsonRpcUrl);
 (async () => {
   const payer = loadPayer(config.solanaKeypairPath);
-  const provider = new Provider(connection, new NodeWallet(payer), {});
+  const provider = new AnchorProvider(connection, new NodeWallet(payer), {});
   // Create new Serum Remote program
   const serumRemoteProgramId = getProgramId(config.cluster);
   const program = new Program<SerumRemote>(IDL, serumRemoteProgramId, provider);
@@ -130,7 +130,7 @@ const connection = new web3.Connection(config.jsonRpcUrl);
           }
 
           if (transaction.instructions.length) {
-            await program.provider.send(transaction);
+            await program.provider.sendAndConfirm(transaction);
           }
         }
       })
