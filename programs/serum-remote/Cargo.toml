@@ -17,6 +17,6 @@ default = []
 devnet = ["anchor-spl/devnet"]
 
 [dependencies]
-anchor-lang = "0.23.0"
-anchor-spl = { version = "0.23.0", features = ["dex"] }
+anchor-lang = "0.24.2"
+anchor-spl = { version = "0.24.2", features = ["dex"] }
 safe-transmute = "0.11.0"
