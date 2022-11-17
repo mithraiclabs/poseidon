@@ -11,6 +11,10 @@ use crate::instructions::*;
 
 declare_id!("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
 
+mod open_serum {
+    anchor_lang::declare_id!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX");
+}
+
 #[program]
 pub mod serum_remote {
     use super::*;
@@ -42,7 +46,9 @@ pub mod serum_remote {
         )
     }
 
-    pub fn bounded_trade<'a, 'b, 'c, 'info>(ctx: Context<'a, 'b, 'c, 'info, BoundedTrade<'info>>) -> Result<()> {
+    pub fn bounded_trade<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, BoundedTrade<'info>>,
+    ) -> Result<()> {
         instructions::bounded_trade::handler(ctx)
     }
 
@@ -50,7 +56,9 @@ pub mod serum_remote {
         instructions::reclaim::handler(ctx)
     }
 
-    pub fn sr_settle_funds<'a, 'b, 'c, 'info>(ctx: Context<'a, 'b, 'c, 'info, SettleFundsAccounts<'info>>) -> Result<()> {
+    pub fn sr_settle_funds<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, SettleFundsAccounts<'info>>,
+    ) -> Result<()> {
         instructions::settle_funds::handler(ctx)
     }
 }

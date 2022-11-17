@@ -12,7 +12,7 @@ use anchor_spl::{
     token::{Token, TokenAccount},
 };
 
-use crate::{authority_signer_seeds, settle_funds};
+use crate::{authority_signer_seeds, open_serum, settle_funds};
 use crate::{
     constants::AUTHORITY_SEED,
     errors::ErrorCode,
@@ -30,27 +30,27 @@ pub struct BoundedTrade<'info> {
     /// CHECK: Checks are made when loading and interacting with the market
     #[account(
       mut,
-    owner = dex::ID
+    owner = open_serum::ID
   )]
     pub serum_market: UncheckedAccount<'info>,
     /// The Serum Market's bids account
     /// CHECK: Market checks are made when loading from the Market
     #[account(
       mut,
-      owner = dex::ID
+      owner = open_serum::ID
     )]
     pub bids: UncheckedAccount<'info>,
     /// The Serum Market's asks accoutn
     /// CHECK: Market checks are made when loading from the Market
     #[account(
       mut,
-      owner = dex::ID
+      owner = open_serum::ID
     )]
     pub asks: UncheckedAccount<'info>,
-    
+
     #[account(
       mut,
-      owner = dex::ID,
+      owner = open_serum::ID,
       constraint = open_orders.key() == strategy.open_orders
           @ ErrorCode::WrongOpenOrdersKey
     )]
@@ -69,11 +69,11 @@ pub struct BoundedTrade<'info> {
     )]
     pub authority: UncheckedAccount<'info>,
     #[account(mut,
-      owner = dex::ID)]
+      owner = open_serum::ID)]
     /// CHECK: Serum handles checks
     pub request_queue: UncheckedAccount<'info>,
     #[account(mut,
-      owner = dex::ID)]
+      owner = open_serum::ID)]
     /// CHECK: Serum handles checkss
     pub event_queue: UncheckedAccount<'info>,
     #[account(mut)]
@@ -102,7 +102,9 @@ pub struct BoundedTrade<'info> {
 
 declare_check_assert_macros!(SourceFileId::State);
 
-pub fn handler<'a, 'b, 'c, 'info>(ctx: Context<'a, 'b, 'c, 'info, BoundedTrade<'info>>) -> Result<()> {
+pub fn handler<'a, 'b, 'c, 'info>(
+    ctx: Context<'a, 'b, 'c, 'info, BoundedTrade<'info>>,
+) -> Result<()> {
     let bounded_strategy = &ctx.accounts.strategy;
 
     let (best_bid, best_ask, coin_lot_size, pc_lot_size) = {
@@ -235,5 +237,5 @@ pub struct SettleWallets<'info> {
     /// CHECK: blah
     pub coin_wallet: AccountInfo<'info>,
     /// CHECK: blah
-    pub pc_wallet: AccountInfo<'info>
+    pub pc_wallet: AccountInfo<'info>,
 }

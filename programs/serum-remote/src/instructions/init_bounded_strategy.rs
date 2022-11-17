@@ -8,9 +8,10 @@ use std::convert::identity;
 
 use crate::{
     authority_signer_seeds,
-    constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED, OPEN_ORDERS_SEED},
+    constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, OPEN_ORDERS_SEED, ORDER_PAYER_SEED},
     errors::ErrorCode,
-    state::BoundedStrategy, open_orders_seeds,
+    open_orders_seeds, open_serum,
+    state::BoundedStrategy,
 };
 
 #[derive(Accounts)]
@@ -28,7 +29,7 @@ pub struct InitBoundedStrategy<'info> {
     pub mint: Account<'info, Mint>,
     /// CHECK: Constraints are handled
     #[account(
-    owner = dex::ID
+    owner = open_serum::ID
   )]
     pub serum_market: UncheckedAccount<'info>,
     #[account(
@@ -104,7 +105,7 @@ pub fn handler(
         }
     }
 
-    // Create the account in the instruction to avoid client bugs when 
+    // Create the account in the instruction to avoid client bugs when
     //  creating but not initializing.
     let cpi_accounts = anchor_lang::system_program::CreateAccount {
         from: ctx.accounts.payer.to_account_info(),
@@ -121,7 +122,7 @@ pub fn handler(
         program: ctx.accounts.dex_program.to_account_info(),
         accounts: cpi_accounts,
         remaining_accounts: Vec::new(),
-        signer_seeds: &[open_orders_seeds!(ctx, open_orders_bump)]
+        signer_seeds: &[open_orders_seeds!(ctx, open_orders_bump)],
     };
 
     anchor_lang::system_program::create_account(

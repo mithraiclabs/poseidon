@@ -1,4 +1,4 @@
-anchor_version = "0.22.1"
+anchor_version = "0.24.2"
 [features]
 seeds = true
 
@@ -9,7 +9,7 @@ serum_remote = "8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs"
 url = "https://anchor.projectserum.com"
 
 [[test.genesis]]
-address = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
+address = "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
 program = "tests/deps/serum_dex.so"
 
 [[test.validator.account]]
