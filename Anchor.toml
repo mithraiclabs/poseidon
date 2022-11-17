@@ -9,7 +9,7 @@ serum_remote = "8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs"
 url = "https://anchor.projectserum.com"
 
 [[test.genesis]]
-address = "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
+address = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
 program = "tests/deps/serum_dex.so"
 
 [[test.validator.account]]

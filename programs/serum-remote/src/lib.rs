@@ -12,7 +12,13 @@ use crate::instructions::*;
 declare_id!("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
 
 mod open_serum {
+    #[cfg(not(feature="devnet"))]
+    #[cfg(not(feature="localnet"))]
     anchor_lang::declare_id!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX");
+    #[cfg(feature="devnet")]
+    anchor_lang::declare_id!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj");
+    #[cfg(feature="localnet")]
+    anchor_lang::declare_id!("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
 }
 
 #[program]

@@ -43,6 +43,10 @@ Right now there’s no simple way for a member of a DAO to initiate a proposal t
 2. First run the seed generator, which creates a USDC mint with your ANCHOR_WALLET key as the mintAuthority
    `ts-node tests/seeds/transformSeeds.ts`
 
+### Running Tests
+
+`anchor test -- --features localnet`
+
 ## Serum Execution Protocol
 
 ### Instruction Set
