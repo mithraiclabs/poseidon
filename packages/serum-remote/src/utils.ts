@@ -38,9 +38,9 @@ export const getClusterNameFromConnection = async (
 
 export const getDexId = (cluster: SolCluster) => {
   if (cluster === "devnet") {
-    return new web3.PublicKey("DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY");
+    return new web3.PublicKey("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj");
   } else if (["mainnet", "mainnet-beta"].includes(cluster)) {
-    return new web3.PublicKey("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
+    return new web3.PublicKey("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX");
   } else {
     throw new Error("Unsupported cluster version");
   }
