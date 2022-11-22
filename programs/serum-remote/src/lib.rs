@@ -9,7 +9,7 @@ pub mod state;
 
 use crate::instructions::*;
 
-declare_id!("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
+declare_id!("oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK");
 
 mod open_serum {
     #[cfg(not(feature="devnet"))]

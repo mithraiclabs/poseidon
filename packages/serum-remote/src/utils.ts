@@ -9,9 +9,9 @@ export const parseTranactionError = (error: any) =>
 
 export const getProgramId = (cluster: SolCluster) => {
   if (cluster === "devnet") {
-    return new web3.PublicKey("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
+    return new web3.PublicKey("oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK");
   } else if (["mainnet", "mainnet-beta"].includes(cluster)) {
-    return new web3.PublicKey("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
+    return new web3.PublicKey("oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK");
   } else {
     throw new Error("Unsupported cluster version");
   }

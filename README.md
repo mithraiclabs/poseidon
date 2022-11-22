@@ -33,9 +33,9 @@ Right now there’s no simple way for a member of a DAO to initiate a proposal t
 
 ## Program Deployments
 
-| Program                          | Devnet                                         | Mainnet Beta                                   |
-| -------------------------------- | ---------------------------------------------- | ---------------------------------------------- |
-| [Remote](/programs/serum-remote) | `8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs` | `8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs` |
+| Program                          | Devnet                                        | Mainnet Beta                                  |
+| -------------------------------- | --------------------------------------------- | --------------------------------------------- |
+| [Remote](/programs/serum-remote) | `oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK` | `oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK` |
 
 ## Development
 
