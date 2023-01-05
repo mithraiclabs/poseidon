@@ -1,7 +1,24 @@
 use anchor_lang::prelude::*;
 
+
+#[derive(Debug, AnchorSerialize, AnchorDeserialize, PartialEq, Eq, Clone, Copy)]
+#[repr(u8)]
+pub enum DexList {
+    OpenBookV3 = 0,
+    RaydiumSwap = 1,
+}
+
+impl From<u8> for DexList {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => DexList::OpenBookV3,
+            1 => DexList::RaydiumSwap,
+            _ => panic!("Unknown DEX ID {}", value),
+        }
+    }
+}
+
 #[account]
-#[derive(Default)]
 pub struct BoundedStrategy {
     /// The PDA authority that owns the order_payer and open_orders account
     pub authority: Pubkey,
@@ -28,4 +45,12 @@ pub struct BoundedStrategy {
     pub authority_bump: u8,
     /// The address of the serum dex program this strategy trades on
     pub serum_dex_id: Pubkey,
+    /// The DexList ID
+    pub dex_id: DexList,
+    /// The public key for the liquidity venue that's being traded on.
+    pub dex_program_id: Pubkey,
+}
+
+impl BoundedStrategy {
+    pub const LEN: usize = 8 + std::mem::size_of::<BoundedStrategy>() + 560;
 }
