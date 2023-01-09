@@ -1,8 +1,9 @@
 use anchor_lang::prelude::*;
+use static_assertions::const_assert;
 
 
 #[derive(Debug, AnchorSerialize, AnchorDeserialize, PartialEq, Eq, Clone, Copy)]
-#[repr(u8)]
+#[repr(u32)]
 pub enum DexList {
     OpenBookV3 = 0,
     RaydiumSwap = 1,
@@ -18,6 +19,7 @@ impl From<u8> for DexList {
     }
 }
 
+// Bytes: 32 * 4 + 1 + 8 + 32 * 2 + 1 + 8+ 1 + 32 + 4 + 32
 #[account]
 pub struct BoundedStrategy {
     /// The PDA authority that owns the order_payer and open_orders account
@@ -45,12 +47,13 @@ pub struct BoundedStrategy {
     pub authority_bump: u8,
     /// The address of the serum dex program this strategy trades on
     pub serum_dex_id: Pubkey,
-    /// The DexList ID
+    // /// The DexList ID
     pub dex_id: DexList,
     /// The public key for the liquidity venue that's being traded on.
     pub dex_program_id: Pubkey,
 }
 
 impl BoundedStrategy {
-    pub const LEN: usize = 8 + std::mem::size_of::<BoundedStrategy>() + 560;
+    pub const LEN: usize = 8 + std::mem::size_of::<BoundedStrategy>() + 564;
 }
+const_assert!(BoundedStrategy::LEN == 852);

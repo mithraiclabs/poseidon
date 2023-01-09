@@ -1126,6 +1126,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "safe-transmute",
+ "static_assertions",
 ]
 
 [[package]]
