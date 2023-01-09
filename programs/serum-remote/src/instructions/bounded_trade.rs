@@ -64,7 +64,7 @@ pub struct BoundedTrade<'info> {
     pub order_payer: Box<Account<'info, TokenAccount>>,
     /// CHECK: Constraints are added
     #[account(
-        constraint = authority.key() == strategy.authority 
+        constraint = authority.key() == strategy.authority
             @ ErrorCode::AuthorityMisMatch,
     )]
     pub authority: UncheckedAccount<'info>,

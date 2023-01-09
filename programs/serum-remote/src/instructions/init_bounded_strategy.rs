@@ -58,7 +58,7 @@ pub struct InitBoundedStrategy<'info> {
     /// The account where swapped assets will be transferred to
     #[account(
         constraint = deposit_account.owner == reclaim_account.owner
-        @ ErrorCode::BadDepositAddress 
+        @ ErrorCode::BadDepositAddress
     )]
     pub deposit_account: Account<'info, TokenAccount>,
 
@@ -176,7 +176,7 @@ pub fn handler(
     bounded_strategy.bound = bound;
     bounded_strategy.open_orders = ctx.accounts.open_orders.key();
     bounded_strategy.authority_bump = authority_bump;
-    bounded_strategy.serum_dex_id = ctx.accounts.dex_program.key();
+    bounded_strategy.dex_program_id = ctx.accounts.dex_program.key();
 
     Ok(())
 }

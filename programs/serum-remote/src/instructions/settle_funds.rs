@@ -36,7 +36,7 @@ pub struct SettleFundsAccounts<'info> {
     pub open_orders: UncheckedAccount<'info>,
     /// CHECK: Constraints are added
     #[account(
-          constraint = authority.key() == strategy.authority 
+          constraint = authority.key() == strategy.authority
               @ ErrorCode::AuthorityMisMatch,
       )]
     pub authority: UncheckedAccount<'info>,

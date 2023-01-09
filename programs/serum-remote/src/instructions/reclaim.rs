@@ -23,7 +23,7 @@ pub struct Reclaim<'info> {
     /// The PDA that has authority over the order payer
     /// CHECK: Checks made
     #[account(
-        constraint = authority.key() == strategy.authority 
+        constraint = authority.key() == strategy.authority
             @ ErrorCode::AuthorityMisMatch,
     )]
     pub authority: UncheckedAccount<'info>,

@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use static_assertions::const_assert;
 
-
 #[derive(Debug, AnchorSerialize, AnchorDeserialize, PartialEq, Eq, Clone, Copy)]
 #[repr(u32)]
 pub enum DexList {
@@ -25,13 +24,15 @@ pub struct BoundedStrategy {
     /// The PDA authority that owns the order_payer and open_orders account
     pub authority: Pubkey,
     /// The Serum market where the execution will take place
+    /// TODO: This will have to change with additional of Raydium or other venues
     pub serum_market: Pubkey,
     /// The open_orders account that is owned by the authority and used to place orders
+    /// TODO: This will have to change with addition of Raydium or other venues
     pub open_orders: Pubkey,
     /// The SPL TokenAccount that contains the tokens that will be put into Serum for trading
     pub order_payer: Pubkey,
     /// The side of the order book the market order will be placed
-    /// 0 for Bid, 1 for Ask
+    /// 0 for Bid | Buy, 1 for Ask | Sell
     pub order_side: u8,
     /// The date at which the DAO's assets can be reclaimed
     pub reclaim_date: i64,
@@ -45,15 +46,13 @@ pub struct BoundedStrategy {
     /// equivalent to the price on the Serum Market's order book
     pub bounded_price: u64,
     pub authority_bump: u8,
-    /// The address of the serum dex program this strategy trades on
-    pub serum_dex_id: Pubkey,
-    // /// The DexList ID
-    pub dex_id: DexList,
     /// The public key for the liquidity venue that's being traded on.
     pub dex_program_id: Pubkey,
+    // The DexList ID
+    pub dex_id: DexList,
 }
 
 impl BoundedStrategy {
-    pub const LEN: usize = 8 + std::mem::size_of::<BoundedStrategy>() + 564;
+    pub const LEN: usize = 8 + std::mem::size_of::<BoundedStrategy>() + 596;
 }
 const_assert!(BoundedStrategy::LEN == 852);
