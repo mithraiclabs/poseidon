@@ -1,18 +1,10 @@
 use anchor_lang::prelude::*;
+use static_assertions::const_assert;
 
 #[account]
-#[derive(Default)]
-pub struct BoundedStrategy {
-    /// The PDA authority that owns the order_payer and open_orders account
-    pub authority: Pubkey,
-    /// The Serum market where the execution will take place
-    pub serum_market: Pubkey,
-    /// The open_orders account that is owned by the authority and used to place orders
-    pub open_orders: Pubkey,
-    /// The SPL TokenAccount that contains the tokens that will be put into Serum for trading
-    pub order_payer: Pubkey,
+pub struct BoundedStrategyV2 {
     /// The side of the order book the market order will be placed
-    /// 0 for Bid, 1 for Ask
+    /// 0 for Bid | Buy, 1 for Ask | Sell
     pub order_side: u8,
     /// The date at which the DAO's assets can be reclaimed
     pub reclaim_date: i64,
@@ -25,7 +17,14 @@ pub struct BoundedStrategy {
     /// The price of the base asset that governs the bound. The decimals are
     /// equivalent to the price on the Serum Market's order book
     pub bounded_price: u64,
+    /// The PDA authority that owns necessary accounts
+    pub authority: Pubkey,
     pub authority_bump: u8,
-    /// The address of the serum dex program this strategy trades on
-    pub serum_dex_id: Pubkey,
+    // A slice that holds the list of account addresses for the route
+    pub account_list: [Pubkey; 30]
 }
+
+impl BoundedStrategyV2 {
+    pub const LEN: usize = 8 + std::mem::size_of::<BoundedStrategyV2>() + 320;
+}
+const_assert!(BoundedStrategyV2::LEN == 1408);

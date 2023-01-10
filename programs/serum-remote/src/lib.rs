@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 pub mod constants;
+pub mod dexes;
 pub mod errors;
 pub mod instructions;
 pub mod macros;
