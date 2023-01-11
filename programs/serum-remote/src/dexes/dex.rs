@@ -24,6 +24,7 @@ pub trait DexStatic<'a, 'info> {
     /// Create the DEX instance from a slice of account infos.
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
+        additional_data: &mut Vec<u8>,
     ) -> Result<Self>
     where
         Self: Sized;

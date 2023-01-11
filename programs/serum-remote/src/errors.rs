@@ -40,4 +40,6 @@ pub enum ErrorCode {
     BadDepositAddress,
     #[msg("open orders does not match strategy")]
     WrongOpenOrdersKey,
+    #[msg("Failed to load OpenBook DEX Market")]
+    FailedToLoadOpenBookDexMarket,
 }

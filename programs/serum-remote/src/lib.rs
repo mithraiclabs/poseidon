@@ -7,6 +7,7 @@ pub mod instructions;
 pub mod macros;
 pub mod serum_utils;
 pub mod state;
+pub mod utils;
 
 use crate::instructions::*;
 
