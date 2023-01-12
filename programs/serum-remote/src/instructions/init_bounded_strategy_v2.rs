@@ -50,3 +50,43 @@ pub struct InitBoundedStrategyV2<'info> {
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
+
+pub fn handler(
+    ctx: Context<InitBoundedStrategyV2>,
+    _transfer_amount: u64,
+    bound_price: u64,
+    reclaim_date: i64,
+    order_side: u8,
+    bound: u8,
+    additional_data: Vec<u8>
+) -> Result<()> {
+    // TODO: Set BoundedStrategy information
+    let authority_bump = match ctx.bumps.get("authority") {
+        Some(bump) => *bump,
+        None => {
+            msg!("Wrong bump key. Available keys are {:?}", ctx.bumps.keys());
+            panic!("Wrong bump key")
+        }
+    };
+    let bounded_strategy = &mut ctx.accounts.strategy;
+    bounded_strategy.collateral_mint = ctx.accounts.mint.key();
+    bounded_strategy.authority = ctx.accounts.authority.key();
+    bounded_strategy.bounded_price = bound_price;
+    bounded_strategy.reclaim_date = reclaim_date;
+    bounded_strategy.reclaim_address = ctx.accounts.reclaim_account.key();
+    bounded_strategy.deposit_address = ctx.accounts.deposit_account.key();
+    bounded_strategy.order_side = order_side;
+    bounded_strategy.bound = bound;
+    bounded_strategy.authority_bump = authority_bump;
+    // TOOD: Double check that this won't error
+    bounded_strategy.additional_data.clone_from_slice(&additional_data[..]);
+    // TODO: Copy the remaining accounts to the BoundedStrategy
+    // bounded_strategy.account_list = ctx.remaining_accounts;
+
+
+    // TODO: Unpack & initalize the routes from remaining accounts
+
+    // TODO: Transfer the assets
+
+    Ok(())
+}

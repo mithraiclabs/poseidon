@@ -23,9 +23,11 @@ pub struct BoundedStrategyV2 {
     pub authority_bump: u8,
     // A slice that holds the list of account addresses for the route
     pub account_list: [Pubkey; 30],
+    /// A slice that holds additional data for DEXes in the route
+    pub additional_data: [u8; 32]
 }
 
 impl BoundedStrategyV2 {
     pub const LEN: usize = 8 + std::mem::size_of::<BoundedStrategyV2>() + 320;
 }
-const_assert!(BoundedStrategyV2::LEN == 1440);
+const_assert!(BoundedStrategyV2::LEN == 1472);
