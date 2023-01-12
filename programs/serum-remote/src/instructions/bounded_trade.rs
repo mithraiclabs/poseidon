@@ -12,7 +12,8 @@ use anchor_spl::{
     token::{Token, TokenAccount},
 };
 
-use crate::{authority_signer_seeds, open_serum, settle_funds};
+use crate::dexes::open_book_dex;
+use crate::{authority_signer_seeds, settle_funds};
 use crate::{
     constants::AUTHORITY_SEED,
     errors::ErrorCode,
@@ -30,27 +31,27 @@ pub struct BoundedTrade<'info> {
     /// CHECK: Checks are made when loading and interacting with the market
     #[account(
       mut,
-    owner = open_serum::ID
+    owner = open_book_dex::ID
   )]
     pub serum_market: UncheckedAccount<'info>,
     /// The Serum Market's bids account
     /// CHECK: Market checks are made when loading from the Market
     #[account(
       mut,
-      owner = open_serum::ID
+      owner = open_book_dex::ID
     )]
     pub bids: UncheckedAccount<'info>,
     /// The Serum Market's asks accoutn
     /// CHECK: Market checks are made when loading from the Market
     #[account(
       mut,
-      owner = open_serum::ID
+      owner = open_book_dex::ID
     )]
     pub asks: UncheckedAccount<'info>,
 
     #[account(
       mut,
-      owner = open_serum::ID,
+      owner = open_book_dex::ID,
       constraint = open_orders.key() == strategy.open_orders
           @ ErrorCode::WrongOpenOrdersKey
     )]
@@ -69,11 +70,11 @@ pub struct BoundedTrade<'info> {
     )]
     pub authority: UncheckedAccount<'info>,
     #[account(mut,
-      owner = open_serum::ID)]
+      owner = open_book_dex::ID)]
     /// CHECK: Serum handles checks
     pub request_queue: UncheckedAccount<'info>,
     #[account(mut,
-      owner = open_serum::ID)]
+      owner = open_book_dex::ID)]
     /// CHECK: Serum handles checkss
     pub event_queue: UncheckedAccount<'info>,
     #[account(mut)]

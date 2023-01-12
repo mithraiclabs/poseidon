@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use enum_dispatch::enum_dispatch;
 
-use crate::{state::BoundedStrategyV2, instructions::InitBoundedStrategyV2};
+use crate::instructions::InitBoundedStrategyV2;
 
 #[enum_dispatch]
 pub trait Dex {
@@ -34,9 +34,5 @@ pub trait DexStatic<'a, 'info> {
     fn initialize(
         &self,
         ctx: &Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
-        payer: UncheckedAccount<'info>,
-        accounts: &'a [AccountInfo<'info>],
-        bounded_strategy: &Account<'info, BoundedStrategyV2>,
-        program_id: &Pubkey,
     ) -> Result<()>;
 }

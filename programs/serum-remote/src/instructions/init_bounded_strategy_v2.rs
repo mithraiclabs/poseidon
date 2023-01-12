@@ -4,7 +4,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use crate::{
     constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED},
     errors::ErrorCode,
-    state::BoundedStrategyV2,
+    state::BoundedStrategyV2, dexes::{DexList, leg::Leg},
 };
 
 #[derive(Accounts)]
@@ -51,8 +51,10 @@ pub struct InitBoundedStrategyV2<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(
-    ctx: Context<InitBoundedStrategyV2>,
+/// The ctx.remaining_accounts should contain a list of account infos in the 
+/// exact order that the Leg's require.
+pub fn handler<'info>(
+    ctx: Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
     _transfer_amount: u64,
     bound_price: u64,
     reclaim_date: i64,
@@ -60,7 +62,7 @@ pub fn handler(
     bound: u8,
     additional_data: Vec<u8>
 ) -> Result<()> {
-    // TODO: Set BoundedStrategy information
+    // Set BoundedStrategy information
     let authority_bump = match ctx.bumps.get("authority") {
         Some(bump) => *bump,
         None => {
@@ -78,15 +80,31 @@ pub fn handler(
     bounded_strategy.order_side = order_side;
     bounded_strategy.bound = bound;
     bounded_strategy.authority_bump = authority_bump;
-    // TOOD: Double check that this won't error
     bounded_strategy.additional_data.clone_from_slice(&additional_data[..]);
-    // TODO: Copy the remaining accounts to the BoundedStrategy
-    // bounded_strategy.account_list = ctx.remaining_accounts;
+    // Copy the remaining accounts to the BoundedStrategy
+    let keys: Vec<Pubkey> = ctx.remaining_accounts.iter().map(|x| x.key()).collect();
+    bounded_strategy.account_list.clone_from_slice(&keys);
 
+    // Unpack & initalize the routes from remaining accounts
+    let mut account_cursor: usize = 0;
+    let mut added_data = additional_data;
+    while let Some(dex_program) = ctx.remaining_accounts.get(account_cursor) {
+        let dex = DexList::from_id(dex_program.key())?;
+        let end_index = dex.get_end_account_idx(account_cursor);
 
-    // TODO: Unpack & initalize the routes from remaining accounts
+        let account_infos = &ctx.remaining_accounts[account_cursor..end_index];
+        // Create the Leg
+        let leg = Leg::from_account_slice(dex, account_infos, &mut added_data)?;
+        // Initialize from the leg
+        leg.initialize(&ctx)?;
 
-    // TODO: Transfer the assets
+        account_cursor = end_index;
+    }
+
+    // TODO: Validate the end to end route mints lines up. This requires having the start and end 
+    //  token of each leg.
+
+    // TODO: Transfer the assets to the remote execution program
 
     Ok(())
 }

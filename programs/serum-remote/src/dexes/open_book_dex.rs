@@ -31,6 +31,14 @@ use super::{
 pub const MAX_ORDER_BOOK_DEPTH: usize = 3;
 const OPEN_ORDERS_MEM_SIZE: u64 = 3228;
 
+#[cfg(not(feature = "devnet"))]
+#[cfg(not(feature = "localnet"))]
+anchor_lang::declare_id!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX");
+#[cfg(feature = "devnet")]
+anchor_lang::declare_id!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj");
+#[cfg(feature = "localnet")]
+anchor_lang::declare_id!("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
+
 /**
  * OpenBookDex ACCOUNT ORDER
  * 0 - dex_program
@@ -62,21 +70,7 @@ pub struct OpenBookDex<'a, 'info> {
     accounts: &'a [AccountInfo<'info>],
 }
 
-/**
- * OpenBookDexInitialize ACCOUNT ORDER
- * 0 - dex_program
- * 1 - serum_market
- * 2 - OpenOrders account
- */
-pub struct OpenBookDexInitialize<'a, 'info> {
-    market: Market<'a>,
-    accounts: &'a [AccountInfo<'info>],
-}
-impl<'a, 'info> OpenBookDexInitialize<'a, 'info> {
-    fn open_orders_account(&self) -> &AccountInfo<'info> {
-        &self.accounts[2]
-    }
-
+impl<'a, 'info> OpenBookDex<'a, 'info> {
     fn dex_program(&self) -> &AccountInfo<'info> {
         &self.accounts[0]
     }
@@ -85,19 +79,16 @@ impl<'a, 'info> OpenBookDexInitialize<'a, 'info> {
         &self.accounts[1]
     }
 
-    fn from_account_slice(
-        accounts: &'a [AccountInfo<'info>],
-    ) -> anchor_lang::Result<OpenBookDexInitialize<'a, 'info>> {
-        let market = Market::load(&accounts[1], accounts[0].key)
-            .map_err(|_| errors::ErrorCode::FailedToLoadOpenBookDexMarket)?;
-
-        Ok(Self { accounts, market })
+    fn open_orders_account(&self) -> &AccountInfo<'info> {
+        &self.accounts[4]
     }
 
-    fn validate(&self, bounded_strategy: &BoundedStrategyV2) -> anchor_lang::Result<()> {
+    fn validate_init(&self, bounded_strategy: &BoundedStrategyV2) -> anchor_lang::Result<()> {
+        let market = Market::load(self.serum_market(), self.dex_program().key)
+            .map_err(|_| errors::ErrorCode::FailedToLoadOpenBookDexMarket)?;
         // Validate market and mint information
-        let coin_mint = Pubkey::new(&transmute_to_bytes(&identity(self.market.coin_mint)));
-        let pc_mint = Pubkey::new(&transmute_to_bytes(&identity(self.market.pc_mint)));
+        let coin_mint = Pubkey::new(&transmute_to_bytes(&identity(market.coin_mint)));
+        let pc_mint = Pubkey::new(&transmute_to_bytes(&identity(market.pc_mint)));
         if bounded_strategy.order_side == 0 && bounded_strategy.collateral_mint != pc_mint {
             // If Bidding the assets to transfer must the the price currency mint
             return Err(error!(ErrorCode::BidsRequireQuoteCurrency));
@@ -259,7 +250,7 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
                 market.pc_lot_size,
             )
         };
-        OrderBookItem::simple_debug(&order_book);
+
         let fee_tier = serum_v3::fees::FeeTier::from_srm_and_msrm_balances(accounts[1].key);
         let (fee_numerator, fee_denominator) = fee_tier.taker_rate_fraction();
 
@@ -279,32 +270,26 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
     fn initialize(
         &self,
         ctx: &Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
-        payer: UncheckedAccount<'info>,
-        accounts: &'a [AccountInfo<'info>],
-        bounded_strategy: &Account<'info, BoundedStrategyV2>,
-        program_id: &Pubkey,
     ) -> anchor_lang::Result<()> {
-        let obd_init = OpenBookDexInitialize::from_account_slice(accounts)?;
-
-        obd_init.validate(bounded_strategy)?;
+        self.validate_init(&ctx.accounts.strategy)?;
 
         // create OpenOrders account
         let cpi_accounts = anchor_lang::system_program::CreateAccount {
-            from: payer.to_account_info(),
-            to: obd_init.open_orders_account().to_account_info(),
+            from: ctx.accounts.payer.to_account_info(),
+            to: self.open_orders_account().to_account_info(),
         };
         // Get the canonical OpenOrders bump
         let (open_orders_key, open_orders_bump) =
-            Pubkey::find_program_address(open_orders_seeds!(bounded_strategy), program_id);
-        if open_orders_key != obd_init.open_orders_account().key() {
+            Pubkey::find_program_address(open_orders_seeds!(&ctx.accounts.strategy), ctx.program_id);
+        if open_orders_key != self.open_orders_account().key() {
             return Err(error!(ErrorCode::BadOpenOrdersKey));
         }
         let cpi_ctx = CpiContext {
-            program: obd_init.dex_program().to_account_info(),
+            program: self.dex_program().to_account_info(),
             accounts: cpi_accounts,
             remaining_accounts: Vec::new(),
             signer_seeds: &[open_orders_signer_seeds!(
-                bounded_strategy,
+                &ctx.accounts.strategy,
                 open_orders_bump
             )],
         };
@@ -313,14 +298,14 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
             cpi_ctx,
             Rent::get()?.minimum_balance(OPEN_ORDERS_MEM_SIZE as usize),
             OPEN_ORDERS_MEM_SIZE,
-            obd_init.dex_program().key,
+            self.dex_program().key,
         )?;
 
         // Initialize the OpenOrders account
         let init_open_orders_accounts = InitOpenOrders {
-            open_orders: obd_init.open_orders_account().to_account_info(),
+            open_orders: self.open_orders_account().to_account_info(),
             authority: ctx.accounts.authority.to_account_info(),
-            market: obd_init.serum_market().to_account_info(),
+            market: self.serum_market().to_account_info(),
             rent: ctx.accounts.rent.to_account_info(),
         };
 
@@ -333,7 +318,7 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
         };
         let init_ctx = CpiContext {
             accounts: init_open_orders_accounts,
-            program: obd_init.dex_program().to_account_info(),
+            program: self.dex_program().to_account_info(),
             remaining_accounts: vec![],
             signer_seeds: &[authority_signer_seeds!(&ctx, authority_bump)],
         };

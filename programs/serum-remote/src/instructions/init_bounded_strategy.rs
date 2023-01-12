@@ -10,8 +10,8 @@ use crate::{
     authority_signer_seeds,
     constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, OPEN_ORDERS_SEED, ORDER_PAYER_SEED},
     errors::ErrorCode,
-    open_orders_signer_seeds, open_serum,
-    state::BoundedStrategy,
+    open_orders_signer_seeds,
+    state::BoundedStrategy, dexes::open_book_dex,
 };
 
 #[derive(Accounts)]
@@ -29,7 +29,7 @@ pub struct InitBoundedStrategy<'info> {
     pub mint: Account<'info, Mint>,
     /// CHECK: Constraints are handled
     #[account(
-    owner = open_serum::ID
+    owner = open_book_dex::ID
   )]
     pub serum_market: UncheckedAccount<'info>,
     #[account(

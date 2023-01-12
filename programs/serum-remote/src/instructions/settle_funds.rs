@@ -6,7 +6,7 @@ use anchor_spl::{
 
 use crate::{
     authority_signer_seeds, constants::AUTHORITY_SEED, errors::ErrorCode,
-    instructions::bounded_trade::SettleWallets, open_serum, settle_funds, state::BoundedStrategy,
+    instructions::bounded_trade::SettleWallets, settle_funds, state::BoundedStrategy, dexes::open_book_dex,
 };
 
 #[derive(Accounts)]
@@ -23,12 +23,12 @@ pub struct SettleFundsAccounts<'info> {
     /// CHECK: Checks are made when loading and interacting with the market
     #[account(
         mut,
-      owner = open_serum::ID
+      owner = open_book_dex::ID
     )]
     pub serum_market: UncheckedAccount<'info>,
     #[account(
         mut,
-        owner = open_serum::ID,
+        owner = open_book_dex::ID,
         constraint = open_orders.key() == strategy.open_orders
           @ ErrorCode::WrongOpenOrdersKey
       )]
