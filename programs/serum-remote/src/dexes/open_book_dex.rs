@@ -1,15 +1,16 @@
-use std::{num::NonZeroU64, cell::Ref, convert::identity};
+use std::{num::NonZeroU64, convert::identity};
 
-use anchor_lang::{prelude::{AccountInfo, Pubkey}, error};
+use anchor_lang::{prelude::*, error};
 use anchor_spl::dex::serum_dex::{matching::{Side, OrderType}, self, instruction::SelfTradeBehavior, state::Market};
 use arrayref::array_refs;
 use safe_transmute::transmute_to_bytes;
 
-use crate::{utils::spl_token_utils, errors::{self, ErrorCode}, state::BoundedStrategyV2};
+use crate::{constants::OPEN_ORDERS_SEED, utils::spl_token_utils, errors::{self, ErrorCode}, state::BoundedStrategyV2, open_orders_seeds, open_orders_signer_seeds};
 
 use super::{serum_v3::{OrderBookItem, buy_coin_amount_out, sell_coin_amount_out, Slab, self}, Dex, DexStatic};
 
 pub const MAX_ORDER_BOOK_DEPTH: usize = 3;
+const OPEN_ORDERS_MEM_SIZE: u64 = 3228;
 
 /**
  * OpenBookDex ACCOUNT ORDER
@@ -53,6 +54,14 @@ pub struct OpenBookDexInitialize<'a, 'info> {
     accounts: &'a [AccountInfo<'info>]
 }
 impl<'a,'info> OpenBookDexInitialize<'a,'info> {
+    fn open_orders_account(&self) -> &AccountInfo<'info> {
+        &self.accounts[2]
+    }
+
+    fn dex_program(&self) -> &AccountInfo<'info> {
+        &self.accounts[0]
+    }
+
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>]
     ) -> anchor_lang::Result<OpenBookDexInitialize<'a, 'info>> {
@@ -251,14 +260,38 @@ impl<'a,'info> DexStatic<'a,'info> for OpenBookDex<'a,'info> {
 
     fn initialize(
         &self,
+        payer: UncheckedAccount<'info>,
         accounts: &'a [AccountInfo<'info>],
-        bounded_strategy: &BoundedStrategyV2
+        bounded_strategy: &Account<'info, BoundedStrategyV2>,
+        program_id: &Pubkey,
     ) -> anchor_lang::Result<()> {
         let obd_init = OpenBookDexInitialize::from_account_slice(accounts)?;
 
         obd_init.validate(bounded_strategy)?;
 
-        // TODO: create OpenOrders account
+        // create OpenOrders account
+        let cpi_accounts = anchor_lang::system_program::CreateAccount {
+            from: payer.to_account_info(),
+            to: obd_init.open_orders_account().to_account_info(),
+        };
+        // Get the canonical OpenOrders bump
+        let (open_orders_key, open_orders_bump) = Pubkey::find_program_address(open_orders_seeds!(bounded_strategy), program_id);
+        if open_orders_key != obd_init.open_orders_account().key() {
+            return Err(error!(ErrorCode::BadOpenOrdersKey))
+        }
+        let cpi_ctx = CpiContext {
+            program: obd_init.dex_program().to_account_info(),
+            accounts: cpi_accounts,
+            remaining_accounts: Vec::new(),
+            signer_seeds: &[open_orders_signer_seeds!(bounded_strategy, open_orders_bump)],
+        };
+
+        anchor_lang::system_program::create_account(
+            cpi_ctx,
+            Rent::get()?.minimum_balance(OPEN_ORDERS_MEM_SIZE as usize),
+            OPEN_ORDERS_MEM_SIZE,
+            obd_init.dex_program().key,
+        )?;
 
         // TODO: Initialize the OpenOrders account
         Ok(())

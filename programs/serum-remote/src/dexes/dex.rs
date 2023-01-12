@@ -34,7 +34,9 @@ pub trait DexStatic<'a, 'info> {
     /// Handles any initialization needed for the DEX
     fn initialize(
         &self,
+        payer: UncheckedAccount<'info>,
         accounts: &'a [AccountInfo<'info>],
-        bounded_strategy: &BoundedStrategyV2
+        bounded_strategy: &Account<'info, BoundedStrategyV2>,
+        program_id: &Pubkey,
     ) -> Result<()>;
 }

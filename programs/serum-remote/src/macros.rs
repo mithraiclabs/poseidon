@@ -11,9 +11,19 @@ macro_rules! authority_signer_seeds {
 
 #[macro_export]
 macro_rules! open_orders_seeds {
-    ($ctx:expr, $bump:ident) => {
+    ($strategy:expr) => {
         &[
-            &$ctx.accounts.strategy.key().to_bytes()[..],
+            &$strategy.key().to_bytes()[..],
+            OPEN_ORDERS_SEED.as_bytes(),
+        ]
+    };
+}
+
+#[macro_export]
+macro_rules! open_orders_signer_seeds {
+    ($strategy:expr, $bump:ident) => {
+        &[
+            &$strategy.key().to_bytes()[..],
             OPEN_ORDERS_SEED.as_bytes(),
             &[$bump],
         ]

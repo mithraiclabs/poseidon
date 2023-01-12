@@ -42,4 +42,6 @@ pub enum ErrorCode {
     WrongOpenOrdersKey,
     #[msg("Failed to load OpenBook DEX Market")]
     FailedToLoadOpenBookDexMarket,
+    #[msg("OpenOrders account does not match derived address")]
+    BadOpenOrdersKey,
 }

@@ -10,7 +10,7 @@ use crate::{
     authority_signer_seeds,
     constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, OPEN_ORDERS_SEED, ORDER_PAYER_SEED},
     errors::ErrorCode,
-    open_orders_seeds, open_serum,
+    open_orders_signer_seeds, open_serum,
     state::BoundedStrategy,
 };
 
@@ -122,7 +122,7 @@ pub fn handler(
         program: ctx.accounts.dex_program.to_account_info(),
         accounts: cpi_accounts,
         remaining_accounts: Vec::new(),
-        signer_seeds: &[open_orders_seeds!(ctx, open_orders_bump)],
+        signer_seeds: &[open_orders_signer_seeds!(ctx.accounts.strategy, open_orders_bump)],
     };
 
     anchor_lang::system_program::create_account(
