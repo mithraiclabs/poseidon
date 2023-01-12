@@ -22,8 +22,7 @@ pub enum FeeTier {
 impl FeeTier {
     #[inline(always)]
     pub fn from_srm_and_msrm_balances(market: &Pubkey) -> FeeTier {
-        if market == &stable_markets::usdt_usdc::ID
-        {
+        if market == &stable_markets::usdt_usdc::ID {
             return FeeTier::Stable;
         }
 
@@ -33,8 +32,8 @@ impl FeeTier {
     }
 
     ///
-    /// Given a FeeTier return the fee numerator and the fee denominator 
-    /// 
+    /// Given a FeeTier return the fee numerator and the fee denominator
+    ///
     #[inline(always)]
     pub fn taker_rate_fraction(&self) -> (u64, u64) {
         match self {

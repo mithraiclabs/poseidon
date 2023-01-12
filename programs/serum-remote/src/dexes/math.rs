@@ -18,10 +18,10 @@ pub fn mul_div_u64(a: u64, b: u64, divisor: u64) -> Option<u64> {
 
 #[inline(always)]
 pub fn convert_price_to_decimals(
-  price: u64, 
-  coin_lot_size: u64, 
-  coin_decimals_factor: u64, 
-  pc_lot_size: u64
-) -> u64{
+    price: u64,
+    coin_lot_size: u64,
+    coin_decimals_factor: u64,
+    pc_lot_size: u64,
+) -> u64 {
     pc_lot_size * mul_div_u64(price, coin_decimals_factor, coin_lot_size).unwrap()
 }

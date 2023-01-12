@@ -1,10 +1,16 @@
-use std::{num::NonZeroU64, convert::{TryFrom, TryInto}};
+use std::{
+    convert::{TryFrom, TryInto},
+    num::NonZeroU64,
+};
 
 use anchor_lang::__private::bytemuck::{cast_ref, cast_slice, Pod, Zeroable};
 use arrayref::array_refs;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-use super::{super::math::{U128, convert_price_to_decimals}, OrderBookItem};
+use super::{
+    super::math::{convert_price_to_decimals, U128},
+    OrderBookItem,
+};
 
 pub type NodeHandle = u32;
 

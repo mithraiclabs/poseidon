@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
 use enum_dispatch::enum_dispatch;
 
-use crate::state::BoundedStrategyV2;
+use crate::{state::BoundedStrategyV2, instructions::InitBoundedStrategyV2};
 
 #[enum_dispatch]
 pub trait Dex {
-
     /// Given the amount of tokens_in, return the amount of tokens returned
     fn simulate_trade(&self, tokens_in: u64) -> u64;
 
@@ -34,6 +33,7 @@ pub trait DexStatic<'a, 'info> {
     /// Handles any initialization needed for the DEX
     fn initialize(
         &self,
+        ctx: &Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
         payer: UncheckedAccount<'info>,
         accounts: &'a [AccountInfo<'info>],
         bounded_strategy: &Account<'info, BoundedStrategyV2>,

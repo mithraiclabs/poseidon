@@ -1,13 +1,32 @@
-use std::{num::NonZeroU64, convert::identity};
+use std::{convert::identity, num::NonZeroU64};
 
-use anchor_lang::{prelude::*, error};
-use anchor_spl::dex::serum_dex::{matching::{Side, OrderType}, self, instruction::SelfTradeBehavior, state::Market};
+use anchor_lang::{error, prelude::*};
+use anchor_spl::dex::{
+    self,
+    serum_dex::{
+        self,
+        instruction::SelfTradeBehavior,
+        matching::{OrderType, Side},
+        state::Market,
+    },
+    InitOpenOrders,
+};
 use arrayref::array_refs;
 use safe_transmute::transmute_to_bytes;
 
-use crate::{constants::OPEN_ORDERS_SEED, utils::spl_token_utils, errors::{self, ErrorCode}, state::BoundedStrategyV2, open_orders_seeds, open_orders_signer_seeds};
+use crate::{
+    authority_signer_seeds,
+    constants::{AUTHORITY_SEED, OPEN_ORDERS_SEED},
+    errors::{self, ErrorCode},
+    open_orders_seeds, open_orders_signer_seeds,
+    state::BoundedStrategyV2,
+    utils::spl_token_utils, instructions::InitBoundedStrategyV2,
+};
 
-use super::{serum_v3::{OrderBookItem, buy_coin_amount_out, sell_coin_amount_out, Slab, self}, Dex, DexStatic};
+use super::{
+    serum_v3::{self, buy_coin_amount_out, sell_coin_amount_out, OrderBookItem, Slab},
+    Dex, DexStatic,
+};
 
 pub const MAX_ORDER_BOOK_DEPTH: usize = 3;
 const OPEN_ORDERS_MEM_SIZE: u64 = 3228;
@@ -40,7 +59,7 @@ pub struct OpenBookDex<'a, 'info> {
     pc_lot_size: u64,
     has_fee_discount_account: bool,
     base_decimals_factor: u64,
-    accounts: &'a [AccountInfo<'info>]
+    accounts: &'a [AccountInfo<'info>],
 }
 
 /**
@@ -51,9 +70,9 @@ pub struct OpenBookDex<'a, 'info> {
  */
 pub struct OpenBookDexInitialize<'a, 'info> {
     market: Market<'a>,
-    accounts: &'a [AccountInfo<'info>]
+    accounts: &'a [AccountInfo<'info>],
 }
-impl<'a,'info> OpenBookDexInitialize<'a,'info> {
+impl<'a, 'info> OpenBookDexInitialize<'a, 'info> {
     fn open_orders_account(&self) -> &AccountInfo<'info> {
         &self.accounts[2]
     }
@@ -62,17 +81,17 @@ impl<'a,'info> OpenBookDexInitialize<'a,'info> {
         &self.accounts[0]
     }
 
-    fn from_account_slice(
-        accounts: &'a [AccountInfo<'info>]
-    ) -> anchor_lang::Result<OpenBookDexInitialize<'a, 'info>> {
+    fn serum_market(&self) -> &AccountInfo<'info> {
+        &self.accounts[1]
+    }
 
+    fn from_account_slice(
+        accounts: &'a [AccountInfo<'info>],
+    ) -> anchor_lang::Result<OpenBookDexInitialize<'a, 'info>> {
         let market = Market::load(&accounts[1], accounts[0].key)
             .map_err(|_| errors::ErrorCode::FailedToLoadOpenBookDexMarket)?;
 
-        Ok(Self {
-            accounts,
-            market,
-        })
+        Ok(Self { accounts, market })
     }
 
     fn validate(&self, bounded_strategy: &BoundedStrategyV2) -> anchor_lang::Result<()> {
@@ -82,7 +101,8 @@ impl<'a,'info> OpenBookDexInitialize<'a,'info> {
         if bounded_strategy.order_side == 0 && bounded_strategy.collateral_mint != pc_mint {
             // If Bidding the assets to transfer must the the price currency mint
             return Err(error!(ErrorCode::BidsRequireQuoteCurrency));
-        } else if bounded_strategy.order_side == 1 && bounded_strategy.collateral_mint != coin_mint {
+        } else if bounded_strategy.order_side == 1 && bounded_strategy.collateral_mint != coin_mint
+        {
             return Err(error!(ErrorCode::AsksRequireBaseCurrency));
         }
         Ok(())
@@ -90,7 +110,7 @@ impl<'a,'info> OpenBookDexInitialize<'a,'info> {
 }
 
 impl Dex for OpenBookDex<'_, '_> {
-    fn simulate_trade(&self,tokens_in:u64) -> u64 {
+    fn simulate_trade(&self, tokens_in: u64) -> u64 {
         if self.trade_is_bid {
             buy_coin_amount_out(
                 tokens_in,
@@ -109,12 +129,12 @@ impl Dex for OpenBookDex<'_, '_> {
                 self.base_decimals_factor,
                 self.coin_lot_size,
             )
-        }   
+        }
     }
 
     fn input_balance(&self) -> anchor_lang::Result<u64> {
         let data = &self.accounts[14].try_borrow_data()?;
-        Ok(spl_token_utils::amount(data))   
+        Ok(spl_token_utils::amount(data))
     }
 
     fn swap(&self, amount_in: u64) -> anchor_lang::Result<()> {
@@ -192,7 +212,7 @@ impl Dex for OpenBookDex<'_, '_> {
     }
 }
 
-impl<'a,'info> DexStatic<'a,'info> for OpenBookDex<'a,'info> {
+impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
     const ACCOUNTS_LEN: usize = 16;
 
     const INIT_ACCOUNTS_LEN: usize = 3;
@@ -240,9 +260,7 @@ impl<'a,'info> DexStatic<'a,'info> for OpenBookDex<'a,'info> {
             )
         };
         OrderBookItem::simple_debug(&order_book);
-        let fee_tier = serum_v3::fees::FeeTier::from_srm_and_msrm_balances(
-            accounts[1].key
-        );
+        let fee_tier = serum_v3::fees::FeeTier::from_srm_and_msrm_balances(accounts[1].key);
         let (fee_numerator, fee_denominator) = fee_tier.taker_rate_fraction();
 
         Ok(Self {
@@ -260,6 +278,7 @@ impl<'a,'info> DexStatic<'a,'info> for OpenBookDex<'a,'info> {
 
     fn initialize(
         &self,
+        ctx: &Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
         payer: UncheckedAccount<'info>,
         accounts: &'a [AccountInfo<'info>],
         bounded_strategy: &Account<'info, BoundedStrategyV2>,
@@ -275,15 +294,19 @@ impl<'a,'info> DexStatic<'a,'info> for OpenBookDex<'a,'info> {
             to: obd_init.open_orders_account().to_account_info(),
         };
         // Get the canonical OpenOrders bump
-        let (open_orders_key, open_orders_bump) = Pubkey::find_program_address(open_orders_seeds!(bounded_strategy), program_id);
+        let (open_orders_key, open_orders_bump) =
+            Pubkey::find_program_address(open_orders_seeds!(bounded_strategy), program_id);
         if open_orders_key != obd_init.open_orders_account().key() {
-            return Err(error!(ErrorCode::BadOpenOrdersKey))
+            return Err(error!(ErrorCode::BadOpenOrdersKey));
         }
         let cpi_ctx = CpiContext {
             program: obd_init.dex_program().to_account_info(),
             accounts: cpi_accounts,
             remaining_accounts: Vec::new(),
-            signer_seeds: &[open_orders_signer_seeds!(bounded_strategy, open_orders_bump)],
+            signer_seeds: &[open_orders_signer_seeds!(
+                bounded_strategy,
+                open_orders_bump
+            )],
         };
 
         anchor_lang::system_program::create_account(
@@ -293,7 +316,28 @@ impl<'a,'info> DexStatic<'a,'info> for OpenBookDex<'a,'info> {
             obd_init.dex_program().key,
         )?;
 
-        // TODO: Initialize the OpenOrders account
+        // Initialize the OpenOrders account
+        let init_open_orders_accounts = InitOpenOrders {
+            open_orders: obd_init.open_orders_account().to_account_info(),
+            authority: ctx.accounts.authority.to_account_info(),
+            market: obd_init.serum_market().to_account_info(),
+            rent: ctx.accounts.rent.to_account_info(),
+        };
+
+        let authority_bump = match ctx.bumps.get("authority") {
+            Some(bump) => *bump,
+            None => {
+                msg!("Wrong bump key. Available keys are {:?}", ctx.bumps.keys());
+                panic!("Wrong bump key")
+            }
+        };
+        let init_ctx = CpiContext {
+            accounts: init_open_orders_accounts,
+            program: obd_init.dex_program().to_account_info(),
+            remaining_accounts: vec![],
+            signer_seeds: &[authority_signer_seeds!(&ctx, authority_bump)],
+        };
+        dex::init_open_orders(init_ctx)?;
         Ok(())
     }
 }

@@ -12,10 +12,7 @@ macro_rules! authority_signer_seeds {
 #[macro_export]
 macro_rules! open_orders_seeds {
     ($strategy:expr) => {
-        &[
-            &$strategy.key().to_bytes()[..],
-            OPEN_ORDERS_SEED.as_bytes(),
-        ]
+        &[&$strategy.key().to_bytes()[..], OPEN_ORDERS_SEED.as_bytes()]
     };
 }
 

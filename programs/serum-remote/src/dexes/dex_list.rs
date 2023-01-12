@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*, AnchorSerialize, AnchorDeserialize};
+use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 #[derive(Debug, AnchorSerialize, AnchorDeserialize, PartialEq, Eq, Clone, Copy)]
 #[repr(u32)]

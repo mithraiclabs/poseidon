@@ -22,7 +22,7 @@ pub struct BoundedStrategyV2 {
     pub authority: Pubkey,
     pub authority_bump: u8,
     // A slice that holds the list of account addresses for the route
-    pub account_list: [Pubkey; 30]
+    pub account_list: [Pubkey; 30],
 }
 
 impl BoundedStrategyV2 {
