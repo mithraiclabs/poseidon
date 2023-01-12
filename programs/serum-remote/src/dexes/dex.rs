@@ -1,6 +1,8 @@
 use anchor_lang::prelude::*;
 use enum_dispatch::enum_dispatch;
 
+use crate::state::BoundedStrategyV2;
+
 #[enum_dispatch]
 pub trait Dex {
 
@@ -12,14 +14,14 @@ pub trait Dex {
 
     /// Returns the balance of the input token account for the leg
     fn input_balance(&self) -> Result<u64>;
-
-    /// Handles any initialization needed for the DEX
-    fn initialize(&self) -> Result<()>;
 }
 
 pub trait DexStatic<'a, 'info> {
     /// The number of accounts needed for the leg. Used to parse account infos slice.
     const ACCOUNTS_LEN: usize;
+
+    /// The number of accounts needed for initializing trading on the DEX
+    const INIT_ACCOUNTS_LEN: usize;
 
     /// Create the DEX instance from a slice of account infos.
     fn from_account_slice(
@@ -28,4 +30,11 @@ pub trait DexStatic<'a, 'info> {
     ) -> Result<Self>
     where
         Self: Sized;
+
+    /// Handles any initialization needed for the DEX
+    fn initialize(
+        &self,
+        accounts: &'a [AccountInfo<'info>],
+        bounded_strategy: &BoundedStrategyV2
+    ) -> Result<()>;
 }

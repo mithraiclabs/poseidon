@@ -1,15 +1,35 @@
-use std::num::NonZeroU64;
+use std::{num::NonZeroU64, cell::Ref, convert::identity};
 
-use anchor_lang::prelude::AccountInfo;
+use anchor_lang::{prelude::{AccountInfo, Pubkey}, error};
 use anchor_spl::dex::serum_dex::{matching::{Side, OrderType}, self, instruction::SelfTradeBehavior, state::Market};
 use arrayref::array_refs;
+use safe_transmute::transmute_to_bytes;
 
-use crate::{utils::spl_token_utils, errors};
+use crate::{utils::spl_token_utils, errors::{self, ErrorCode}, state::BoundedStrategyV2};
 
 use super::{serum_v3::{OrderBookItem, buy_coin_amount_out, sell_coin_amount_out, Slab, self}, Dex, DexStatic};
 
 pub const MAX_ORDER_BOOK_DEPTH: usize = 3;
 
+/**
+ * OpenBookDex ACCOUNT ORDER
+ * 0 - dex_program
+ * 1 - serum_market
+ * 2 - bids
+ * 3 - asks
+ * 4 - open_orders
+ * 5 - request_queue
+ * 6 - event_queue
+ * 7 - coin_vault
+ * 8 - pc_vault
+ * 9 - serum_vault_signer
+ * 10 - token_program_id
+ * 11 - rent
+ * 12 - serum_referral_account
+ * 13 - payer account
+ * 14 - payer_source_wallet
+ * 15 - payer_destination_wallet
+ */
 pub struct OpenBookDex<'a, 'info> {
     trade_is_bid: bool,
     order_book: Vec<OrderBookItem>,
@@ -22,11 +42,45 @@ pub struct OpenBookDex<'a, 'info> {
     accounts: &'a [AccountInfo<'info>]
 }
 
-impl Dex for OpenBookDex<'_, '_> {
-    fn initialize(&self) -> anchor_lang::Result<()> {
-        todo!();
+/**
+ * OpenBookDexInitialize ACCOUNT ORDER
+ * 0 - dex_program
+ * 1 - serum_market
+ * 2 - OpenOrders account
+ */
+pub struct OpenBookDexInitialize<'a, 'info> {
+    market: Market<'a>,
+    accounts: &'a [AccountInfo<'info>]
+}
+impl<'a,'info> OpenBookDexInitialize<'a,'info> {
+    fn from_account_slice(
+        accounts: &'a [AccountInfo<'info>]
+    ) -> anchor_lang::Result<OpenBookDexInitialize<'a, 'info>> {
+
+        let market = Market::load(&accounts[1], accounts[0].key)
+            .map_err(|_| errors::ErrorCode::FailedToLoadOpenBookDexMarket)?;
+
+        Ok(Self {
+            accounts,
+            market,
+        })
     }
 
+    fn validate(&self, bounded_strategy: &BoundedStrategyV2) -> anchor_lang::Result<()> {
+        // Validate market and mint information
+        let coin_mint = Pubkey::new(&transmute_to_bytes(&identity(self.market.coin_mint)));
+        let pc_mint = Pubkey::new(&transmute_to_bytes(&identity(self.market.pc_mint)));
+        if bounded_strategy.order_side == 0 && bounded_strategy.collateral_mint != pc_mint {
+            // If Bidding the assets to transfer must the the price currency mint
+            return Err(error!(ErrorCode::BidsRequireQuoteCurrency));
+        } else if bounded_strategy.order_side == 1 && bounded_strategy.collateral_mint != coin_mint {
+            return Err(error!(ErrorCode::AsksRequireBaseCurrency));
+        }
+        Ok(())
+    }
+}
+
+impl Dex for OpenBookDex<'_, '_> {
     fn simulate_trade(&self,tokens_in:u64) -> u64 {
         if self.trade_is_bid {
             buy_coin_amount_out(
@@ -132,6 +186,8 @@ impl Dex for OpenBookDex<'_, '_> {
 impl<'a,'info> DexStatic<'a,'info> for OpenBookDex<'a,'info> {
     const ACCOUNTS_LEN: usize = 16;
 
+    const INIT_ACCOUNTS_LEN: usize = 3;
+
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
         additional_data: &mut Vec<u8>,
@@ -191,5 +247,20 @@ impl<'a,'info> DexStatic<'a,'info> for OpenBookDex<'a,'info> {
             coin_lot_size: market.coin_lot_size,
             pc_lot_size: market.pc_lot_size,
         })
+    }
+
+    fn initialize(
+        &self,
+        accounts: &'a [AccountInfo<'info>],
+        bounded_strategy: &BoundedStrategyV2
+    ) -> anchor_lang::Result<()> {
+        let obd_init = OpenBookDexInitialize::from_account_slice(accounts)?;
+
+        obd_init.validate(bounded_strategy)?;
+
+        // TODO: create OpenOrders account
+
+        // TODO: Initialize the OpenOrders account
+        Ok(())
     }
 }

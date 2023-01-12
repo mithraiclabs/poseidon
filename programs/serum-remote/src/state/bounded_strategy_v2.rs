@@ -3,6 +3,7 @@ use static_assertions::const_assert;
 
 #[account]
 pub struct BoundedStrategyV2 {
+    pub collateral_mint: Pubkey,
     /// The side of the order book the market order will be placed
     /// 0 for Bid | Buy, 1 for Ask | Sell
     pub order_side: u8,
@@ -27,4 +28,4 @@ pub struct BoundedStrategyV2 {
 impl BoundedStrategyV2 {
     pub const LEN: usize = 8 + std::mem::size_of::<BoundedStrategyV2>() + 320;
 }
-const_assert!(BoundedStrategyV2::LEN == 1408);
+const_assert!(BoundedStrategyV2::LEN == 1440);
