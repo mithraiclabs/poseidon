@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::{
-    constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED},
+    constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
     dexes::{leg::Leg, DexList},
     errors::ErrorCode,
     state::BoundedStrategyV2,
@@ -19,6 +19,15 @@ pub struct InitBoundedStrategyV2<'info> {
     bump,
   )]
     pub authority: UncheckedAccount<'info>,
+    #[account(
+        init,
+        seeds = [strategy.key().as_ref(), ORDER_PAYER_SEED.as_bytes()],
+        payer = payer,
+        bump,
+        token::mint = mint,
+        token::authority = authority
+      )]
+    pub collateral_account: Box<Account<'info, TokenAccount>>,
 
     pub mint: Account<'info, Mint>,
     /// TODO: The BoundedStrategy seeds will likely need another key. Otherwise DAO's and other
@@ -56,7 +65,7 @@ pub struct InitBoundedStrategyV2<'info> {
 /// exact order that the Leg's require.
 pub fn handler<'info>(
     ctx: Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
-    _transfer_amount: u64,
+    transfer_amount: u64,
     bound_price: u64,
     reclaim_date: i64,
     order_side: u8,
@@ -108,6 +117,13 @@ pub fn handler<'info>(
     //  token of each leg.
 
     // TODO: Transfer the assets to the remote execution program
+    let cpi_accounts = Transfer {
+        from: ctx.accounts.reclaim_account.to_account_info(),
+        to: ctx.accounts.collateral_account.to_account_info(),
+        authority: ctx.accounts.payer.to_account_info().clone(),
+    };
+    let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+    token::transfer(cpi_ctx, transfer_amount)?;
 
     Ok(())
 }
