@@ -5,8 +5,8 @@ use anchor_spl::{
 };
 
 use crate::{
-    authority_signer_seeds, constants::AUTHORITY_SEED, errors::ErrorCode,
-    instructions::bounded_trade::SettleWallets, settle_funds, state::BoundedStrategy, dexes::open_book_dex,
+    authority_signer_seeds, constants::AUTHORITY_SEED, dexes::open_book_dex, errors::ErrorCode,
+    instructions::bounded_trade::SettleWallets, settle_funds, state::BoundedStrategy,
 };
 
 #[derive(Accounts)]

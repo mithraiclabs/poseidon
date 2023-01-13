@@ -9,9 +9,10 @@ use std::convert::identity;
 use crate::{
     authority_signer_seeds,
     constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, OPEN_ORDERS_SEED, ORDER_PAYER_SEED},
+    dexes::open_book_dex,
     errors::ErrorCode,
     open_orders_signer_seeds,
-    state::BoundedStrategy, dexes::open_book_dex,
+    state::BoundedStrategy,
 };
 
 #[derive(Accounts)]

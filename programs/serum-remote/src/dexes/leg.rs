@@ -3,7 +3,7 @@ use enum_dispatch::enum_dispatch;
 
 use crate::{dexes::Dex, instructions::InitBoundedStrategyV2};
 
-use super::{DexList, open_book_dex::OpenBookDex, DexStatic};
+use super::{open_book_dex::OpenBookDex, DexList, DexStatic};
 
 #[enum_dispatch(Dex)]
 pub enum Leg<'a, 'info> {
@@ -17,7 +17,10 @@ impl<'a, 'info> Leg<'a, 'info> {
         additional_data: &mut Vec<u8>,
     ) -> Result<Self> {
         let res = match dex {
-            DexList::OpenBookV3 => Leg::OpenBookV3(OpenBookDex::from_account_slice(account_infos, additional_data)?),
+            DexList::OpenBookV3 => Leg::OpenBookV3(OpenBookDex::from_account_slice(
+                account_infos,
+                additional_data,
+            )?),
         };
 
         Ok(res)
@@ -28,7 +31,7 @@ impl<'a, 'info> Leg<'a, 'info> {
         ctx: &Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
     ) -> Result<()> {
         match self {
-            Leg::OpenBookV3(open_book_dex) => open_book_dex.initialize(ctx)
+            Leg::OpenBookV3(open_book_dex) => open_book_dex.initialize(ctx),
         }
     }
 }

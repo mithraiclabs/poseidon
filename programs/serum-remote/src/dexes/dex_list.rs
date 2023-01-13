@@ -2,7 +2,10 @@ use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 use crate::errors;
 
-use super::{open_book_dex::{self, OpenBookDex}, DexStatic};
+use super::{
+    open_book_dex::{self, OpenBookDex},
+    DexStatic,
+};
 
 #[derive(Debug, AnchorSerialize, AnchorDeserialize, PartialEq, Eq, Clone, Copy)]
 #[repr(u32)]
@@ -35,4 +38,3 @@ impl DexList {
         start + accounts_len
     }
 }
-

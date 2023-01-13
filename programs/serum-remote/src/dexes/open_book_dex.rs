@@ -18,9 +18,10 @@ use crate::{
     authority_signer_seeds,
     constants::{AUTHORITY_SEED, OPEN_ORDERS_SEED},
     errors::{self, ErrorCode},
+    instructions::InitBoundedStrategyV2,
     open_orders_seeds, open_orders_signer_seeds,
     state::BoundedStrategyV2,
-    utils::spl_token_utils, instructions::InitBoundedStrategyV2,
+    utils::spl_token_utils,
 };
 
 use super::{
@@ -279,8 +280,10 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
             to: self.open_orders_account().to_account_info(),
         };
         // Get the canonical OpenOrders bump
-        let (open_orders_key, open_orders_bump) =
-            Pubkey::find_program_address(open_orders_seeds!(&ctx.accounts.strategy), ctx.program_id);
+        let (open_orders_key, open_orders_bump) = Pubkey::find_program_address(
+            open_orders_seeds!(&ctx.accounts.strategy),
+            ctx.program_id,
+        );
         if open_orders_key != self.open_orders_account().key() {
             return Err(error!(ErrorCode::BadOpenOrdersKey));
         }

@@ -3,8 +3,9 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 
 use crate::{
     constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED},
+    dexes::{leg::Leg, DexList},
     errors::ErrorCode,
-    state::BoundedStrategyV2, dexes::{DexList, leg::Leg},
+    state::BoundedStrategyV2,
 };
 
 #[derive(Accounts)]
@@ -51,7 +52,7 @@ pub struct InitBoundedStrategyV2<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-/// The ctx.remaining_accounts should contain a list of account infos in the 
+/// The ctx.remaining_accounts should contain a list of account infos in the
 /// exact order that the Leg's require.
 pub fn handler<'info>(
     ctx: Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
@@ -60,7 +61,7 @@ pub fn handler<'info>(
     reclaim_date: i64,
     order_side: u8,
     bound: u8,
-    additional_data: Vec<u8>
+    additional_data: Vec<u8>,
 ) -> Result<()> {
     // Set BoundedStrategy information
     let authority_bump = match ctx.bumps.get("authority") {
@@ -80,7 +81,9 @@ pub fn handler<'info>(
     bounded_strategy.order_side = order_side;
     bounded_strategy.bound = bound;
     bounded_strategy.authority_bump = authority_bump;
-    bounded_strategy.additional_data.clone_from_slice(&additional_data[..]);
+    bounded_strategy
+        .additional_data
+        .clone_from_slice(&additional_data[..]);
     // Copy the remaining accounts to the BoundedStrategy
     let keys: Vec<Pubkey> = ctx.remaining_accounts.iter().map(|x| x.key()).collect();
     bounded_strategy.account_list.clone_from_slice(&keys);
@@ -101,7 +104,7 @@ pub fn handler<'info>(
         account_cursor = end_index;
     }
 
-    // TODO: Validate the end to end route mints lines up. This requires having the start and end 
+    // TODO: Validate the end to end route mints lines up. This requires having the start and end
     //  token of each leg.
 
     // TODO: Transfer the assets to the remote execution program
