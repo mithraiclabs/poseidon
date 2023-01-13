@@ -50,4 +50,6 @@ pub enum ErrorCode {
     OutputMintMismatch,
     #[msg("Input mint does not match route")]
     InputMintMismatch,
+    #[msg("The Leg's accounts aren't correct or ordered properly")]
+    IncorrectKeysForLeg,
 }

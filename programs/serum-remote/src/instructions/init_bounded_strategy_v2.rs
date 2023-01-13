@@ -3,9 +3,9 @@ use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::{
     constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
-    dexes::{DexList, Route, Leg},
-    errors::{ErrorCode, self},
-    state::BoundedStrategyV2, utils::spl_token_utils,
+    dexes::{DexList, Leg, Route},
+    errors::{self, ErrorCode},
+    state::BoundedStrategyV2,
 };
 
 #[derive(Accounts)]
@@ -99,7 +99,7 @@ pub fn handler<'info>(
 
     // Unpack & initalize the routes from remaining accounts
     let mut route = Route::default();
-    let (mut account_cursor, mut leg_cursor): (usize, usize) = (0,0);
+    let (mut account_cursor, mut leg_cursor): (usize, usize) = (0, 0);
     let mut added_data = additional_data;
     while let Some(dex_program) = ctx.remaining_accounts.get(account_cursor) {
         let dex = DexList::from_id(dex_program.key())?;
@@ -119,10 +119,10 @@ pub fn handler<'info>(
 
     // Validate the start and end route mints lines up
     if ctx.accounts.deposit_account.mint != route.end_mint()? {
-        return Err(error!(errors::ErrorCode::OutputMintMismatch))
+        return Err(error!(errors::ErrorCode::OutputMintMismatch));
     }
     if ctx.accounts.reclaim_account.mint != route.start_mint()? {
-        return Err(error!(errors::ErrorCode::InputMintMismatch))
+        return Err(error!(errors::ErrorCode::InputMintMismatch));
     }
 
     // Transfer the assets to the remote execution program

@@ -1,16 +1,16 @@
 use std::{convert::identity, num::NonZeroU64};
 
-use anchor_lang::{error, prelude::*};
-use anchor_spl::dex::{
+use anchor_lang::{error, prelude::*, solana_program::sysvar};
+use anchor_spl::{dex::{
     self,
     serum_dex::{
         self,
         instruction::SelfTradeBehavior,
         matching::{OrderType, Side},
-        state::Market,
+        state::{gen_vault_signer_key, Market},
     },
     InitOpenOrders,
-};
+}, token};
 use arrayref::array_refs;
 use safe_transmute::transmute_to_bytes;
 
@@ -80,8 +80,56 @@ impl<'a, 'info> OpenBookDex<'a, 'info> {
         &self.accounts[1]
     }
 
+    fn bids(&self) -> &AccountInfo<'info> {
+        &self.accounts[2]
+    }
+
+    fn asks(&self) -> &AccountInfo<'info> {
+        &self.accounts[3]
+    }
+
     fn open_orders_account(&self) -> &AccountInfo<'info> {
         &self.accounts[4]
+    }
+
+    fn request_queue(&self) -> &AccountInfo<'info> {
+        &self.accounts[5]
+    }
+
+    fn event_queue(&self) -> &AccountInfo<'info> {
+        &self.accounts[6]
+    }
+
+    fn coin_vault(&self) -> &AccountInfo<'info> {
+        &self.accounts[7]
+    }
+
+    fn pc_vault(&self) -> &AccountInfo<'info> {
+        &self.accounts[8]
+    }
+
+    fn vault_signer(&self) -> &AccountInfo<'info> {
+        &self.accounts[9]
+    }
+
+    fn expected_vault_signer(&self, market: &Market) -> Pubkey {
+        let res = gen_vault_signer_key(
+            market.vault_signer_nonce,
+            self.serum_market().key,
+            self.dex_program().key,
+        );
+        match res {
+            Ok(key) => key,
+            Err(err) => panic!("market_vault_signer Error: {}", err),
+        }
+    }
+
+    fn token_program_id(&self) -> &AccountInfo<'info> {
+        &self.accounts[10]
+    }
+
+    fn rent(&self) -> &AccountInfo<'info> {
+        &self.accounts[11]
     }
 
     fn payer_source_wallet(&self) -> &AccountInfo<'info> {
@@ -105,6 +153,38 @@ impl<'a, 'info> OpenBookDex<'a, 'info> {
         {
             return Err(error!(ErrorCode::AsksRequireBaseCurrency));
         }
+
+        ////////////////// Validate the accounts data against the Market //////////////////
+        // These are helpful for user feedback. Downstream programs should validate accounts, 
+        //  but validating market information on initialization is nice to have.
+        if self.bids().key.to_bytes() != transmute_to_bytes(&identity(market.bids)) {
+            return Err(error!(ErrorCode::IncorrectKeysForLeg));
+        }
+        if self.asks().key.to_bytes() != transmute_to_bytes(&identity(market.asks)) {
+            return Err(error!(ErrorCode::IncorrectKeysForLeg));
+        }
+        if self.request_queue().key.to_bytes() != transmute_to_bytes(&identity(market.req_q)) {
+            return Err(error!(ErrorCode::IncorrectKeysForLeg));
+        }
+        if self.event_queue().key.to_bytes() != transmute_to_bytes(&identity(market.event_q)) {
+            return Err(error!(ErrorCode::IncorrectKeysForLeg));
+        }
+        if self.coin_vault().key.to_bytes() != transmute_to_bytes(&identity(market.coin_vault)) {
+            return Err(error!(ErrorCode::IncorrectKeysForLeg));
+        }
+        if self.pc_vault().key.to_bytes() != transmute_to_bytes(&identity(market.pc_vault)) {
+            return Err(error!(ErrorCode::IncorrectKeysForLeg));
+        }
+        if self.vault_signer().key != &self.expected_vault_signer(&market) {
+            return Err(error!(ErrorCode::IncorrectKeysForLeg));
+        }
+        if self.token_program_id().key != &token::ID {
+            return Err(error!(ErrorCode::IncorrectKeysForLeg));
+        }
+        if self.rent().key != &sysvar::rent::ID {
+            return Err(error!(ErrorCode::IncorrectKeysForLeg));
+        }
+
         Ok(())
     }
 }
@@ -211,12 +291,16 @@ impl Dex for OpenBookDex<'_, '_> {
         Ok(())
     }
 
-    fn start_mint(&self) ->  Result<Pubkey> {
-        Ok(spl_token_utils::mint(&self.payer_source_wallet().try_borrow_data()?))
+    fn start_mint(&self) -> Result<Pubkey> {
+        Ok(spl_token_utils::mint(
+            &self.payer_source_wallet().try_borrow_data()?,
+        ))
     }
 
-    fn end_mint(&self) ->  Result<Pubkey> {
-        Ok(spl_token_utils::mint(&self.payer_destination_wallet().try_borrow_data()?))
+    fn end_mint(&self) -> Result<Pubkey> {
+        Ok(spl_token_utils::mint(
+            &self.payer_destination_wallet().try_borrow_data()?,
+        ))
     }
 }
 
