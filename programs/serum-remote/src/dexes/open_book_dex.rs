@@ -84,6 +84,14 @@ impl<'a, 'info> OpenBookDex<'a, 'info> {
         &self.accounts[4]
     }
 
+    fn payer_source_wallet(&self) -> &AccountInfo<'info> {
+        &self.accounts[14]
+    }
+
+    fn payer_destination_wallet(&self) -> &AccountInfo<'info> {
+        &self.accounts[15]
+    }
+
     fn validate_init(&self, bounded_strategy: &BoundedStrategyV2) -> anchor_lang::Result<()> {
         let market = Market::load(self.serum_market(), self.dex_program().key)
             .map_err(|_| errors::ErrorCode::FailedToLoadOpenBookDexMarket)?;
@@ -201,6 +209,14 @@ impl Dex for OpenBookDex<'_, '_> {
         anchor_lang::solana_program::program::invoke_unchecked(&settle_funds_ix, self.accounts)
             .unwrap();
         Ok(())
+    }
+
+    fn start_mint(&self) ->  Result<Pubkey> {
+        Ok(spl_token_utils::mint(&self.payer_source_wallet().try_borrow_data()?))
+    }
+
+    fn end_mint(&self) ->  Result<Pubkey> {
+        Ok(spl_token_utils::mint(&self.payer_destination_wallet().try_borrow_data()?))
     }
 }
 

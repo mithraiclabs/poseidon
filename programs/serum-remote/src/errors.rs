@@ -46,4 +46,8 @@ pub enum ErrorCode {
     BadOpenOrdersKey,
     #[msg("Uknown DEX Program ID")]
     UknownDexId,
+    #[msg("Output mint does not match route")]
+    OutputMintMismatch,
+    #[msg("Input mint does not match route")]
+    InputMintMismatch,
 }

@@ -13,6 +13,12 @@ pub trait Dex {
 
     /// Returns the balance of the input token account for the leg
     fn input_balance(&self) -> Result<u64>;
+
+    /// Returns the mint of the starting token for the swap/trade
+    fn start_mint(&self) -> Result<Pubkey>;
+
+    /// Returns the mint of the token being swapped to
+    fn end_mint(&self) -> Result<Pubkey>;
 }
 
 pub trait DexStatic<'a, 'info> {
