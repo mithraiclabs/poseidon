@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { BN, Program, web3 } from "@project-serum/anchor";
-import { splTokenProgram } from "@coral-xyz/spl-token";
+import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Market, DexInstructions } from "@project-serum/serum";
 import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
@@ -33,7 +33,7 @@ describe("BoundedTrade", () => {
 
   // @ts-ignore: TODO: Remove after anchor npm upgrade
   const payerKey = program.provider.wallet.publicKey;
-  const tokenProgram = splTokenProgram();
+  const tokenProgram = splTokenProgram({ programId: SPL_TOKEN_PROGRAM_ID });
 
   let boundPrice = new anchor.BN(957);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);

@@ -40,6 +40,15 @@ anchor_lang::declare_id!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj");
 #[cfg(feature = "localnet")]
 anchor_lang::declare_id!("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
 
+#[derive(Clone)]
+pub struct OpenBookDexV3;
+
+impl anchor_lang::Id for OpenBookDexV3 {
+    fn id() -> Pubkey {
+        ID
+    }
+}
+
 /**
  * OpenBookDex ACCOUNT ORDER
  * 0 - dex_program

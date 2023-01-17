@@ -1,5 +1,6 @@
 import * as anchor from "@project-serum/anchor";
-import { BN, Program, Spl, web3 } from "@project-serum/anchor";
+import { BN, Program, web3 } from "@project-serum/anchor";
+import { splTokenProgram } from "@coral-xyz/spl-token";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { assert } from "chai";
@@ -26,7 +27,7 @@ describe("Reclaim", () => {
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
   // @ts-ignore: TODO: Remove after anchor npm upgrade
   const payerKey = program.provider.wallet.publicKey;
-  const splTokenProgram = Spl.token();
+  const tokenProgram = splTokenProgram();
 
   let boundPrice = new anchor.BN(957);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
@@ -82,7 +83,7 @@ describe("Reclaim", () => {
     });
     transaction.add(transferBaseInstruction);
     // Sync the native account after the transfer
-    const syncNativeIx = splTokenProgram.instruction.syncNative({
+    const syncNativeIx = tokenProgram.instruction.syncNative({
       accounts: {
         account: baseAddress,
       },
@@ -188,10 +189,10 @@ describe("Reclaim", () => {
       await wait(2_000);
     });
     it("should return the assets to the reclaim address", async () => {
-      const reclaimAccountBefore = await splTokenProgram.account.token.fetch(
+      const reclaimAccountBefore = await tokenProgram.account.account.fetch(
         quoteAddress
       );
-      const orderPayerBefore = await splTokenProgram.account.token.fetch(
+      const orderPayerBefore = await tokenProgram.account.account.fetch(
         orderPayer
       );
 
@@ -211,7 +212,7 @@ describe("Reclaim", () => {
         assert.ok(false);
       }
 
-      const reclaimAccountAfter = await splTokenProgram.account.token.fetch(
+      const reclaimAccountAfter = await tokenProgram.account.account.fetch(
         quoteAddress
       );
       const reclaimDiff = reclaimAccountAfter.amount.sub(

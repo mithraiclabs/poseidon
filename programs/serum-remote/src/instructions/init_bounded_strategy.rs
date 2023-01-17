@@ -73,7 +73,7 @@ pub struct InitBoundedStrategy<'info> {
     pub open_orders: UncheckedAccount<'info>,
 
     /// The Serum program
-    pub dex_program: Program<'info, dex::Dex>,
+    pub dex_program: Program<'info, open_book_dex::OpenBookDexV3>,
     pub token_program: Program<'info, Token>,
     #[account(
     constraint = system_program.key() == anchor_lang::solana_program::system_program::ID

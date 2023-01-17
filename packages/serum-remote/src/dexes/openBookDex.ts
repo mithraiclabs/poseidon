@@ -1,6 +1,6 @@
-import { SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { web3 } from "@project-serum/anchor";
 import { Market } from "@project-serum/serum";
+import { TOKEN_PROGRAM_ID } from "@project-serum/serum/lib/token-instructions";
 
 export default class OpenBookDex {
   static deriveOpenOrders(
@@ -64,7 +64,7 @@ export default class OpenBookDex {
         isSigner: false,
       },
       { pubkey: vaultSigner, isWritable: false, isSigner: false },
-      { pubkey: SPL_TOKEN_PROGRAM_ID, isWritable: false, isSigner: false },
+      { pubkey: TOKEN_PROGRAM_ID, isWritable: false, isSigner: false },
       { pubkey: web3.SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
     ];
   }
