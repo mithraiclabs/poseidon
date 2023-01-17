@@ -1,11 +1,11 @@
 use anchor_lang::prelude::*;
 
 pub mod constants;
-pub mod dexes;
+pub(crate) mod dexes;
 pub mod errors;
 pub mod instructions;
-pub mod macros;
-pub mod serum_utils;
+pub(crate) mod macros;
+pub(crate) mod serum_utils;
 pub mod state;
 pub mod utils;
 
@@ -58,5 +58,17 @@ pub mod serum_remote {
         ctx: Context<'a, 'b, 'c, 'info, SettleFundsAccounts<'info>>,
     ) -> Result<()> {
         instructions::settle_funds::handler(ctx)
+    }
+
+    pub fn init_bounded_strategy_v2<'info>(
+        ctx: Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
+        transfer_amount: u64,
+        bound_price: u64,
+        reclaim_date: i64,
+        order_side: u8,
+        bound: u8,
+        additional_data: Vec<u8>,
+    ) -> Result<()> {
+        instructions::init_bounded_strategy_v2::handler(ctx, transfer_amount, bound_price, reclaim_date, order_side, bound, additional_data)
     }
 }

@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 const MAX_LEGS: usize = 3;
 
 #[derive(Default)]
-pub struct Route<'a, 'info> {
+pub(crate) struct Route<'a, 'info> {
     pub legs: [Option<Leg<'a, 'info>>; MAX_LEGS],
 }
 

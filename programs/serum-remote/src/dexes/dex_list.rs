@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
+use anchor_lang::prelude::*;
 
 use crate::errors;
 
@@ -7,7 +7,7 @@ use super::{
     DexStatic,
 };
 
-#[derive(Debug, AnchorSerialize, AnchorDeserialize, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u32)]
 pub enum DexList {
     OpenBookV3 = 0,

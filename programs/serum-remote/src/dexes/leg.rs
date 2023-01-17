@@ -6,7 +6,7 @@ use crate::{dexes::Dex, instructions::InitBoundedStrategyV2};
 use super::{open_book_dex::OpenBookDex, DexList, DexStatic};
 
 #[enum_dispatch(Dex)]
-pub enum Leg<'a, 'info> {
+pub(crate) enum Leg<'a, 'info> {
     OpenBookV3(OpenBookDex<'a, 'info>),
 }
 

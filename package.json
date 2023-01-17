@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "@project-serum/anchor": "^0.24.2",
+    "@coral-xyz/spl-token": "^0.26.0",
+    "@project-serum/anchor": "^0.26.0",
     "@project-serum/serum": "^0.13.63"
   },
   "devDependencies": {

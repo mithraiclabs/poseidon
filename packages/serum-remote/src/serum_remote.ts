@@ -103,12 +103,18 @@ export type SerumRemote = {
         {
           "name": "depositAccount",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The account where swapped assets will be transferred to"
+          ]
         },
         {
           "name": "openOrders",
           "isMut": true,
           "isSigner": false,
+          "docs": [
+            "The OpenOrders account to initialize"
+          ],
           "pda": {
             "seeds": [
               {
@@ -128,7 +134,10 @@ export type SerumRemote = {
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The Serum program"
+          ]
         },
         {
           "name": "tokenProgram",
@@ -179,12 +188,18 @@ export type SerumRemote = {
         {
           "name": "payer",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
+          "docs": [
+            "Anyone can fire this transaction"
+          ]
         },
         {
           "name": "strategy",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategy account"
+          ]
         },
         {
           "name": "serumMarket",
@@ -194,12 +209,18 @@ export type SerumRemote = {
         {
           "name": "bids",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The Serum Market's bids account"
+          ]
         },
         {
           "name": "asks",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The Serum Market's asks accoutn"
+          ]
         },
         {
           "name": "openOrders",
@@ -249,12 +270,18 @@ export type SerumRemote = {
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The Serum program"
+          ]
         },
         {
           "name": "tokenProgramId",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The SPL Token program id"
+          ]
         },
         {
           "name": "rent",
@@ -270,22 +297,34 @@ export type SerumRemote = {
         {
           "name": "receiver",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the SOL"
+          ]
         },
         {
           "name": "strategy",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategy account"
+          ]
         },
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The PDA that has authority over the order payer"
+          ]
         },
         {
           "name": "orderPayer",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The account where the assets to trade with are"
+          ]
         },
         {
           "name": "openOrders",
@@ -300,7 +339,10 @@ export type SerumRemote = {
         {
           "name": "reclaimAccount",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the assets"
+          ]
         },
         {
           "name": "tokenProgram",
@@ -321,12 +363,18 @@ export type SerumRemote = {
         {
           "name": "reclaimAccount",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Either the PC or Coin wallet from the strategy"
+          ]
         },
         {
           "name": "strategy",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategy account"
+          ]
         },
         {
           "name": "serumMarket",
@@ -366,18 +414,255 @@ export type SerumRemote = {
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The Serum program"
+          ]
         },
         {
           "name": "tokenProgramId",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The SPL Token program id"
+          ]
         }
       ],
       "args": []
+    },
+    {
+      "name": "initBoundedStrategyV2",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "BoundedStrategyV2",
+                "path": "strategy"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "BoundedStrategyV2",
+                "path": "strategy"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "orderPayer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "strategy",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "TODO: The BoundedStrategy seeds will likely need another key. Otherwise DAO's and other",
+            "users will be uniquely constrained by these values."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "bound_price"
+              },
+              {
+                "kind": "arg",
+                "type": "i64",
+                "path": "reclaim_date"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "boundedStrategy"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reclaimAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "depositAccount",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The account where swapped assets will be transferred to"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "transferAmount",
+          "type": "u64"
+        },
+        {
+          "name": "boundPrice",
+          "type": "u64"
+        },
+        {
+          "name": "reclaimDate",
+          "type": "i64"
+        },
+        {
+          "name": "orderSide",
+          "type": "u8"
+        },
+        {
+          "name": "bound",
+          "type": "u8"
+        },
+        {
+          "name": "additionalData",
+          "type": "bytes"
+        }
+      ]
     }
   ],
   "accounts": [
+    {
+      "name": "boundedStrategyV2",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "collateralMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "orderSide",
+            "docs": [
+              "The side of the order book the market order will be placed",
+              "0 for Bid | Buy, 1 for Ask | Sell"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "reclaimDate",
+            "docs": [
+              "The date at which the DAO's assets can be reclaimed"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "reclaimAddress",
+            "docs": [
+              "The address that the assets are transferred to when being reclaimed."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "depositAddress",
+            "docs": [
+              "The address where the swapped asset should be deposited"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "bound",
+            "docs": [
+              "0 for lower bound, 1 for upper bound"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "boundedPrice",
+            "docs": [
+              "The price of the base asset that governs the bound. The decimals are",
+              "equivalent to the price on the Serum Market's order book"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "The PDA authority that owns necessary accounts"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "authorityBump",
+            "type": "u8"
+          },
+          {
+            "name": "accountList",
+            "type": {
+              "array": [
+                "publicKey",
+                30
+              ]
+            }
+          },
+          {
+            "name": "additionalData",
+            "docs": [
+              "A slice that holds additional data for DEXes in the route"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "boundedStrategy",
       "type": {
@@ -385,42 +670,74 @@ export type SerumRemote = {
         "fields": [
           {
             "name": "authority",
+            "docs": [
+              "The PDA authority that owns the order_payer and open_orders account"
+            ],
             "type": "publicKey"
           },
           {
             "name": "serumMarket",
+            "docs": [
+              "The Serum market where the execution will take place"
+            ],
             "type": "publicKey"
           },
           {
             "name": "openOrders",
+            "docs": [
+              "The open_orders account that is owned by the authority and used to place orders"
+            ],
             "type": "publicKey"
           },
           {
             "name": "orderPayer",
+            "docs": [
+              "The SPL TokenAccount that contains the tokens that will be put into Serum for trading"
+            ],
             "type": "publicKey"
           },
           {
             "name": "orderSide",
+            "docs": [
+              "The side of the order book the market order will be placed",
+              "0 for Bid, 1 for Ask"
+            ],
             "type": "u8"
           },
           {
             "name": "reclaimDate",
+            "docs": [
+              "The date at which the DAO's assets can be reclaimed"
+            ],
             "type": "i64"
           },
           {
             "name": "reclaimAddress",
+            "docs": [
+              "The address that the assets are transferred to when being reclaimed."
+            ],
             "type": "publicKey"
           },
           {
             "name": "depositAddress",
+            "docs": [
+              "The address where the swapped asset should be deposited"
+            ],
             "type": "publicKey"
           },
           {
             "name": "bound",
+            "docs": [
+              "0 for lower bound, 1 for upper bound"
+            ],
             "type": "u8"
           },
           {
             "name": "boundedPrice",
+            "docs": [
+              "The price of the base asset that governs the bound. The decimals are",
+              "equivalent to the price on the Serum Market's order book"
+            ],
             "type": "u64"
           },
           {
@@ -429,6 +746,9 @@ export type SerumRemote = {
           },
           {
             "name": "serumDexId",
+            "docs": [
+              "The address of the serum dex program this strategy trades on"
+            ],
             "type": "publicKey"
           }
         ]
@@ -436,6 +756,49 @@ export type SerumRemote = {
     }
   ],
   "types": [
+    {
+      "name": "DexList",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "OpenBookV3"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeeTier",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Base"
+          },
+          {
+            "name": "_SRM2"
+          },
+          {
+            "name": "_SRM3"
+          },
+          {
+            "name": "_SRM4"
+          },
+          {
+            "name": "_SRM5"
+          },
+          {
+            "name": "_SRM6"
+          },
+          {
+            "name": "_MSRM"
+          },
+          {
+            "name": "Stable"
+          }
+        ]
+      }
+    },
     {
       "name": "FeeTier",
       "type": {
@@ -564,6 +927,36 @@ export type SerumRemote = {
       "code": 6018,
       "name": "WrongOpenOrdersKey",
       "msg": "open orders does not match strategy"
+    },
+    {
+      "code": 6019,
+      "name": "FailedToLoadOpenBookDexMarket",
+      "msg": "Failed to load OpenBook DEX Market"
+    },
+    {
+      "code": 6020,
+      "name": "BadOpenOrdersKey",
+      "msg": "OpenOrders account does not match derived address"
+    },
+    {
+      "code": 6021,
+      "name": "UknownDexId",
+      "msg": "Uknown DEX Program ID"
+    },
+    {
+      "code": 6022,
+      "name": "OutputMintMismatch",
+      "msg": "Output mint does not match route"
+    },
+    {
+      "code": 6023,
+      "name": "InputMintMismatch",
+      "msg": "Input mint does not match route"
+    },
+    {
+      "code": 6024,
+      "name": "IncorrectKeysForLeg",
+      "msg": "The Leg's accounts aren't correct or ordered properly"
     }
   ]
 };
@@ -673,12 +1066,18 @@ export const IDL: SerumRemote = {
         {
           "name": "depositAccount",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The account where swapped assets will be transferred to"
+          ]
         },
         {
           "name": "openOrders",
           "isMut": true,
           "isSigner": false,
+          "docs": [
+            "The OpenOrders account to initialize"
+          ],
           "pda": {
             "seeds": [
               {
@@ -698,7 +1097,10 @@ export const IDL: SerumRemote = {
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The Serum program"
+          ]
         },
         {
           "name": "tokenProgram",
@@ -749,12 +1151,18 @@ export const IDL: SerumRemote = {
         {
           "name": "payer",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
+          "docs": [
+            "Anyone can fire this transaction"
+          ]
         },
         {
           "name": "strategy",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategy account"
+          ]
         },
         {
           "name": "serumMarket",
@@ -764,12 +1172,18 @@ export const IDL: SerumRemote = {
         {
           "name": "bids",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The Serum Market's bids account"
+          ]
         },
         {
           "name": "asks",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The Serum Market's asks accoutn"
+          ]
         },
         {
           "name": "openOrders",
@@ -819,12 +1233,18 @@ export const IDL: SerumRemote = {
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The Serum program"
+          ]
         },
         {
           "name": "tokenProgramId",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The SPL Token program id"
+          ]
         },
         {
           "name": "rent",
@@ -840,22 +1260,34 @@ export const IDL: SerumRemote = {
         {
           "name": "receiver",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the SOL"
+          ]
         },
         {
           "name": "strategy",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategy account"
+          ]
         },
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The PDA that has authority over the order payer"
+          ]
         },
         {
           "name": "orderPayer",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The account where the assets to trade with are"
+          ]
         },
         {
           "name": "openOrders",
@@ -870,7 +1302,10 @@ export const IDL: SerumRemote = {
         {
           "name": "reclaimAccount",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the assets"
+          ]
         },
         {
           "name": "tokenProgram",
@@ -891,12 +1326,18 @@ export const IDL: SerumRemote = {
         {
           "name": "reclaimAccount",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Either the PC or Coin wallet from the strategy"
+          ]
         },
         {
           "name": "strategy",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategy account"
+          ]
         },
         {
           "name": "serumMarket",
@@ -936,18 +1377,255 @@ export const IDL: SerumRemote = {
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The Serum program"
+          ]
         },
         {
           "name": "tokenProgramId",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "The SPL Token program id"
+          ]
         }
       ],
       "args": []
+    },
+    {
+      "name": "initBoundedStrategyV2",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "BoundedStrategyV2",
+                "path": "strategy"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "BoundedStrategyV2",
+                "path": "strategy"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "orderPayer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "strategy",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "TODO: The BoundedStrategy seeds will likely need another key. Otherwise DAO's and other",
+            "users will be uniquely constrained by these values."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "bound_price"
+              },
+              {
+                "kind": "arg",
+                "type": "i64",
+                "path": "reclaim_date"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "boundedStrategy"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reclaimAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "depositAccount",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The account where swapped assets will be transferred to"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "transferAmount",
+          "type": "u64"
+        },
+        {
+          "name": "boundPrice",
+          "type": "u64"
+        },
+        {
+          "name": "reclaimDate",
+          "type": "i64"
+        },
+        {
+          "name": "orderSide",
+          "type": "u8"
+        },
+        {
+          "name": "bound",
+          "type": "u8"
+        },
+        {
+          "name": "additionalData",
+          "type": "bytes"
+        }
+      ]
     }
   ],
   "accounts": [
+    {
+      "name": "boundedStrategyV2",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "collateralMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "orderSide",
+            "docs": [
+              "The side of the order book the market order will be placed",
+              "0 for Bid | Buy, 1 for Ask | Sell"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "reclaimDate",
+            "docs": [
+              "The date at which the DAO's assets can be reclaimed"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "reclaimAddress",
+            "docs": [
+              "The address that the assets are transferred to when being reclaimed."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "depositAddress",
+            "docs": [
+              "The address where the swapped asset should be deposited"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "bound",
+            "docs": [
+              "0 for lower bound, 1 for upper bound"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "boundedPrice",
+            "docs": [
+              "The price of the base asset that governs the bound. The decimals are",
+              "equivalent to the price on the Serum Market's order book"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "The PDA authority that owns necessary accounts"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "authorityBump",
+            "type": "u8"
+          },
+          {
+            "name": "accountList",
+            "type": {
+              "array": [
+                "publicKey",
+                30
+              ]
+            }
+          },
+          {
+            "name": "additionalData",
+            "docs": [
+              "A slice that holds additional data for DEXes in the route"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "boundedStrategy",
       "type": {
@@ -955,42 +1633,74 @@ export const IDL: SerumRemote = {
         "fields": [
           {
             "name": "authority",
+            "docs": [
+              "The PDA authority that owns the order_payer and open_orders account"
+            ],
             "type": "publicKey"
           },
           {
             "name": "serumMarket",
+            "docs": [
+              "The Serum market where the execution will take place"
+            ],
             "type": "publicKey"
           },
           {
             "name": "openOrders",
+            "docs": [
+              "The open_orders account that is owned by the authority and used to place orders"
+            ],
             "type": "publicKey"
           },
           {
             "name": "orderPayer",
+            "docs": [
+              "The SPL TokenAccount that contains the tokens that will be put into Serum for trading"
+            ],
             "type": "publicKey"
           },
           {
             "name": "orderSide",
+            "docs": [
+              "The side of the order book the market order will be placed",
+              "0 for Bid, 1 for Ask"
+            ],
             "type": "u8"
           },
           {
             "name": "reclaimDate",
+            "docs": [
+              "The date at which the DAO's assets can be reclaimed"
+            ],
             "type": "i64"
           },
           {
             "name": "reclaimAddress",
+            "docs": [
+              "The address that the assets are transferred to when being reclaimed."
+            ],
             "type": "publicKey"
           },
           {
             "name": "depositAddress",
+            "docs": [
+              "The address where the swapped asset should be deposited"
+            ],
             "type": "publicKey"
           },
           {
             "name": "bound",
+            "docs": [
+              "0 for lower bound, 1 for upper bound"
+            ],
             "type": "u8"
           },
           {
             "name": "boundedPrice",
+            "docs": [
+              "The price of the base asset that governs the bound. The decimals are",
+              "equivalent to the price on the Serum Market's order book"
+            ],
             "type": "u64"
           },
           {
@@ -999,6 +1709,9 @@ export const IDL: SerumRemote = {
           },
           {
             "name": "serumDexId",
+            "docs": [
+              "The address of the serum dex program this strategy trades on"
+            ],
             "type": "publicKey"
           }
         ]
@@ -1006,6 +1719,49 @@ export const IDL: SerumRemote = {
     }
   ],
   "types": [
+    {
+      "name": "DexList",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "OpenBookV3"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeeTier",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Base"
+          },
+          {
+            "name": "_SRM2"
+          },
+          {
+            "name": "_SRM3"
+          },
+          {
+            "name": "_SRM4"
+          },
+          {
+            "name": "_SRM5"
+          },
+          {
+            "name": "_SRM6"
+          },
+          {
+            "name": "_MSRM"
+          },
+          {
+            "name": "Stable"
+          }
+        ]
+      }
+    },
     {
       "name": "FeeTier",
       "type": {
@@ -1134,6 +1890,36 @@ export const IDL: SerumRemote = {
       "code": 6018,
       "name": "WrongOpenOrdersKey",
       "msg": "open orders does not match strategy"
+    },
+    {
+      "code": 6019,
+      "name": "FailedToLoadOpenBookDexMarket",
+      "msg": "Failed to load OpenBook DEX Market"
+    },
+    {
+      "code": 6020,
+      "name": "BadOpenOrdersKey",
+      "msg": "OpenOrders account does not match derived address"
+    },
+    {
+      "code": 6021,
+      "name": "UknownDexId",
+      "msg": "Uknown DEX Program ID"
+    },
+    {
+      "code": 6022,
+      "name": "OutputMintMismatch",
+      "msg": "Output mint does not match route"
+    },
+    {
+      "code": 6023,
+      "name": "InputMintMismatch",
+      "msg": "Input mint does not match route"
+    },
+    {
+      "code": 6024,
+      "name": "IncorrectKeysForLeg",
+      "msg": "The Leg's accounts aren't correct or ordered properly"
     }
   ]
 };

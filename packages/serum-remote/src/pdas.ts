@@ -22,7 +22,23 @@ export const deriveBoundedStrategy = (
     program.programId
   );
 
-export const deriveOrderPayer = (
+export const deriveBoundedStrategyV2 = (
+  program: Program<SerumRemote>,
+  mint: web3.PublicKey,
+  boundPrice: BN,
+  reclaimDate: BN
+) =>
+  web3.PublicKey.findProgramAddress(
+    [
+      mint.toBuffer(),
+      boundPrice.toArrayLike(Buffer, "le", 8),
+      reclaimDate.toArrayLike(Buffer, "le", 8),
+      textEncoder.encode("boundedStrategy"),
+    ],
+    program.programId
+  );
+
+export const deriveCollateralAccount = (
   program: Program<SerumRemote>,
   strategy: web3.PublicKey
 ) =>
@@ -63,8 +79,28 @@ export const deriveAllBoundedStrategyKeys = async (
     boundPrice,
     reclaimDate
   );
-  const [orderPayer] = await deriveOrderPayer(program, boundedStrategy);
+  const [orderPayer] = await deriveCollateralAccount(program, boundedStrategy);
   const [authority] = await deriveAuthority(program, boundedStrategy);
   const [openOrders] = await deriveOpenOrders(program, boundedStrategy);
   return { orderPayer, boundedStrategy, authority, openOrders };
+};
+
+export const deriveAllBoundedStrategyKeysV2 = async (
+  program: Program<SerumRemote>,
+  mint: web3.PublicKey,
+  boundedStrategyParams: BoundedStrategyParams
+) => {
+  const { boundPrice, reclaimDate } = boundedStrategyParams;
+  const [boundedStrategy] = await deriveBoundedStrategyV2(
+    program,
+    mint,
+    boundPrice,
+    reclaimDate
+  );
+  const [collateralAccount] = await deriveCollateralAccount(
+    program,
+    boundedStrategy
+  );
+  const [authority] = await deriveAuthority(program, boundedStrategy);
+  return { collateralAccount, boundedStrategy, authority };
 };

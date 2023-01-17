@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { Spl } from "@project-serum/anchor";
+import { splTokenProgram } from "@coral-xyz/spl-token";
 import { BN } from "@project-serum/anchor";
 import { Program, web3 } from "@project-serum/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
@@ -23,7 +23,7 @@ describe("InitBoundedStrategy", () => {
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
   // @ts-ignore: TODO: Remove after anchor npm upgrade
   const payerKey = program.provider.wallet.publicKey;
-  const splTokenProgram = Spl.token();
+  const tokenProgram = splTokenProgram();
 
   let boundPrice = new anchor.BN(957);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
@@ -108,7 +108,7 @@ describe("InitBoundedStrategy", () => {
         bound,
       }
     );
-    const reclaimTokenAccountBefore = await splTokenProgram.account.token.fetch(
+    const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
 
@@ -181,7 +181,7 @@ describe("InitBoundedStrategy", () => {
     assert.ok(openOrders);
 
     // Check that the assets were transfered from the reclaimAddress to the orderPayer
-    const reclaimTokenAccountAfter = await splTokenProgram.account.token.fetch(
+    const reclaimTokenAccountAfter = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
     const reclaimTokenDiff = reclaimTokenAccountAfter.amount.sub(
@@ -190,7 +190,7 @@ describe("InitBoundedStrategy", () => {
     assert.equal(reclaimTokenDiff.toString(), transferAmount.neg().toString());
 
     const orderPayerTokenAccountAfter =
-      await splTokenProgram.account.token.fetch(orderPayer);
+      await tokenProgram.account.account.fetch(orderPayer);
     const orderPayerTokenDiff = orderPayerTokenAccountAfter.amount;
     assert.equal(orderPayerTokenDiff.toString(), transferAmount.toString());
   });
