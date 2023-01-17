@@ -69,6 +69,14 @@ pub mod serum_remote {
         bound: u8,
         additional_data: Vec<u8>,
     ) -> Result<()> {
-        instructions::init_bounded_strategy_v2::handler(ctx, transfer_amount, bound_price, reclaim_date, order_side, bound, additional_data)
+        instructions::init_bounded_strategy_v2::handler(
+            ctx,
+            transfer_amount,
+            bound_price,
+            reclaim_date,
+            order_side,
+            bound,
+            additional_data,
+        )
     }
 }

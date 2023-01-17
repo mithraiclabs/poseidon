@@ -1,16 +1,19 @@
 use std::{convert::identity, num::NonZeroU64};
 
 use anchor_lang::{error, prelude::*, solana_program::sysvar};
-use anchor_spl::{dex::{
-    self,
-    serum_dex::{
+use anchor_spl::{
+    dex::{
         self,
-        instruction::SelfTradeBehavior,
-        matching::{OrderType, Side},
-        state::{gen_vault_signer_key, Market},
+        serum_dex::{
+            self,
+            instruction::SelfTradeBehavior,
+            matching::{OrderType, Side},
+            state::{gen_vault_signer_key, Market},
+        },
+        InitOpenOrders,
     },
-    InitOpenOrders,
-}, token};
+    token,
+};
 use arrayref::array_refs;
 use safe_transmute::transmute_to_bytes;
 
@@ -164,7 +167,7 @@ impl<'a, 'info> OpenBookDex<'a, 'info> {
         }
 
         ////////////////// Validate the accounts data against the Market //////////////////
-        // These are helpful for user feedback. Downstream programs should validate accounts, 
+        // These are helpful for user feedback. Downstream programs should validate accounts,
         //  but validating market information on initialization is nice to have.
         if self.bids().key.to_bytes() != transmute_to_bytes(&identity(market.bids)) {
             return Err(error!(ErrorCode::IncorrectKeysForLeg));

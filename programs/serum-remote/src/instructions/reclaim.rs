@@ -5,7 +5,8 @@ use anchor_spl::{
 };
 
 use crate::{
-    authority_signer_seeds, constants::AUTHORITY_SEED, errors::ErrorCode, state::BoundedStrategy,
+    authority_signer_seeds, constants::AUTHORITY_SEED, dexes::open_book_dex, errors::ErrorCode,
+    state::BoundedStrategy,
 };
 
 #[derive(Accounts)]
@@ -44,7 +45,7 @@ pub struct Reclaim<'info> {
     pub reclaim_account: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
-    pub dex_program: Program<'info, Dex>,
+    pub dex_program: Program<'info, open_book_dex::OpenBookDexV3>,
 }
 
 pub fn handler(ctx: Context<Reclaim>) -> Result<()> {
@@ -95,6 +96,18 @@ pub fn handler(ctx: Context<Reclaim>) -> Result<()> {
         signer_seeds: &[authority_signer_seeds!(ctx, bump)],
         remaining_accounts: Vec::new(),
     };
-    close_open_orders(cpi_ctx)?;
+    let ix = anchor_spl::dex::serum_dex::instruction::close_open_orders(
+        &open_book_dex::ID,
+        cpi_ctx.accounts.open_orders.key,
+        cpi_ctx.accounts.authority.key,
+        cpi_ctx.accounts.destination.key,
+        cpi_ctx.accounts.market.key,
+    )
+    .map_err(|pe| ProgramError::from(pe))?;
+    anchor_lang::solana_program::program::invoke_signed(
+        &ix,
+        &ToAccountInfos::to_account_infos(&cpi_ctx),
+        cpi_ctx.signer_seeds,
+    )?;
     Ok(())
 }

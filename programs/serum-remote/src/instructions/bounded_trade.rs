@@ -5,9 +5,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::dex::serum_dex::matching::{OrderType, Side};
 use anchor_spl::{
     dex::{
-        self, new_order_v3,
         serum_dex::{declare_check_assert_macros, instruction::SelfTradeBehavior, state::Market},
-        settle_funds, NewOrderV3, SettleFunds,
+        NewOrderV3, SettleFunds,
     },
     token::{Token, TokenAccount},
 };
@@ -95,7 +94,7 @@ pub struct BoundedTrade<'info> {
     pub deposit_account: Box<Account<'info, TokenAccount>>,
 
     /// The Serum program
-    pub dex_program: Program<'info, dex::Dex>,
+    pub dex_program: Program<'info, open_book_dex::OpenBookDexV3>,
     /// The SPL Token program id
     pub token_program_id: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,

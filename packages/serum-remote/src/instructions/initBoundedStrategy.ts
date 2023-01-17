@@ -13,8 +13,7 @@ export const initBoundedStrategyIx = async (
   boundedStrategyParams: BoundedStrategyParams,
   opts: { owner?: web3.PublicKey } = {}
 ) => {
-  // @ts-ignore: TODO: Remove after anchor npm upgrade
-  const payerKey = program.provider.wallet.publicKey;
+  const payerKey = program.provider.publicKey;
   const {
     boundPrice,
     reclaimDate,

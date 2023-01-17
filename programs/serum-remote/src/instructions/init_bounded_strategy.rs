@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    dex::{self, serum_dex::state::Market, InitOpenOrders},
+    dex::{
+        serum_dex::{self, state::Market},
+        InitOpenOrders,
+    },
     token::{self, Mint, Token, TokenAccount, Transfer},
 };
 use safe_transmute::to_bytes::transmute_to_bytes;
@@ -157,7 +160,19 @@ pub fn handler(
         remaining_accounts: vec![],
         signer_seeds: &[authority_signer_seeds!(&ctx, authority_bump)],
     };
-    dex::init_open_orders(init_ctx)?;
+    let ix = serum_dex::instruction::init_open_orders(
+        &open_book_dex::ID,
+        ctx.accounts.open_orders.key,
+        ctx.accounts.authority.key,
+        ctx.accounts.serum_market.key,
+        ctx.remaining_accounts.first().map(|acc| acc.key),
+    )
+    .map_err(|pe| ProgramError::from(pe))?;
+    anchor_lang::solana_program::program::invoke_signed(
+        &ix,
+        &ToAccountInfos::to_account_infos(&init_ctx),
+        init_ctx.signer_seeds,
+    )?;
 
     // Transfer the assets
     let cpi_accounts = Transfer {
