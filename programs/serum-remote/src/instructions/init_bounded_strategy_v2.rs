@@ -2,30 +2,24 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::{
-    constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
+    constants::{BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
     dexes::{DexList, Leg, Route},
     errors::{self, ErrorCode},
     state::BoundedStrategyV2,
 };
 
 #[derive(Accounts)]
-#[instruction(transfer_amount: u64, bound_price: u64, reclaim_date: i64)]
+#[instruction(transfer_amount: u64, bounded_price: u64, reclaim_date: i64)]
 pub struct InitBoundedStrategyV2<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-    /// CHECK: Constraints are handled
-    #[account(
-    seeds = [strategy.key().as_ref(), AUTHORITY_SEED.as_bytes()],
-    bump,
-  )]
-    pub authority: UncheckedAccount<'info>,
     #[account(
         init,
         seeds = [strategy.key().as_ref(), ORDER_PAYER_SEED.as_bytes()],
         payer = payer,
         bump,
         token::mint = mint,
-        token::authority = authority
+        token::authority = strategy
       )]
     pub collateral_account: Box<Account<'info, TokenAccount>>,
 
@@ -34,7 +28,7 @@ pub struct InitBoundedStrategyV2<'info> {
     /// users will be uniquely constrained by these values.
     #[account(
     init,
-    seeds = [mint.key().as_ref(), &bound_price.to_le_bytes(), &reclaim_date.to_le_bytes(), BOUNDED_STRATEGY_SEED.as_bytes()],
+    seeds = [mint.key().as_ref(), &bounded_price.to_le_bytes(), &reclaim_date.to_le_bytes(), BOUNDED_STRATEGY_SEED.as_bytes()],
     payer = payer,
     bump,
     space = BoundedStrategyV2::LEN,
@@ -66,14 +60,14 @@ pub struct InitBoundedStrategyV2<'info> {
 pub fn handler<'info>(
     ctx: Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
     transfer_amount: u64,
-    bound_price: u64,
+    bounded_price: u64,
     reclaim_date: i64,
     order_side: u8,
     bound: u8,
     additional_data: Vec<u8>,
 ) -> Result<()> {
     // Set BoundedStrategy information
-    let authority_bump = match ctx.bumps.get("authority") {
+    let strategy_bump = match ctx.bumps.get("strategy") {
         Some(bump) => *bump,
         None => {
             msg!("Wrong bump key. Available keys are {:?}", ctx.bumps.keys());
@@ -82,20 +76,21 @@ pub fn handler<'info>(
     };
     let bounded_strategy = &mut ctx.accounts.strategy;
     bounded_strategy.collateral_mint = ctx.accounts.mint.key();
-    bounded_strategy.authority = ctx.accounts.authority.key();
-    bounded_strategy.bounded_price = bound_price;
+    bounded_strategy.bounded_price = bounded_price;
     bounded_strategy.reclaim_date = reclaim_date;
     bounded_strategy.reclaim_address = ctx.accounts.reclaim_account.key();
     bounded_strategy.deposit_address = ctx.accounts.deposit_account.key();
     bounded_strategy.order_side = order_side;
     bounded_strategy.bound = bound;
-    bounded_strategy.authority_bump = authority_bump;
-    bounded_strategy
-        .additional_data
-        .clone_from_slice(&additional_data[..]);
+    bounded_strategy.bump = strategy_bump;
+    for (dst, src) in bounded_strategy.additional_data.iter_mut().zip(&additional_data) {
+        *dst = *src
+    }
     // Copy the remaining accounts to the BoundedStrategy
     let keys: Vec<Pubkey> = ctx.remaining_accounts.iter().map(|x| x.key()).collect();
-    bounded_strategy.account_list.clone_from_slice(&keys);
+    for (dst, src) in bounded_strategy.account_list.iter_mut().zip(&keys) {
+        *dst = *src
+    }
 
     // Unpack & initalize the routes from remaining accounts
     let mut route = Route::default();

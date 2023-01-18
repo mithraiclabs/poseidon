@@ -42,7 +42,6 @@ describe("InitBoundedStrategy", () => {
     const accountInfo = await program.provider.connection.getAccountInfo(
       SOL_USDC_SERUM_MARKET
     );
-    console.log("*** market account info", accountInfo);
     serumMarket = await Market.load(
       program.provider.connection,
       SOL_USDC_SERUM_MARKET,
@@ -109,7 +108,17 @@ describe("InitBoundedStrategy", () => {
     const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
-
+    const initAdditionalAccounts = await OpenBookDex.initLegAccounts(
+      program.programId,
+      serumMarket,
+      boundedStrategyKey,
+      collateralAccount,
+      depositAddress
+    );
+    const additionalData = new BN(
+      // @ts-ignore
+      serumMarket._baseSplTokenDecimals
+    ).toArrayLike(Buffer, "le", 1);
     const instruction = await program.methods
       .initBoundedStrategyV2(
         transferAmount,
@@ -117,12 +126,10 @@ describe("InitBoundedStrategy", () => {
         reclaimDate,
         orderSide,
         bound,
-        // TODO: Add the base decimals to the extra data
-        Buffer.from([])
+        additionalData
       )
       .accounts({
         payer: program.provider.publicKey,
-        authority: authority,
         collateralAccount,
         mint: USDC_MINT,
         strategy: boundedStrategyKey,
@@ -132,18 +139,13 @@ describe("InitBoundedStrategy", () => {
         systemProgram: web3.SystemProgram.programId,
         rent: web3.SYSVAR_RENT_PUBKEY,
       })
-      .remainingAccounts(
-        await OpenBookDex.initLegAccounts(
-          program.programId,
-          serumMarket,
-          boundedStrategyKey
-        )
-      )
+      .remainingAccounts(initAdditionalAccounts)
       .instruction();
     const transaction = new web3.Transaction().add(instruction);
     try {
       await program.provider.sendAndConfirm(transaction);
     } catch (error) {
+      console.error(error);
       const parsedError = parseTranactionError(error);
       console.log("error: ", parsedError.msg);
       assert.ok(false);
@@ -153,13 +155,7 @@ describe("InitBoundedStrategy", () => {
       boundedStrategyKey
     );
 
-    // Test that the information was stored on the BoundedStrategy account
-
-    assert.equal(
-      boundedStrategy.serumMarket.toString(),
-      SOL_USDC_SERUM_MARKET.toString()
-    );
-    assert.equal(boundedStrategy.authority.toString(), authority.toString());
+    // Test that the information was stored on the BoundedStrategyV2 account
     assert.equal(
       boundedStrategy.collateralMint.toString(),
       USDC_MINT.toString()
@@ -182,19 +178,25 @@ describe("InitBoundedStrategy", () => {
     );
     assert.equal(boundedStrategy.orderSide, orderSide);
     assert.equal(boundedStrategy.bound, bound);
-    assert.equal(boundedStrategy.serumDexId.toString(), DEX_ID.toString());
-    // // Check the OpenOrders address
-    // assert.equal(
-    //   boundedStrategy.openOrders.toString(),
-    //   openOrdersKey.toString()
-    // );
+    // check additional accounts array
+    boundedStrategy.accountList.forEach((key, index) => {
+      const expectedKey = initAdditionalAccounts[index];
+      if (expectedKey) {
+        assert.ok(key.equals(expectedKey.pubkey));
+      } else {
+        assert.ok(key.equals(web3.SystemProgram.programId));
+      }
+    });
 
-    // const openOrders = await OpenOrders.load(
-    //   program.provider.connection,
-    //   openOrdersKey,
-    //   DEX_ID
-    // );
-    // assert.ok(openOrders);
+    // check additional data
+    boundedStrategy.additionalData.forEach((byte, index) => {
+      const expectedByte = additionalData[index];
+      if (expectedByte) {
+        assert.equal(byte, expectedByte);
+      } else {
+        assert.equal(byte, 0);
+      }
+    });
 
     // Check that the assets were transfered from the reclaimAddress to the orderPayer
     const reclaimTokenAccountAfter = await tokenProgram.account.account.fetch(

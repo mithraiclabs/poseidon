@@ -3,7 +3,6 @@ use std::{convert::identity, num::NonZeroU64};
 use anchor_lang::{error, prelude::*, solana_program::sysvar};
 use anchor_spl::{
     dex::{
-        self,
         serum_dex::{
             self,
             instruction::SelfTradeBehavior,
@@ -18,13 +17,12 @@ use arrayref::array_refs;
 use safe_transmute::transmute_to_bytes;
 
 use crate::{
-    authority_signer_seeds,
-    constants::{AUTHORITY_SEED, OPEN_ORDERS_SEED},
+    constants::{BOUNDED_STRATEGY_SEED, OPEN_ORDERS_SEED},
     errors::{self, ErrorCode},
     instructions::InitBoundedStrategyV2,
     open_orders_seeds, open_orders_signer_seeds,
     state::BoundedStrategyV2,
-    utils::spl_token_utils,
+    utils::spl_token_utils, strategy_signer_seeds,
 };
 
 use super::{
@@ -419,12 +417,12 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
         // Initialize the OpenOrders account
         let init_open_orders_accounts = InitOpenOrders {
             open_orders: self.open_orders_account().to_account_info(),
-            authority: ctx.accounts.authority.to_account_info(),
+            authority: ctx.accounts.strategy.to_account_info(),
             market: self.serum_market().to_account_info(),
             rent: ctx.accounts.rent.to_account_info(),
         };
 
-        let authority_bump = match ctx.bumps.get("authority") {
+        let strategy_bump = match ctx.bumps.get("strategy") {
             Some(bump) => *bump,
             None => {
                 msg!("Wrong bump key. Available keys are {:?}", ctx.bumps.keys());
@@ -435,9 +433,21 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
             accounts: init_open_orders_accounts,
             program: self.dex_program().to_account_info(),
             remaining_accounts: vec![],
-            signer_seeds: &[authority_signer_seeds!(&ctx, authority_bump)],
+            signer_seeds: &[strategy_signer_seeds!(&ctx.accounts.strategy, strategy_bump)],
         };
-        dex::init_open_orders(init_ctx)?;
+        let ix = serum_dex::instruction::init_open_orders(
+            &ID,
+            init_ctx.accounts.open_orders.key,
+            init_ctx.accounts.authority.key,
+            init_ctx.accounts.market.key,
+            init_ctx.remaining_accounts.first().map(|acc| acc.key),
+        )
+        .map_err(|pe| ProgramError::from(pe))?;
+        anchor_lang::solana_program::program::invoke_signed(
+            &ix,
+            &ToAccountInfos::to_account_infos(&init_ctx),
+            init_ctx.signer_seeds,
+        )?;
         Ok(())
     }
 }

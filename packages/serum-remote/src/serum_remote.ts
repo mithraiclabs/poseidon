@@ -439,26 +439,6 @@ export type SerumRemote = {
           "isSigner": true
         },
         {
-          "name": "authority",
-          "isMut": false,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "BoundedStrategyV2",
-                "path": "strategy"
-              },
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "authority"
-              }
-            ]
-          }
-        },
-        {
           "name": "collateralAccount",
           "isMut": true,
           "isSigner": false,
@@ -502,7 +482,7 @@ export type SerumRemote = {
               {
                 "kind": "arg",
                 "type": "u64",
-                "path": "bound_price"
+                "path": "bounded_price"
               },
               {
                 "kind": "arg",
@@ -629,14 +609,10 @@ export type SerumRemote = {
             "type": "u64"
           },
           {
-            "name": "authority",
+            "name": "bump",
             "docs": [
-              "The PDA authority that owns necessary accounts"
+              "The bump for the strategy's derived address"
             ],
-            "type": "publicKey"
-          },
-          {
-            "name": "authorityBump",
             "type": "u8"
           },
           {
@@ -1402,26 +1378,6 @@ export const IDL: SerumRemote = {
           "isSigner": true
         },
         {
-          "name": "authority",
-          "isMut": false,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "BoundedStrategyV2",
-                "path": "strategy"
-              },
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "authority"
-              }
-            ]
-          }
-        },
-        {
           "name": "collateralAccount",
           "isMut": true,
           "isSigner": false,
@@ -1465,7 +1421,7 @@ export const IDL: SerumRemote = {
               {
                 "kind": "arg",
                 "type": "u64",
-                "path": "bound_price"
+                "path": "bounded_price"
               },
               {
                 "kind": "arg",
@@ -1592,14 +1548,10 @@ export const IDL: SerumRemote = {
             "type": "u64"
           },
           {
-            "name": "authority",
+            "name": "bump",
             "docs": [
-              "The PDA authority that owns necessary accounts"
+              "The bump for the strategy's derived address"
             ],
-            "type": "publicKey"
-          },
-          {
-            "name": "authorityBump",
             "type": "u8"
           },
           {

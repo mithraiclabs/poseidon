@@ -1,4 +1,17 @@
 #[macro_export]
+macro_rules! strategy_signer_seeds {
+    ($strategy:expr, $bump:ident) => {
+        &[
+            &$strategy.collateral_mint.as_ref(),
+            &$strategy.bounded_price.to_le_bytes(),
+            &$strategy.reclaim_date.to_le_bytes(),
+            BOUNDED_STRATEGY_SEED.as_bytes(),
+            &[$bump],
+        ]
+    };
+}
+
+#[macro_export]
 macro_rules! authority_signer_seeds {
     ($ctx:expr, $bump:ident) => {
         &[

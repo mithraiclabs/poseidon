@@ -18,9 +18,8 @@ pub struct BoundedStrategyV2 {
     /// The price of the base asset that governs the bound. The decimals are
     /// equivalent to the price on the Serum Market's order book
     pub bounded_price: u64,
-    /// The PDA authority that owns necessary accounts
-    pub authority: Pubkey,
-    pub authority_bump: u8,
+    /// The bump for the strategy's derived address
+    pub bump: u8,
     // A slice that holds the list of account addresses for the route
     pub account_list: [Pubkey; 30],
     /// A slice that holds additional data for DEXes in the route
@@ -30,4 +29,4 @@ pub struct BoundedStrategyV2 {
 impl BoundedStrategyV2 {
     pub const LEN: usize = 8 + std::mem::size_of::<BoundedStrategyV2>() + 320;
 }
-const_assert!(BoundedStrategyV2::LEN == 1472);
+const_assert!(BoundedStrategyV2::LEN == 1440);
