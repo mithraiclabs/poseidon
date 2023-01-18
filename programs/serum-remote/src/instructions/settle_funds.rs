@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    dex::{self, settle_funds, SettleFunds},
+    dex::SettleFunds,
     token::{Token, TokenAccount},
 };
 
@@ -58,7 +58,7 @@ pub struct SettleFundsAccounts<'info> {
     pub deposit_account: Box<Account<'info, TokenAccount>>,
 
     /// The Serum program
-    pub dex_program: Program<'info, dex::Dex>,
+    pub dex_program: Program<'info, open_book_dex::OpenBookDexV3>,
     /// The SPL Token program id
     pub token_program_id: Program<'info, Token>,
 }

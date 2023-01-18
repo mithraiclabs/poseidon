@@ -22,7 +22,8 @@ use crate::{
     instructions::InitBoundedStrategyV2,
     open_orders_seeds, open_orders_signer_seeds,
     state::BoundedStrategyV2,
-    utils::spl_token_utils, strategy_signer_seeds,
+    strategy_signer_seeds,
+    utils::spl_token_utils,
 };
 
 use super::{
@@ -433,7 +434,10 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
             accounts: init_open_orders_accounts,
             program: self.dex_program().to_account_info(),
             remaining_accounts: vec![],
-            signer_seeds: &[strategy_signer_seeds!(&ctx.accounts.strategy, strategy_bump)],
+            signer_seeds: &[strategy_signer_seeds!(
+                &ctx.accounts.strategy,
+                strategy_bump
+            )],
         };
         let ix = serum_dex::instruction::init_open_orders(
             &ID,

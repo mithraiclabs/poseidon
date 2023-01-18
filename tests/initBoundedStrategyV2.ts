@@ -157,6 +157,10 @@ describe("InitBoundedStrategy", () => {
 
     // Test that the information was stored on the BoundedStrategyV2 account
     assert.equal(
+      boundedStrategy.collateralAccount.toString(),
+      collateralAccount.toString()
+    );
+    assert.equal(
       boundedStrategy.collateralMint.toString(),
       USDC_MINT.toString()
     );

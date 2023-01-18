@@ -552,6 +552,38 @@ export type SerumRemote = {
           "type": "bytes"
         }
       ]
+    },
+    {
+      "name": "boundedTradeV2",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Anyone can fire this transaction"
+          ]
+        },
+        {
+          "name": "strategy",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategy account"
+          ]
+        },
+        {
+          "name": "orderPayer",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "depositAccount",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -562,6 +594,13 @@ export type SerumRemote = {
         "fields": [
           {
             "name": "collateralMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateralAccount",
+            "docs": [
+              "The token account where the assets to be traded are held"
+            ],
             "type": "publicKey"
           },
           {
@@ -1491,6 +1530,38 @@ export const IDL: SerumRemote = {
           "type": "bytes"
         }
       ]
+    },
+    {
+      "name": "boundedTradeV2",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Anyone can fire this transaction"
+          ]
+        },
+        {
+          "name": "strategy",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategy account"
+          ]
+        },
+        {
+          "name": "orderPayer",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "depositAccount",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -1501,6 +1572,13 @@ export const IDL: SerumRemote = {
         "fields": [
           {
             "name": "collateralMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateralAccount",
+            "docs": [
+              "The token account where the assets to be traded are held"
+            ],
             "type": "publicKey"
           },
           {

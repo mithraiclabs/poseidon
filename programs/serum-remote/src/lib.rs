@@ -79,4 +79,10 @@ pub mod serum_remote {
             additional_data,
         )
     }
+
+    pub fn bounded_trade_v2<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, BoundedTradeV2<'info>>,
+    ) -> Result<()> {
+        instructions::bounded_trade_v2::handler(ctx)
+    }
 }

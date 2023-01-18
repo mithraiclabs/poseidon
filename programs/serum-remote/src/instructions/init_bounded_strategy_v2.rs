@@ -75,6 +75,7 @@ pub fn handler<'info>(
         }
     };
     let bounded_strategy = &mut ctx.accounts.strategy;
+    bounded_strategy.collateral_account = ctx.accounts.collateral_account.key();
     bounded_strategy.collateral_mint = ctx.accounts.mint.key();
     bounded_strategy.bounded_price = bounded_price;
     bounded_strategy.reclaim_date = reclaim_date;
@@ -83,7 +84,11 @@ pub fn handler<'info>(
     bounded_strategy.order_side = order_side;
     bounded_strategy.bound = bound;
     bounded_strategy.bump = strategy_bump;
-    for (dst, src) in bounded_strategy.additional_data.iter_mut().zip(&additional_data) {
+    for (dst, src) in bounded_strategy
+        .additional_data
+        .iter_mut()
+        .zip(&additional_data)
+    {
         *dst = *src
     }
     // Copy the remaining accounts to the BoundedStrategy
