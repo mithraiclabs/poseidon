@@ -16,8 +16,6 @@ declare_id!("oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK");
 
 #[program]
 pub mod serum_remote {
-    use crate::utils::U64F64;
-
     use super::*;
 
     #[access_control(InitBoundedStrategy::valid_arguments(
@@ -72,7 +70,7 @@ pub mod serum_remote {
         bound: u8,
         additional_data: Vec<u8>,
     ) -> Result<()> {
-        let bounded_price = U64F64 {val: bound_price};
+        let bounded_price = U64F64 { val: bound_price };
         instructions::init_bounded_strategy_v2::handler(
             ctx,
             transfer_amount,

@@ -5,7 +5,8 @@ use crate::{
     constants::{BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
     dexes::{DexList, Leg, Route},
     errors::{self, ErrorCode},
-    state::BoundedStrategyV2, utils::U64F64,
+    state::BoundedStrategyV2,
+    utils::U64F64,
 };
 
 #[derive(Accounts)]

@@ -19,8 +19,8 @@ pub struct BoundedStrategyV2 {
     pub deposit_address: Pubkey,
     /// 0 for lower bound, 1 for upper bound
     pub bound: u8,
-    /// The price of the base asset that governs the bound. U64F64 supports 64 bits of 
-    /// floating precision using a u128 under the hood. The price here should be the 
+    /// The price of the base asset that governs the bound. U64F64 supports 64 bits of
+    /// floating precision using a u128 under the hood. The price here should be the
     pub bounded_price: U64F64,
     /// The bump for the strategy's derived address
     pub bump: u8,
