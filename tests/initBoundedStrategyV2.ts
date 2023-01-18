@@ -22,7 +22,7 @@ import {
 } from "./utils";
 
 let timesRun = 0;
-describe("InitBoundedStrategy", () => {
+describe("InitBoundedStrategyV2", () => {
   // Configure the client to use the local cluster.
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
   // @ts-ignore: TODO: Remove after anchor npm upgrade
@@ -92,19 +92,16 @@ describe("InitBoundedStrategy", () => {
 
   // Test the BoundedStrategy account is created with the right info
   it("Should store all the information for a BoundedStretegyV2", async () => {
-    const {
-      boundedStrategy: boundedStrategyKey,
-      authority,
-      collateralAccount,
-    } = await deriveAllBoundedStrategyKeysV2(program, USDC_MINT, {
-      transferAmount,
-      boundPrice,
-      reclaimDate,
-      reclaimAddress,
-      depositAddress,
-      orderSide,
-      bound,
-    });
+    const { boundedStrategy: boundedStrategyKey, collateralAccount } =
+      await deriveAllBoundedStrategyKeysV2(program, USDC_MINT, {
+        transferAmount,
+        boundPrice,
+        reclaimDate,
+        reclaimAddress,
+        depositAddress,
+        orderSide,
+        bound,
+      });
     const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
@@ -119,6 +116,7 @@ describe("InitBoundedStrategy", () => {
       // @ts-ignore
       serumMarket._baseSplTokenDecimals
     ).toArrayLike(Buffer, "le", 1);
+
     const instruction = await program.methods
       .initBoundedStrategyV2(
         transferAmount,
@@ -165,7 +163,7 @@ describe("InitBoundedStrategy", () => {
       USDC_MINT.toString()
     );
     assert.equal(
-      boundedStrategy.boundedPrice.toString(),
+      boundedStrategy.boundedPrice.val.toString(),
       boundPrice.toString()
     );
     assert.equal(

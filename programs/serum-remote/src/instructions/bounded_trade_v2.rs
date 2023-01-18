@@ -32,7 +32,7 @@ pub fn handler<'a, 'b, 'c, 'info>(
     // Validate remaining_accounts equals matches the accounts list in BoundedStrategyV2
     for (index, key) in bounded_strategy.account_list.iter().enumerate() {
         if key != &system_program::ID && key != ctx.remaining_accounts[index].key {
-            return Err(error!(ErrorCode::IncorrectKeysForLeg))
+            return Err(error!(ErrorCode::IncorrectKeysForLeg));
         }
     }
     // Build the route

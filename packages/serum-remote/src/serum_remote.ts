@@ -470,32 +470,7 @@ export type SerumRemote = {
           "docs": [
             "TODO: The BoundedStrategy seeds will likely need another key. Otherwise DAO's and other",
             "users will be uniquely constrained by these values."
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "Mint",
-                "path": "mint"
-              },
-              {
-                "kind": "arg",
-                "type": "u64",
-                "path": "bounded_price"
-              },
-              {
-                "kind": "arg",
-                "type": "i64",
-                "path": "reclaim_date"
-              },
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "boundedStrategy"
-              }
-            ]
-          }
+          ]
         },
         {
           "name": "reclaimAccount",
@@ -533,7 +508,7 @@ export type SerumRemote = {
         },
         {
           "name": "boundPrice",
-          "type": "u64"
+          "type": "u128"
         },
         {
           "name": "reclaimDate",
@@ -642,10 +617,12 @@ export type SerumRemote = {
           {
             "name": "boundedPrice",
             "docs": [
-              "The price of the base asset that governs the bound. The decimals are",
-              "equivalent to the price on the Serum Market's order book"
+              "The price of the base asset that governs the bound. U64F64 supports 64 bits of",
+              "floating precision using a u128 under the hood. The price here should be the"
             ],
-            "type": "u64"
+            "type": {
+              "defined": "U64F64"
+            }
           },
           {
             "name": "bump",
@@ -771,6 +748,18 @@ export type SerumRemote = {
     }
   ],
   "types": [
+    {
+      "name": "U64F64",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "val",
+            "type": "u128"
+          }
+        ]
+      }
+    },
     {
       "name": "DexList",
       "type": {
@@ -1448,32 +1437,7 @@ export const IDL: SerumRemote = {
           "docs": [
             "TODO: The BoundedStrategy seeds will likely need another key. Otherwise DAO's and other",
             "users will be uniquely constrained by these values."
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "Mint",
-                "path": "mint"
-              },
-              {
-                "kind": "arg",
-                "type": "u64",
-                "path": "bounded_price"
-              },
-              {
-                "kind": "arg",
-                "type": "i64",
-                "path": "reclaim_date"
-              },
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "boundedStrategy"
-              }
-            ]
-          }
+          ]
         },
         {
           "name": "reclaimAccount",
@@ -1511,7 +1475,7 @@ export const IDL: SerumRemote = {
         },
         {
           "name": "boundPrice",
-          "type": "u64"
+          "type": "u128"
         },
         {
           "name": "reclaimDate",
@@ -1620,10 +1584,12 @@ export const IDL: SerumRemote = {
           {
             "name": "boundedPrice",
             "docs": [
-              "The price of the base asset that governs the bound. The decimals are",
-              "equivalent to the price on the Serum Market's order book"
+              "The price of the base asset that governs the bound. U64F64 supports 64 bits of",
+              "floating precision using a u128 under the hood. The price here should be the"
             ],
-            "type": "u64"
+            "type": {
+              "defined": "U64F64"
+            }
           },
           {
             "name": "bump",
@@ -1749,6 +1715,18 @@ export const IDL: SerumRemote = {
     }
   ],
   "types": [
+    {
+      "name": "U64F64",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "val",
+            "type": "u128"
+          }
+        ]
+      }
+    },
     {
       "name": "DexList",
       "type": {

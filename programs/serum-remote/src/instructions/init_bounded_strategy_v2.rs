@@ -5,11 +5,11 @@ use crate::{
     constants::{BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
     dexes::{DexList, Leg, Route},
     errors::{self, ErrorCode},
-    state::BoundedStrategyV2,
+    state::BoundedStrategyV2, utils::U64F64,
 };
 
 #[derive(Accounts)]
-#[instruction(transfer_amount: u64, bounded_price: u64, reclaim_date: i64)]
+#[instruction(transfer_amount: u64, bounded_price: U64F64, reclaim_date: i64)]
 pub struct InitBoundedStrategyV2<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -60,12 +60,13 @@ pub struct InitBoundedStrategyV2<'info> {
 pub fn handler<'info>(
     ctx: Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
     transfer_amount: u64,
-    bounded_price: u64,
+    bounded_price: U64F64,
     reclaim_date: i64,
     order_side: u8,
     bound: u8,
     additional_data: Vec<u8>,
 ) -> Result<()> {
+    msg!("Bounded price {:?}", bounded_price);
     // Set BoundedStrategy information
     let strategy_bump = match ctx.bumps.get("strategy") {
         Some(bump) => *bump,

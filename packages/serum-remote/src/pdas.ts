@@ -11,7 +11,7 @@ export const deriveBoundedStrategy = (
   boundPrice: BN,
   reclaimDate: BN
 ) =>
-  web3.PublicKey.findProgramAddress(
+  web3.PublicKey.findProgramAddressSync(
     [
       serumMarket.toBuffer(),
       mint.toBuffer(),
@@ -28,10 +28,10 @@ export const deriveBoundedStrategyV2 = (
   boundPrice: BN,
   reclaimDate: BN
 ) =>
-  web3.PublicKey.findProgramAddress(
+  web3.PublicKey.findProgramAddressSync(
     [
       mint.toBuffer(),
-      boundPrice.toArrayLike(Buffer, "le", 8),
+      boundPrice.toArrayLike(Buffer, "le", 16),
       reclaimDate.toArrayLike(Buffer, "le", 8),
       textEncoder.encode("boundedStrategy"),
     ],
@@ -42,7 +42,7 @@ export const deriveCollateralAccount = (
   program: Program<SerumRemote>,
   strategy: web3.PublicKey
 ) =>
-  web3.PublicKey.findProgramAddress(
+  web3.PublicKey.findProgramAddressSync(
     [strategy.toBuffer(), textEncoder.encode("orderPayer")],
     program.programId
   );
@@ -51,7 +51,7 @@ export const deriveAuthority = (
   program: Program<SerumRemote>,
   strategy: web3.PublicKey
 ) =>
-  web3.PublicKey.findProgramAddress(
+  web3.PublicKey.findProgramAddressSync(
     [strategy.toBuffer(), textEncoder.encode("authority")],
     program.programId
   );
@@ -60,7 +60,7 @@ export const deriveOpenOrders = (
   program: Program<SerumRemote>,
   strategy: web3.PublicKey
 ) =>
-  web3.PublicKey.findProgramAddress(
+  web3.PublicKey.findProgramAddressSync(
     [strategy.toBuffer(), textEncoder.encode("openOrders")],
     program.programId
   );
@@ -91,7 +91,7 @@ export const deriveAllBoundedStrategyKeysV2 = async (
   boundedStrategyParams: BoundedStrategyParams
 ) => {
   const { boundPrice, reclaimDate } = boundedStrategyParams;
-  const [boundedStrategy] = await deriveBoundedStrategyV2(
+  const [boundedStrategy] = deriveBoundedStrategyV2(
     program,
     mint,
     boundPrice,
@@ -101,6 +101,5 @@ export const deriveAllBoundedStrategyKeysV2 = async (
     program,
     boundedStrategy
   );
-  const [authority] = await deriveAuthority(program, boundedStrategy);
-  return { collateralAccount, boundedStrategy, authority };
+  return { collateralAccount, boundedStrategy };
 };

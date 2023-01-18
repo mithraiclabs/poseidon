@@ -32,6 +32,27 @@ impl<'a, 'info> Route<'a, 'info> {
         }
         Ok(route)
     }
+
+    /// Simulate the route with the smallest lot possible, testing whether the trade fits the
+    /// bounds
+    pub fn simple_price_check(&self, bounded_price: u64, bound_direction: u8) -> bool {
+        // TODO: actually pull minimum trade size from each Leg and use that to determine the minimum input.
+        let input_amount: u64 = 100;
+        let mut output: u64 = 0;
+
+        self.for_each_leg(|leg| {
+            output = leg.simulate_trade(input_amount)
+        });
+        // TODO: Normalize input to output to determine whether the price per asset matches the
+        //  bound. This must handle the case where output is less than input (i.e. the purchase price is < 1)
+        if bound_direction == 0 && output > bounded_price {
+            false
+        } else if bound_direction == 1 && output < bounded_price {
+            false
+        } else {
+            true
+        }
+    }
     /// Return the mint that is the input to the trade route
     pub fn start_mint(&self) -> Result<Pubkey> {
         match &self.legs[0] {
@@ -50,5 +71,19 @@ impl<'a, 'info> Route<'a, 'info> {
             }
         }
         panic!("There must be at least one leg")
+    }
+
+    fn for_each_leg<F>(&self, mut f: F)
+    where
+        F: FnMut(&Leg),
+    {
+        for leg in self.legs.iter() {
+            match leg {
+                Some(leg) => {
+                    f(&leg);
+                }
+                None => {}
+            }
+        }
     }
 }
