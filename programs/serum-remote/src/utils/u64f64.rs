@@ -9,8 +9,17 @@ impl U64F64 {
     pub const ONE: Self = U64F64 { val: 1 << 64 };
 
     #[inline(always)]
-    pub const fn div(self, other: U64F64) -> u128 {
-        self.val / other.val
+    pub const fn div(self, other: U64F64) -> U64F64 {
+        U64F64 {
+            val: self.val / other.val,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn mul_u64(self, other: u64) -> U64F64 {
+        U64F64 {
+            val: self.val * other as u128,
+        }
     }
 
     #[inline(always)]

@@ -1,8 +1,6 @@
 use anchor_lang::prelude::*;
 use static_assertions::const_assert;
 
-use crate::utils::U64F64;
-
 #[account]
 pub struct BoundedStrategyV2 {
     pub collateral_mint: Pubkey,
@@ -19,9 +17,16 @@ pub struct BoundedStrategyV2 {
     pub deposit_address: Pubkey,
     /// 0 for lower bound, 1 for upper bound
     pub bound: u8,
-    /// The price of the base asset that governs the bound. U64F64 supports 64 bits of
-    /// floating precision using a u128 under the hood. The price here should be the
-    pub bounded_price: U64F64,
+    /// Using a numerator and denominator we can back out a price without having to use floating
+    /// point math or account for token decimals when price checking.
+    ///
+    /// ### Example:
+    /// Buying SOL with USDC for $92.75
+    /// Use a numerator of 92_750_000 because USDC has 6 decimals. So 92_750_000 is 92.75 USDC.
+    /// Use a denominator of 1_000_000_000 because SOL has 9 decimal places. So that's 1 SOL.
+    /// 92.75 USDC / 1 SOL
+    pub bounded_price_numerator: u64,
+    pub bounded_price_denominator: u64,
     /// The bump for the strategy's derived address
     pub bump: u8,
     // A slice that holds the list of account addresses for the route

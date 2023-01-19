@@ -35,3 +35,14 @@ export type BoundedStrategyParams = {
   orderSide: number;
   bound: number;
 };
+
+export type BoundedStrategyParamsV2 = {
+  transferAmount: BN;
+  boundPriceNumerator: BN;
+  boundPriceDenominator: BN;
+  reclaimDate: BN;
+  reclaimAddress: web3.PublicKey;
+  depositAddress: web3.PublicKey;
+  orderSide: number;
+  bound: number;
+};

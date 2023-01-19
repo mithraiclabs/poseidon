@@ -470,7 +470,37 @@ export type SerumRemote = {
           "docs": [
             "TODO: The BoundedStrategy seeds will likely need another key. Otherwise DAO's and other",
             "users will be uniquely constrained by these values."
-          ]
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "bounded_price_numerator"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "bounded_price_denominator"
+              },
+              {
+                "kind": "arg",
+                "type": "i64",
+                "path": "reclaim_date"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "boundedStrategy"
+              }
+            ]
+          }
         },
         {
           "name": "reclaimAccount",
@@ -507,8 +537,12 @@ export type SerumRemote = {
           "type": "u64"
         },
         {
-          "name": "boundPrice",
-          "type": "u128"
+          "name": "boundedPriceNumerator",
+          "type": "u64"
+        },
+        {
+          "name": "boundedPriceDenominator",
+          "type": "u64"
         },
         {
           "name": "reclaimDate",
@@ -615,14 +649,22 @@ export type SerumRemote = {
             "type": "u8"
           },
           {
-            "name": "boundedPrice",
+            "name": "boundedPriceNumerator",
             "docs": [
-              "The price of the base asset that governs the bound. U64F64 supports 64 bits of",
-              "floating precision using a u128 under the hood. The price here should be the"
+              "Using a numerator and denominator we can back out a price without having to use floating",
+              "point math or account for token decimals when price checking.",
+              "",
+              "### Example:",
+              "Buying SOL with USDC for $92.75",
+              "Use a numerator of 92_750_000 because USDC has 6 decimals. So 92_750_000 is 92.75 USDC.",
+              "Use a denominator of 1_000_000_000 because SOL has 9 decimal places. So that's 1 SOL.",
+              "92.75 USDC / 1 SOL"
             ],
-            "type": {
-              "defined": "U64F64"
-            }
+            "type": "u64"
+          },
+          {
+            "name": "boundedPriceDenominator",
+            "type": "u64"
           },
           {
             "name": "bump",
@@ -1437,7 +1479,37 @@ export const IDL: SerumRemote = {
           "docs": [
             "TODO: The BoundedStrategy seeds will likely need another key. Otherwise DAO's and other",
             "users will be uniquely constrained by these values."
-          ]
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "bounded_price_numerator"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "bounded_price_denominator"
+              },
+              {
+                "kind": "arg",
+                "type": "i64",
+                "path": "reclaim_date"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "boundedStrategy"
+              }
+            ]
+          }
         },
         {
           "name": "reclaimAccount",
@@ -1474,8 +1546,12 @@ export const IDL: SerumRemote = {
           "type": "u64"
         },
         {
-          "name": "boundPrice",
-          "type": "u128"
+          "name": "boundedPriceNumerator",
+          "type": "u64"
+        },
+        {
+          "name": "boundedPriceDenominator",
+          "type": "u64"
         },
         {
           "name": "reclaimDate",
@@ -1582,14 +1658,22 @@ export const IDL: SerumRemote = {
             "type": "u8"
           },
           {
-            "name": "boundedPrice",
+            "name": "boundedPriceNumerator",
             "docs": [
-              "The price of the base asset that governs the bound. U64F64 supports 64 bits of",
-              "floating precision using a u128 under the hood. The price here should be the"
+              "Using a numerator and denominator we can back out a price without having to use floating",
+              "point math or account for token decimals when price checking.",
+              "",
+              "### Example:",
+              "Buying SOL with USDC for $92.75",
+              "Use a numerator of 92_750_000 because USDC has 6 decimals. So 92_750_000 is 92.75 USDC.",
+              "Use a denominator of 1_000_000_000 because SOL has 9 decimal places. So that's 1 SOL.",
+              "92.75 USDC / 1 SOL"
             ],
-            "type": {
-              "defined": "U64F64"
-            }
+            "type": "u64"
+          },
+          {
+            "name": "boundedPriceDenominator",
+            "type": "u64"
           },
           {
             "name": "bump",

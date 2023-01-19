@@ -3,7 +3,8 @@ macro_rules! strategy_signer_seeds {
     ($strategy:expr, $bump:ident) => {
         &[
             &$strategy.collateral_mint.as_ref(),
-            &$strategy.bounded_price.to_le_bytes(),
+            &$strategy.bounded_price_numerator.to_le_bytes(),
+            &$strategy.bounded_price_denominator.to_le_bytes(),
             &$strategy.reclaim_date.to_le_bytes(),
             BOUNDED_STRATEGY_SEED.as_bytes(),
             &[$bump],

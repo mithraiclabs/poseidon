@@ -10,7 +10,6 @@ pub mod state;
 pub mod utils;
 
 use crate::instructions::*;
-use crate::utils::U64F64;
 
 declare_id!("oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK");
 
@@ -64,17 +63,18 @@ pub mod serum_remote {
     pub fn init_bounded_strategy_v2<'info>(
         ctx: Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
         transfer_amount: u64,
-        bound_price: u128,
+        bounded_price_numerator: u64,
+        bounded_price_denominator: u64,
         reclaim_date: i64,
         order_side: u8,
         bound: u8,
         additional_data: Vec<u8>,
     ) -> Result<()> {
-        let bounded_price = U64F64 { val: bound_price };
         instructions::init_bounded_strategy_v2::handler(
             ctx,
             transfer_amount,
-            bounded_price,
+            bounded_price_numerator,
+            bounded_price_denominator,
             reclaim_date,
             order_side,
             bound,

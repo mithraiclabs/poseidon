@@ -71,15 +71,15 @@ impl anchor_lang::Id for OpenBookDexV3 {
  * 15 - payer_destination_wallet
  */
 pub struct OpenBookDex<'a, 'info> {
-    trade_is_bid: bool,
-    order_book: Vec<OrderBookItem>,
-    fee_numerator: u64,
-    fee_denominator: u64,
-    coin_lot_size: u64,
-    pc_lot_size: u64,
-    has_fee_discount_account: bool,
-    base_decimals_factor: u64,
-    accounts: &'a [AccountInfo<'info>],
+    pub trade_is_bid: bool,
+    pub order_book: Vec<OrderBookItem>,
+    pub fee_numerator: u64,
+    pub fee_denominator: u64,
+    pub coin_lot_size: u64,
+    pub pc_lot_size: u64,
+    pub has_fee_discount_account: bool,
+    pub base_decimals_factor: u64,
+    pub accounts: &'a [AccountInfo<'info>],
 }
 
 impl<'a, 'info> OpenBookDex<'a, 'info> {
@@ -203,6 +203,7 @@ impl<'a, 'info> OpenBookDex<'a, 'info> {
 impl Dex for OpenBookDex<'_, '_> {
     fn simulate_trade(&self, tokens_in: u64) -> u64 {
         if self.trade_is_bid {
+            println!("ob {:?} ", self.order_book);
             buy_coin_amount_out(
                 tokens_in,
                 &self.order_book,

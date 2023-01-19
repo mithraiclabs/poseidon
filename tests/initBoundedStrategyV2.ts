@@ -29,7 +29,8 @@ describe("InitBoundedStrategyV2", () => {
   const payerKey = program.provider.wallet.publicKey;
   const tokenProgram = splTokenProgram();
 
-  let boundPrice = new anchor.BN(957);
+  let boundPriceNumerator = new anchor.BN(95_700_000);
+  let boundPriceDenominator = new anchor.BN(1_000_000_000);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
   let reclaimAddress: web3.PublicKey;
   let depositAddress: web3.PublicKey;
@@ -83,7 +84,8 @@ describe("InitBoundedStrategyV2", () => {
     // timesRun is used to generate unique seeds for the strategy, otherwise
     //  the tests can fail with accounts already in use.
     timesRun += 1;
-    boundPrice = new anchor.BN(957);
+    boundPriceNumerator = new anchor.BN(95_700_000);
+    boundPriceDenominator = new anchor.BN(1_000_000_000);
     reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600 + timesRun);
     orderSide = 0;
     bound = 1;
@@ -95,7 +97,8 @@ describe("InitBoundedStrategyV2", () => {
     const { boundedStrategy: boundedStrategyKey, collateralAccount } =
       await deriveAllBoundedStrategyKeysV2(program, USDC_MINT, {
         transferAmount,
-        boundPrice,
+        boundPriceNumerator,
+        boundPriceDenominator,
         reclaimDate,
         reclaimAddress,
         depositAddress,
@@ -120,7 +123,8 @@ describe("InitBoundedStrategyV2", () => {
     const instruction = await program.methods
       .initBoundedStrategyV2(
         transferAmount,
-        boundPrice,
+        boundPriceNumerator,
+        boundPriceDenominator,
         reclaimDate,
         orderSide,
         bound,
@@ -163,8 +167,12 @@ describe("InitBoundedStrategyV2", () => {
       USDC_MINT.toString()
     );
     assert.equal(
-      boundedStrategy.boundedPrice.val.toString(),
-      boundPrice.toString()
+      boundedStrategy.boundedPriceNumerator.toString(),
+      boundPriceNumerator.toString()
+    );
+    assert.equal(
+      boundedStrategy.boundedPriceDenominator.toString(),
+      boundPriceDenominator.toString()
     );
     assert.equal(
       boundedStrategy.reclaimDate.toString(),

@@ -1,6 +1,6 @@
 import { BN, Program, web3 } from "@project-serum/anchor";
 import { SerumRemote } from "./serum_remote";
-import { BoundedStrategyParams } from "./types";
+import { BoundedStrategyParams, BoundedStrategyParamsV2 } from "./types";
 
 const textEncoder = new TextEncoder();
 
@@ -25,13 +25,15 @@ export const deriveBoundedStrategy = (
 export const deriveBoundedStrategyV2 = (
   program: Program<SerumRemote>,
   mint: web3.PublicKey,
-  boundPrice: BN,
+  boundPriceNumerator: BN,
+  boundPriceDenominator: BN,
   reclaimDate: BN
 ) =>
   web3.PublicKey.findProgramAddressSync(
     [
       mint.toBuffer(),
-      boundPrice.toArrayLike(Buffer, "le", 16),
+      boundPriceNumerator.toArrayLike(Buffer, "le", 8),
+      boundPriceDenominator.toArrayLike(Buffer, "le", 8),
       reclaimDate.toArrayLike(Buffer, "le", 8),
       textEncoder.encode("boundedStrategy"),
     ],
@@ -88,13 +90,15 @@ export const deriveAllBoundedStrategyKeys = async (
 export const deriveAllBoundedStrategyKeysV2 = async (
   program: Program<SerumRemote>,
   mint: web3.PublicKey,
-  boundedStrategyParams: BoundedStrategyParams
+  boundedStrategyParams: BoundedStrategyParamsV2
 ) => {
-  const { boundPrice, reclaimDate } = boundedStrategyParams;
+  const { boundPriceNumerator, boundPriceDenominator, reclaimDate } =
+    boundedStrategyParams;
   const [boundedStrategy] = deriveBoundedStrategyV2(
     program,
     mint,
-    boundPrice,
+    boundPriceNumerator,
+    boundPriceDenominator,
     reclaimDate
   );
   const [collateralAccount] = await deriveCollateralAccount(

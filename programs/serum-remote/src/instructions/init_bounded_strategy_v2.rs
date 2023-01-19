@@ -5,12 +5,11 @@ use crate::{
     constants::{BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
     dexes::{DexList, Leg, Route},
     errors::{self, ErrorCode},
-    state::BoundedStrategyV2,
-    utils::U64F64,
+    state::BoundedStrategyV2
 };
 
 #[derive(Accounts)]
-#[instruction(transfer_amount: u64, bounded_price: U64F64, reclaim_date: i64)]
+#[instruction(transfer_amount: u64, bounded_price_numerator: u64, bounded_price_denominator: u64, reclaim_date: i64)]
 pub struct InitBoundedStrategyV2<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -29,7 +28,7 @@ pub struct InitBoundedStrategyV2<'info> {
     /// users will be uniquely constrained by these values.
     #[account(
     init,
-    seeds = [mint.key().as_ref(), &bounded_price.to_le_bytes(), &reclaim_date.to_le_bytes(), BOUNDED_STRATEGY_SEED.as_bytes()],
+    seeds = [mint.key().as_ref(), &bounded_price_numerator.to_le_bytes(), &bounded_price_denominator.to_le_bytes(), &reclaim_date.to_le_bytes(), BOUNDED_STRATEGY_SEED.as_bytes()],
     payer = payer,
     bump,
     space = BoundedStrategyV2::LEN,
@@ -61,13 +60,13 @@ pub struct InitBoundedStrategyV2<'info> {
 pub fn handler<'info>(
     ctx: Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
     transfer_amount: u64,
-    bounded_price: U64F64,
+    bounded_price_numerator: u64,
+    bounded_price_denominator: u64,
     reclaim_date: i64,
     order_side: u8,
     bound: u8,
     additional_data: Vec<u8>,
 ) -> Result<()> {
-    msg!("Bounded price {:?}", bounded_price);
     // Set BoundedStrategy information
     let strategy_bump = match ctx.bumps.get("strategy") {
         Some(bump) => *bump,
@@ -79,7 +78,8 @@ pub fn handler<'info>(
     let bounded_strategy = &mut ctx.accounts.strategy;
     bounded_strategy.collateral_account = ctx.accounts.collateral_account.key();
     bounded_strategy.collateral_mint = ctx.accounts.mint.key();
-    bounded_strategy.bounded_price = bounded_price;
+    bounded_strategy.bounded_price_numerator = bounded_price_numerator;
+    bounded_strategy.bounded_price_denominator = bounded_price_denominator;
     bounded_strategy.reclaim_date = reclaim_date;
     bounded_strategy.reclaim_address = ctx.accounts.reclaim_account.key();
     bounded_strategy.deposit_address = ctx.accounts.deposit_account.key();
