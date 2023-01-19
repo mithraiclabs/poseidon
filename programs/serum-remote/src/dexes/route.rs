@@ -50,6 +50,7 @@ impl<'a, 'info> Route<'a, 'info> {
         //  bound. This must handle the case where output is less than input (i.e. the purchase price is < 1)
         let bounded_numerator = bounded_price_numerator * output;
         let executed_numerator = input_amount * bounded_price_denominator;
+        println!("bn {} en {}", bounded_numerator, executed_numerator);
 
         // Check whether the execution price is out of bounds
         if bound_direction == &0 && executed_numerator < bounded_numerator {
@@ -103,34 +104,63 @@ mod test {
     use crate::dexes::open_book_dex::OpenBookDex;
     use crate::dexes::serum_v3::OrderBookItem;
     use crate::dexes::{math::U128, Leg, Route};
-    use crate::utils::U64F64;
 
     fn mock_open_book_route<'a, 'info>(
         route: &mut Route<'a, 'info>,
         accounts: &'a [AccountInfo<'info>],
+        asks: bool,
     ) {
-        // Create mock OpenBookDex
-        let order_book = vec![
-            OrderBookItem {
-                price: 92750000,
-                quantity: 191300000000,
-                quantity_sum: 191300000000,
-                price_quantity_sum: U128::from(17_743_075_000_000_000_000 as i128),
-            },
-            OrderBookItem {
-                price: 92761000,
-                quantity: 977900000000,
-                quantity_sum: 1169200000000,
-                price_quantity_sum: U128::from(108_454_056_900_000_000_000 as i128),
-            },
-            OrderBookItem {
-                price: 92805000,
-                quantity: 383100000000,
-                quantity_sum: 1552300000000,
-                price_quantity_sum: U128::from(144_007_652_400_000_000_000 as i128),
-            },
-        ];
+        let order_book = if asks {
+            vec![
+                OrderBookItem {
+                    price: 92750000,
+                    quantity: 191300000000,
+                    quantity_sum: 191300000000,
+                    price_quantity_sum: U128::from(17_743_075_000_000_000_000 as i128),
+                },
+                OrderBookItem {
+                    price: 92761000,
+                    quantity: 977900000000,
+                    quantity_sum: 1169200000000,
+                    price_quantity_sum: U128::from(108_454_056_900_000_000_000 as i128),
+                },
+                OrderBookItem {
+                    price: 92805000,
+                    quantity: 383100000000,
+                    quantity_sum: 1552300000000,
+                    price_quantity_sum: U128::from(144_007_652_400_000_000_000 as i128),
+                },
+            ]
+        } else {
+            vec![
+                OrderBookItem {
+                    price: 92805000,
+                    quantity: 383100000000,
+                    quantity_sum: 383100000000,
+                    price_quantity_sum: U128::from(92805000 * 383100000000 as i128),
+                },
+                OrderBookItem {
+                    price: 92761000,
+                    quantity: 977900000000,
+                    quantity_sum: 1361000000000,
+                    price_quantity_sum: U128::from(
+                        92805000 * 383100000000 + 977900000000 * 92761000 as i128,
+                    ),
+                },
+                OrderBookItem {
+                    price: 92750000,
+                    quantity: 191300000000,
+                    quantity_sum: 1552300000000,
+                    price_quantity_sum: U128::from(
+                        92805000 * 383100000000
+                            + 977900000000 * 92761000
+                            + 92750000 * 191300000000 as i128,
+                    ),
+                },
+            ]
+        };
 
+        // Create mock OpenBookDex
         let obd = OpenBookDex {
             trade_is_bid: true,
             order_book,
@@ -149,16 +179,16 @@ mod test {
     }
 
     #[test]
-    /// Test for a successful buy
+    /// Test for a successful lower bound (sell)
     fn test_simple_price_1() {
         let mock_accounts: Vec<AccountInfo> = vec![];
         let mut route = Route::default();
-        mock_open_book_route(&mut route, &mock_accounts);
+        mock_open_book_route(&mut route, &mock_accounts, false);
 
         // Lower bound
         let bound_direction = 0;
-        // 92.75 USDC is input to get 1 SOL out. This creates a bounded price of 92.75 USDC / SOL
-        let bounded_price_numerator = 92_750_000;
+        // Sell 1 SOL for at least 92 USDC
+        let bounded_price_numerator = 92_000_000;
         let bounded_price_denominator = 1_000_000_000;
 
         let res = route.simple_price_check(
@@ -169,7 +199,66 @@ mod test {
         assert!(res == true);
     }
 
-    // TODO: Write a test for a failing buy
-    // TODO: Write a test for a successful sell
-    // TODO: Write a test for a failing sell
+    #[test]
+    // Test for a failing lower bound (sell)
+    fn test_simple_price_2() {
+        let mock_accounts: Vec<AccountInfo> = vec![];
+        let mut route = Route::default();
+        mock_open_book_route(&mut route, &mock_accounts, false);
+
+        // Lower bound
+        let bound_direction = 0;
+        // Sell 1 SOL for at least 93
+        let bounded_price_numerator = 93_000_000;
+        let bounded_price_denominator = 1_000_000_000;
+
+        let res = route.simple_price_check(
+            &bounded_price_numerator,
+            &bounded_price_denominator,
+            &bound_direction,
+        );
+        assert!(res == false);
+    }
+
+    #[test]
+    // Test for a successful upper bound (buy)
+    fn test_simple_price_3() {
+        let mock_accounts: Vec<AccountInfo> = vec![];
+        let mut route = Route::default();
+        mock_open_book_route(&mut route, &mock_accounts, true);
+
+        // Lower bound
+        let bound_direction = 1;
+        // Buy 1 SOL for at most 93 USDC
+        let bounded_price_numerator = 93_000_000;
+        let bounded_price_denominator = 1_000_000_000;
+
+        let res = route.simple_price_check(
+            &bounded_price_numerator,
+            &bounded_price_denominator,
+            &bound_direction,
+        );
+        assert!(res == true);
+    }
+
+    #[test]
+    // Test for a failing upper bound (buy)
+    fn test_simple_price_4() {
+        let mock_accounts: Vec<AccountInfo> = vec![];
+        let mut route = Route::default();
+        mock_open_book_route(&mut route, &mock_accounts, true);
+
+        // Lower bound
+        let bound_direction = 1;
+        // Buy 1 SOL for at most 90 USDC
+        let bounded_price_numerator = 90_000_000;
+        let bounded_price_denominator = 1_000_000_000;
+
+        let res = route.simple_price_check(
+            &bounded_price_numerator,
+            &bounded_price_denominator,
+            &bound_direction,
+        );
+        assert!(res == false);
+    }
 }

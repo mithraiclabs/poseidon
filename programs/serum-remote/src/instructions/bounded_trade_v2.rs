@@ -40,10 +40,14 @@ pub fn handler<'a, 'b, 'c, 'info>(
         ctx.remaining_accounts,
         bounded_strategy.additional_data.to_vec(),
     )?;
-    // TODO: Simple price check
-    // if !route.simple_price_check(&bounded_strategy.bounded_price, &bounded_strategy.bound) {
-    //     return Err(error!(ErrorCode::MarketPriceIsOutOfBounds));
-    // }
+    // Simple price check
+    if !route.simple_price_check(
+        &bounded_strategy.bounded_price_numerator,
+        &bounded_strategy.bounded_price_denominator,
+        &bounded_strategy.bound,
+    ) {
+        return Err(error!(ErrorCode::MarketPriceIsOutOfBounds));
+    }
     // TODO: Trade input calculation
     // TODO: Execute the trade route
     Ok(())
