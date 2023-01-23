@@ -1,4 +1,4 @@
-use super::{leg::Leg, Dex, DexList};
+use super::{leg::Leg, math::{find_maximum}, Dex, DexList};
 use anchor_lang::prelude::*;
 
 const MAX_LEGS: usize = 3;
@@ -43,25 +43,20 @@ impl<'a, 'info> Route<'a, 'info> {
     ) -> bool {
         // TODO: actually pull minimum trade size from each Leg and use that to determine the minimum input.
         let input_amount: u64 = 1_000_000;
-        let mut output: u64 = 0;
+        let output = self.simulate_execution(input_amount);
 
-        self.for_each_leg(|leg| output = leg.simulate_trade(input_amount));
-        // Normalize input to output to determine whether the price per asset matches the
-        //  bound. This must handle the case where output is less than input (i.e. the purchase price is < 1)
-        let bounded_numerator = bounded_price_numerator * output;
-        let executed_numerator = input_amount * bounded_price_denominator;
-        println!("bn {} en {}", bounded_numerator, executed_numerator);
-
-        // Check whether the execution price is out of bounds
-        if bound_direction == &0 && executed_numerator < bounded_numerator {
-            false
-        } else if bound_direction == &1 && executed_numerator > bounded_numerator {
-            false
-        } else {
-            true
-        }
+        is_in_bounds(
+            input_amount,
+            output,
+            bounded_price_numerator,
+            bounded_price_denominator,
+            bound_direction,
+        )
     }
+
+    ///
     /// Return the mint that is the input to the trade route
+    ///
     pub fn start_mint(&self) -> Result<Pubkey> {
         match &self.legs[0] {
             Some(leg) => leg.start_mint(),
@@ -69,7 +64,9 @@ impl<'a, 'info> Route<'a, 'info> {
         }
     }
 
+    ///
     /// Return the end mint of the final leg in the route.
+    ///
     pub fn end_mint(&self) -> Result<Pubkey> {
         // Iterate in reverse returning the end_mint of the first leg
         for leg in self.legs.iter().rev() {
@@ -79,6 +76,69 @@ impl<'a, 'info> Route<'a, 'info> {
             }
         }
         panic!("There must be at least one leg")
+    }
+
+    ///
+    /// Find the maximum amount of tokens to input in the trade such that the execution price does 
+    /// not cross the bounded price.
+    /// 
+    pub fn calculate_max_input(
+        &self,
+        input_tokens_available: u64,
+        bounded_price_numerator: &u64,
+        bounded_price_denominator: &u64,
+        bound_direction: &u8,
+        iterations: u8,
+    ) -> u64 {
+        find_maximum(
+            |x| {
+                self.simulate_bounded_execution(
+                    x,
+                    bounded_price_numerator,
+                    bounded_price_denominator,
+                    bound_direction,
+                )
+            },
+            0,
+            input_tokens_available,
+            iterations.into(),
+        )
+    }
+
+    ///
+    /// Simulates the trade execution but returns 0 if the execution price is out of bounds.
+    /// This is required to adjust the curve and avoid input amounts where the execution
+    /// price is outside the curve.
+    ///
+    fn simulate_bounded_execution(
+        &self,
+        input_amount: u64,
+        bounded_price_numerator: &u64,
+        bounded_price_denominator: &u64,
+        bound_direction: &u8,
+    ) -> u64 {
+        let output = self.simulate_execution(input_amount);
+        // Price check to ensure the input to output ratio is in bounds.
+        if is_in_bounds(
+            input_amount,
+            output,
+            bounded_price_numerator,
+            bounded_price_denominator,
+            bound_direction,
+        ) {
+            output
+        } else {
+            0
+        }
+    }
+
+    ///
+    /// Simulate the amount of output tokens you will receive if executing the Route
+    ///
+    fn simulate_execution(&self, input_amount: u64) -> u64 {
+        let mut output: u64 = 0;
+        self.for_each_leg(|leg| output = leg.simulate_trade(input_amount));
+        return output;
     }
 
     fn for_each_leg<F>(&self, mut f: F)
@@ -93,6 +153,29 @@ impl<'a, 'info> Route<'a, 'info> {
                 None => {}
             }
         }
+    }
+}
+
+///
+/// Check whether the execution price is out of bounds
+///
+fn is_in_bounds(
+    input: u64,
+    output: u64,
+    bounded_price_numerator: &u64,
+    bounded_price_denominator: &u64,
+    bound_direction: &u8,
+) -> bool {
+    // Normalize input to output to determine whether the price per asset matches the
+    //  bound. This must handle the case where output is less than input (i.e. the purchase price is < 1)
+    let bounded_numerator = bounded_price_numerator * output;
+    let executed_numerator = input * bounded_price_denominator;
+    if bound_direction == &0 && executed_numerator < bounded_numerator {
+        false
+    } else if bound_direction == &1 && executed_numerator > bounded_numerator {
+        false
+    } else {
+        true
     }
 }
 

@@ -48,7 +48,16 @@ pub fn handler<'a, 'b, 'c, 'info>(
     ) {
         return Err(error!(ErrorCode::MarketPriceIsOutOfBounds));
     }
-    // TODO: Trade input calculation
+    // Get the input token account balance
+    let input_tokens = ctx.accounts.order_payer.amount;
+    // Trade input calculation
+    let _input_amount = route.calculate_max_input(
+        input_tokens,
+        &bounded_strategy.bounded_price_numerator,
+        &bounded_strategy.bounded_price_denominator,
+        &bounded_strategy.bound,
+        16,
+    );
     // TODO: Execute the trade route
     Ok(())
 }
