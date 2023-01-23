@@ -106,6 +106,26 @@ impl<'a, 'info> Route<'a, 'info> {
     }
 
     ///
+    /// Execute all legs of the route
+    /// 
+    pub fn execute(&self, input_tokens: u64) -> Result<()> {
+        for (index, leg) in self.legs.iter().enumerate() {
+            match leg {
+                Some(leg) => {
+                    if index == 0 {
+                        leg.swap(input_tokens)?;
+                    } else {
+                        let amount = leg.input_balance()?;
+                        leg.swap(amount)?;
+                    }
+                }
+                None => {}
+            }
+        }
+        Ok(())
+    }
+
+    ///
     /// Simulates the trade execution but returns 0 if the execution price is out of bounds.
     /// This is required to adjust the curve and avoid input amounts where the execution
     /// price is outside the curve.
