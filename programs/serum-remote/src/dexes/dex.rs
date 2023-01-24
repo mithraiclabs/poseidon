@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use anchor_lang::prelude::*;
 use enum_dispatch::enum_dispatch;
 
@@ -7,9 +9,6 @@ use crate::instructions::InitBoundedStrategyV2;
 pub trait Dex {
     /// Given the amount of tokens_in, return the amount of tokens returned
     fn simulate_trade(&self, tokens_in: u64) -> u64;
-
-    /// Execute the full swap via CPI to the DEX
-    fn swap(&self, tokens_in: u64) -> Result<()>;
 
     /// Returns the balance of the input token account for the leg
     fn input_balance(&self) -> Result<u64>;
@@ -31,7 +30,7 @@ pub trait DexStatic<'a, 'info> {
     /// Create the DEX instance from a slice of account infos.
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
-        additional_data: &mut Vec<u8>,
+        additional_data: &mut VecDeque<u8>,
     ) -> Result<Self>
     where
         Self: Sized;
@@ -41,4 +40,7 @@ pub trait DexStatic<'a, 'info> {
         &self,
         ctx: &Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
     ) -> Result<()>;
+
+    /// Execute the full swap via CPI to the DEX
+    fn swap(&self, tokens_in: u64, signers_seeds: &[&[&[u8]]]) -> Result<()>;
 }

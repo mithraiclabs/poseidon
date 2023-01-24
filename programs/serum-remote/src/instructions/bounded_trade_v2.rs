@@ -1,7 +1,12 @@
+use std::collections::VecDeque;
+
 use anchor_lang::{prelude::*, system_program};
 use anchor_spl::token::TokenAccount;
 
-use crate::{dexes::Route, errors::ErrorCode, state::BoundedStrategyV2};
+use crate::{
+    constants::BOUNDED_STRATEGY_SEED, dexes::Route, errors::ErrorCode, state::BoundedStrategyV2,
+    strategy_signer_seeds,
+};
 
 #[derive(Accounts)]
 pub struct BoundedTradeV2<'info> {
@@ -38,7 +43,7 @@ pub fn handler<'a, 'b, 'c, 'info>(
     // Build the route
     let route = Route::create(
         ctx.remaining_accounts,
-        bounded_strategy.additional_data.to_vec(),
+        VecDeque::from(bounded_strategy.additional_data.to_vec()),
     )?;
     // Simple price check
     if !route.simple_price_check(
@@ -59,6 +64,9 @@ pub fn handler<'a, 'b, 'c, 'info>(
         16,
     );
     // Execute the trade route
-    route.execute(input_amount)?;
+    route.execute(
+        input_amount,
+        &[strategy_signer_seeds!(&ctx.accounts.strategy)],
+    )?;
     Ok(())
 }

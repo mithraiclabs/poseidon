@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
@@ -102,7 +104,7 @@ pub fn handler<'info>(
     // Unpack & initalize the routes from remaining accounts
     let mut route = Route::default();
     let (mut account_cursor, mut leg_cursor): (usize, usize) = (0, 0);
-    let mut added_data = additional_data;
+    let mut added_data = VecDeque::from(additional_data);
     while let Some(dex_program) = ctx.remaining_accounts.get(account_cursor) {
         let dex = DexList::from_id(dex_program.key())?;
         let end_index = dex.get_end_account_idx(account_cursor);

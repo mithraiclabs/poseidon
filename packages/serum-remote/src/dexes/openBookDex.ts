@@ -78,4 +78,58 @@ export default class OpenBookDex {
       { pubkey: tradeDestinationAccount, isWritable: false, isSigner: false },
     ];
   }
+
+  static async tradeAccounts(
+    remoteProgramId: web3.PublicKey,
+    serumMarket: Market,
+    strategyKey: web3.PublicKey,
+    collateralAccount: web3.PublicKey,
+    tradeDestinationAccount: web3.PublicKey
+  ): Promise<web3.AccountMeta[]> {
+    const openOrdersKey = (
+      await this.deriveOpenOrders(remoteProgramId, strategyKey)
+    )[0];
+
+    const vaultSigner = await this.deriveVaultSigner(serumMarket);
+    return [
+      { pubkey: serumMarket.programId, isWritable: false, isSigner: false },
+      { pubkey: serumMarket.address, isWritable: true, isSigner: false },
+      { pubkey: serumMarket.bidsAddress, isWritable: true, isSigner: false },
+      { pubkey: serumMarket.asksAddress, isWritable: true, isSigner: false },
+      { pubkey: openOrdersKey, isWritable: true, isSigner: false },
+      {
+        // @ts-ignore
+        pubkey: serumMarket._decoded.requestQueue,
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        // @ts-ignore
+        pubkey: serumMarket._decoded.eventQueue,
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        // @ts-ignore
+        pubkey: serumMarket._decoded.baseVault,
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        // @ts-ignore
+        pubkey: serumMarket._decoded.quoteVault,
+        isWritable: true,
+        isSigner: false,
+      },
+      { pubkey: vaultSigner, isWritable: false, isSigner: false },
+      { pubkey: TOKEN_PROGRAM_ID, isWritable: false, isSigner: false },
+      { pubkey: web3.SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
+      // This is the SRM referral account
+      // TODO: Maybe actually implement this?
+      { pubkey: web3.SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
+      { pubkey: strategyKey, isWritable: false, isSigner: false },
+      { pubkey: collateralAccount, isWritable: true, isSigner: false },
+      { pubkey: tradeDestinationAccount, isWritable: true, isSigner: false },
+    ];
+  }
 }

@@ -1,4 +1,6 @@
-use super::{leg::Leg, math::{find_maximum}, Dex, DexList};
+use std::collections::VecDeque;
+
+use super::{leg::Leg, math::find_maximum, Dex, DexList};
 use anchor_lang::prelude::*;
 
 const MAX_LEGS: usize = 3;
@@ -11,7 +13,7 @@ pub(crate) struct Route<'a, 'info> {
 impl<'a, 'info> Route<'a, 'info> {
     pub fn create(
         remaining_accounts: &'a [AccountInfo<'info>],
-        additional_data: Vec<u8>,
+        additional_data: VecDeque<u8>,
     ) -> Result<Self> {
         // Unpack & initalize the routes from remaining accounts
         let mut route = Route::default();
@@ -79,9 +81,9 @@ impl<'a, 'info> Route<'a, 'info> {
     }
 
     ///
-    /// Find the maximum amount of tokens to input in the trade such that the execution price does 
+    /// Find the maximum amount of tokens to input in the trade such that the execution price does
     /// not cross the bounded price.
-    /// 
+    ///
     pub fn calculate_max_input(
         &self,
         input_tokens_available: u64,
@@ -107,16 +109,16 @@ impl<'a, 'info> Route<'a, 'info> {
 
     ///
     /// Execute all legs of the route
-    /// 
-    pub fn execute(&self, input_tokens: u64) -> Result<()> {
+    ///
+    pub fn execute(&self, input_tokens: u64, signers_seeds: &[&[&[u8]]]) -> Result<()> {
         for (index, leg) in self.legs.iter().enumerate() {
             match leg {
                 Some(leg) => {
                     if index == 0 {
-                        leg.swap(input_tokens)?;
+                        leg.swap(input_tokens, signers_seeds)?;
                     } else {
                         let amount = leg.input_balance()?;
-                        leg.swap(amount)?;
+                        leg.swap(amount, signers_seeds)?;
                     }
                 }
                 None => {}
