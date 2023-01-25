@@ -30,7 +30,8 @@ export default class OpenBookDex {
     serumMarket: Market,
     strategyKey: web3.PublicKey,
     collateralAccount: web3.PublicKey,
-    tradeDestinationAccount: web3.PublicKey
+    tradeDestinationAccount: web3.PublicKey,
+    destinationMint: web3.PublicKey
   ): Promise<web3.AccountMeta[]> {
     const openOrdersKey = (
       await this.deriveOpenOrders(remoteProgramId, strategyKey)
@@ -76,6 +77,7 @@ export default class OpenBookDex {
       { pubkey: strategyKey, isWritable: false, isSigner: false },
       { pubkey: collateralAccount, isWritable: false, isSigner: false },
       { pubkey: tradeDestinationAccount, isWritable: false, isSigner: false },
+      { pubkey: destinationMint, isWritable: false, isSigner: false },
     ];
   }
 

@@ -31,6 +31,7 @@ pub trait DexStatic<'a, 'info> {
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
         additional_data: &mut VecDeque<u8>,
+        is_init: bool
     ) -> Result<Self>
     where
         Self: Sized;
@@ -43,4 +44,10 @@ pub trait DexStatic<'a, 'info> {
 
     /// Execute the full swap via CPI to the DEX
     fn swap(&self, tokens_in: u64, signers_seeds: &[&[&[u8]]]) -> Result<()>;
+
+    /// Returns the SPL Token account where the assets from the trade are deposited
+    fn destination_token_account(&self) -> AccountInfo<'info>;
+
+    /// Returns the SPL Mint account for the end_mint of a leg
+    fn destination_mint_account(&self) -> AccountInfo<'info>;
 }

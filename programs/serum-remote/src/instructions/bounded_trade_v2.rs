@@ -44,6 +44,7 @@ pub fn handler<'a, 'b, 'c, 'info>(
     let route = Route::create(
         ctx.remaining_accounts,
         VecDeque::from(bounded_strategy.additional_data.to_vec()),
+        false
     )?;
     // Get the input token account balance
     let input_tokens = ctx.accounts.order_payer.amount;

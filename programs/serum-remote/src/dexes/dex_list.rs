@@ -31,10 +31,14 @@ impl DexList {
         }
     }
 
-    pub fn get_end_account_idx(&self, start: usize) -> usize {
+    pub fn get_end_account_idx(&self, start: usize, is_init: bool) -> usize {
         let accounts_len = match self {
             DexList::OpenBookV3 => OpenBookDex::ACCOUNTS_LEN,
         };
-        start + accounts_len
+        if is_init {
+            start + accounts_len + 1
+        } else {
+            start + accounts_len
+        }
     }
 }

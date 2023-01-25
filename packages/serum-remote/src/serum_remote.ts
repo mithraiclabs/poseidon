@@ -1003,6 +1003,11 @@ export type SerumRemote = {
       "code": 6024,
       "name": "IncorrectKeysForLeg",
       "msg": "The Leg's accounts aren't correct or ordered properly"
+    },
+    {
+      "code": 6025,
+      "name": "BadTokenAccountKeyForLeg",
+      "msg": "The intermediary token account key is incorrect"
     }
   ]
 };
@@ -2012,6 +2017,11 @@ export const IDL: SerumRemote = {
       "code": 6024,
       "name": "IncorrectKeysForLeg",
       "msg": "The Leg's accounts aren't correct or ordered properly"
+    },
+    {
+      "code": 6025,
+      "name": "BadTokenAccountKeyForLeg",
+      "msg": "The intermediary token account key is incorrect"
     }
   ]
 };

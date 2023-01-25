@@ -17,11 +17,13 @@ impl<'a, 'info> Leg<'a, 'info> {
         dex: DexList,
         account_infos: &'a [AccountInfo<'info>],
         additional_data: &mut VecDeque<u8>,
+        is_init: bool
     ) -> Result<Self> {
         let res = match dex {
             DexList::OpenBookV3 => Leg::OpenBookV3(OpenBookDex::from_account_slice(
                 account_infos,
                 additional_data,
+                is_init
             )?),
         };
 
@@ -41,6 +43,18 @@ impl<'a, 'info> Leg<'a, 'info> {
     pub fn swap(&self, tokens_in: u64, signers_seeds: &[&[&[u8]]]) -> Result<()> {
         match self {
             Leg::OpenBookV3(open_book_dex) => open_book_dex.swap(tokens_in, signers_seeds),
+        }
+    }
+
+    pub fn destination_token_account(&self) -> AccountInfo<'info> {
+        match self {
+            Leg::OpenBookV3(open_book_dex) => open_book_dex.destination_token_account(),
+        }
+    }
+
+    pub fn destination_mint_account(&self) -> AccountInfo<'info> {
+        match self {
+            Leg::OpenBookV3(open_book_dex) => open_book_dex.destination_mint_account()
         }
     }
 }

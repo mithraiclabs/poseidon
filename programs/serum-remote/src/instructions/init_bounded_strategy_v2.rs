@@ -107,11 +107,11 @@ pub fn handler<'info>(
     let mut added_data = VecDeque::from(additional_data);
     while let Some(dex_program) = ctx.remaining_accounts.get(account_cursor) {
         let dex = DexList::from_id(dex_program.key())?;
-        let end_index = dex.get_end_account_idx(account_cursor);
+        let end_index = dex.get_end_account_idx(account_cursor, true);
 
         let account_infos = &ctx.remaining_accounts[account_cursor..end_index];
         // Create the Leg
-        let leg = Leg::from_account_slice(dex, account_infos, &mut added_data)?;
+        let leg = Leg::from_account_slice(dex, account_infos, &mut added_data, true)?;
         // Initialize from the leg
         leg.initialize(&ctx)?;
         // Add the leg to the Route
@@ -128,6 +128,10 @@ pub fn handler<'info>(
     if ctx.accounts.reclaim_account.mint != route.start_mint()? {
         return Err(error!(errors::ErrorCode::InputMintMismatch));
     }
+
+    // Initialize any intermediary token accounts for multi-legged routes
+    route.initialize_intermediary_token_accounts(&ctx)?;
+    
 
     // Transfer the assets to the remote execution program
     let cpi_accounts = Transfer {

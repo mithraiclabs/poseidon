@@ -113,7 +113,9 @@ describe("InitBoundedStrategyV2", () => {
       serumMarket,
       boundedStrategyKey,
       collateralAccount,
-      depositAddress
+      depositAddress,
+      // This a dummy key for the destimation mint. It is not used in single leg transactions
+      web3.SystemProgram.programId
     );
     const additionalData = new BN(
       // @ts-ignore

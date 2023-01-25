@@ -24,6 +24,27 @@ macro_rules! authority_signer_seeds {
 }
 
 #[macro_export]
+macro_rules! token_account_seeds {
+    ($strategy:expr, $mint:ident) => {
+        &[
+            &$strategy.key().as_ref(),
+            &$mint.as_ref()
+        ]
+    };
+}
+
+#[macro_export]
+macro_rules! token_account_signer_seeds {
+    ($strategy:expr, $mint:ident, $bump:ident) => {
+        &[
+            &$strategy.key().to_bytes()[..],
+            &$mint.as_ref(),
+            &[$bump]
+        ]
+    };
+}
+
+#[macro_export]
 macro_rules! open_orders_seeds {
     ($strategy:expr) => {
         &[&$strategy.key().to_bytes()[..], OPEN_ORDERS_SEED.as_bytes()]

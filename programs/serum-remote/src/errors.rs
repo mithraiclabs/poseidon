@@ -52,4 +52,6 @@ pub enum ErrorCode {
     InputMintMismatch,// 6023
     #[msg("The Leg's accounts aren't correct or ordered properly")]
     IncorrectKeysForLeg,// 6024
+    #[msg("The intermediary token account key is incorrect")]
+    BadTokenAccountKeyForLeg, // 6025
 }

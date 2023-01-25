@@ -11,7 +11,7 @@ use anchor_spl::{
         },
         InitOpenOrders,
     },
-    token::{self, accessor::amount},
+    token,
 };
 use arrayref::array_refs;
 use safe_transmute::transmute_to_bytes;
@@ -151,6 +151,11 @@ impl<'a, 'info> OpenBookDex<'a, 'info> {
         &self.accounts[15]
     }
 
+    // This account at index 16 should only exist during initialization
+    fn destination_mint(&self) -> &AccountInfo<'info> {
+        &self.accounts[16]
+    }
+
     fn validate_init(&self, bounded_strategy: &BoundedStrategyV2) -> anchor_lang::Result<()> {
         let market = Market::load(self.serum_market(), self.dex_program().key)
             .map_err(|_| errors::ErrorCode::FailedToLoadOpenBookDexMarket)?;
@@ -249,6 +254,7 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
         additional_data: &mut VecDeque<u8>,
+        is_init: bool
     ) -> anchor_lang::Result<OpenBookDex<'a, 'info>> {
         let base_decimals = additional_data.pop_front().unwrap();
         let base_decimals_factor = 10_u64.pow(base_decimals.into());
@@ -452,5 +458,13 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
         )
         .unwrap();
         Ok(())
+    }
+
+    fn destination_token_account(&self) -> AccountInfo<'info> {
+        self.payer_destination_wallet().to_account_info()
+    }
+
+    fn destination_mint_account(&self) -> AccountInfo<'info> {
+        self.destination_mint().to_account_info()
     }
 }
