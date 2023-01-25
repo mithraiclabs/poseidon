@@ -45,16 +45,20 @@ pub fn handler<'a, 'b, 'c, 'info>(
         ctx.remaining_accounts,
         VecDeque::from(bounded_strategy.additional_data.to_vec()),
     )?;
-    // Simple price check
-    if !route.simple_price_check(
+    // Get the input token account balance
+    let input_tokens = ctx.accounts.order_payer.amount;
+    // Test the maxiumum amount of tokens the payer has in order to off load all at once. 
+    if route.simple_price_check(
+        input_tokens,
         &bounded_strategy.bounded_price_numerator,
         &bounded_strategy.bounded_price_denominator,
         &bounded_strategy.bound,
     ) {
-        return Err(error!(ErrorCode::MarketPriceIsOutOfBounds));
+        return route.execute(
+            input_tokens,
+            &[strategy_signer_seeds!(&ctx.accounts.strategy)],
+        );
     }
-    // Get the input token account balance
-    let input_tokens = ctx.accounts.order_payer.amount;
     // Trade input calculation
     let input_amount = route.calculate_max_input(
         input_tokens,
@@ -63,6 +67,14 @@ pub fn handler<'a, 'b, 'c, 'info>(
         &bounded_strategy.bound,
         16,
     );
+    if !route.simple_price_check(
+        input_amount,
+        &bounded_strategy.bounded_price_numerator,
+        &bounded_strategy.bounded_price_denominator,
+        &bounded_strategy.bound,
+    ) {
+        return Err(error!(ErrorCode::MarketPriceIsOutOfBounds));
+    }
     // Execute the trade route
     route.execute(
         input_amount,

@@ -11,7 +11,7 @@ use anchor_spl::{
         },
         InitOpenOrders,
     },
-    token,
+    token::{self, accessor::amount},
 };
 use arrayref::array_refs;
 use safe_transmute::transmute_to_bytes;
@@ -202,6 +202,7 @@ impl<'a, 'info> OpenBookDex<'a, 'info> {
 
 impl Dex for OpenBookDex<'_, '_> {
     fn simulate_trade(&self, tokens_in: u64) -> u64 {
+        println!("trade_is_bid {}", self.trade_is_bid);
         if self.trade_is_bid {
             buy_coin_amount_out(
                 tokens_in,
@@ -212,6 +213,7 @@ impl Dex for OpenBookDex<'_, '_> {
                 self.pc_lot_size,
             )
         } else {
+            println!("sell_coin_amount_out {} {:?} {} {} {} {}", tokens_in, self.order_book, self.fee_numerator, self.fee_denominator, self.base_decimals_factor, self.coin_lot_size);
             sell_coin_amount_out(
                 tokens_in,
                 &self.order_book,
@@ -380,9 +382,10 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
                 Side::Bid,
             )
         } else {
+            let max_coin_qty = amount_in.checked_div(self.coin_lot_size).unwrap();
             (
                 NonZeroU64::new(u64::MAX).unwrap(),
-                NonZeroU64::new(amount_in).unwrap(),
+                NonZeroU64::new(max_coin_qty).unwrap(),
                 NonZeroU64::new(1_u64).unwrap(),
                 Side::Ask,
             )
@@ -393,6 +396,7 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
             None
         };
         // Place ioc order
+        msg!("tib {} side {:?} max {} {} cls {}", self.trade_is_bid, side, max_coin_qty, max_pc_qty, self.coin_lot_size);
         let new_order_ix = serum_dex::instruction::new_order(
             self.accounts[1].key,
             self.accounts[4].key,

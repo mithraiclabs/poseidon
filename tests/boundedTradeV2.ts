@@ -57,7 +57,11 @@ describe("BoundedTradeV2", () => {
   let initBoundedStrategy: (
     nonce: number,
     boundedPriceNumerator: BN,
-    boundedPriceDenominator: BN
+    boundedPriceDenominator: BN,
+    depositAddress: web3.PublicKey,
+    reclaimAddress: web3.PublicKey,
+    collateralMint: web3.PublicKey,
+    transferAmount: BN
   ) => Promise<{
     boundedStrategyKey: web3.PublicKey;
   }>;
@@ -142,20 +146,23 @@ describe("BoundedTradeV2", () => {
     initBoundedStrategy = async (
       nonce: number,
       boundedPriceNumerator: BN,
-      boundedPriceDenominator: BN
+      boundedPriceDenominator: BN,
+      depositAddress: web3.PublicKey,
+      reclaimAddress: web3.PublicKey,
+      collateralMint: web3.PublicKey,
+      transferAmount: BN
     ) => {
       const reclaimDate = new anchor.BN(
         new Date().getTime() / 1_000 + 3600 + nonce
       );
-      const reclaimAddress = quoteAddress;
       const { boundedStrategy: boundedStrategyKey, collateralAccount } =
-        await deriveAllBoundedStrategyKeysV2(program, USDC_MINT, {
-          transferAmount: quoteTransferAmount,
+        await deriveAllBoundedStrategyKeysV2(program, collateralMint, {
+          transferAmount,
           boundPriceNumerator: boundedPriceNumerator,
           boundPriceDenominator: boundedPriceDenominator,
           reclaimDate,
-          reclaimAddress: quoteAddress,
-          depositAddress: baseAddress,
+          reclaimAddress,
+          depositAddress,
           orderSide,
           bound,
         });
@@ -164,7 +171,7 @@ describe("BoundedTradeV2", () => {
         serumMarket,
         boundedStrategyKey,
         collateralAccount,
-        baseAddress
+        depositAddress
       );
       const additionalData = new BN(
         // @ts-ignore
@@ -173,7 +180,7 @@ describe("BoundedTradeV2", () => {
 
       const instruction = await program.methods
         .initBoundedStrategyV2(
-          quoteTransferAmount,
+          transferAmount,
           boundedPriceNumerator,
           boundedPriceDenominator,
           reclaimDate,
@@ -184,10 +191,10 @@ describe("BoundedTradeV2", () => {
         .accounts({
           payer: program.provider.publicKey,
           collateralAccount,
-          mint: USDC_MINT,
+          mint: collateralMint,
           strategy: boundedStrategyKey,
           reclaimAccount: reclaimAddress,
-          depositAccount: baseAddress,
+          depositAccount: depositAddress,
           tokenProgram: SPL_TOKEN_PROGRAM_ID,
           systemProgram: web3.SystemProgram.programId,
           rent: web3.SYSVAR_RENT_PUBKEY,
@@ -221,7 +228,11 @@ describe("BoundedTradeV2", () => {
           ({ boundedStrategyKey } = await initBoundedStrategy(
             nonce,
             boundPriceNumerator,
-            boundPriceDenominator
+            boundPriceDenominator,
+            baseAddress,
+            quoteAddress,
+            serumMarket.quoteMintAddress,
+            quoteTransferAmount
           ));
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
             boundedStrategyKey
@@ -235,9 +246,9 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategyKey,
             boundedStrategy.collateralAccount,
-            baseAddress
+            boundedStrategy.depositAddress
           );
-          // Create and send the BoundedTrade transaction
+          // Create and send the BoundedTradeV2 transaction
           const ix = await program.methods
             .boundedTradeV2()
             .accounts({
@@ -286,201 +297,198 @@ describe("BoundedTradeV2", () => {
         });
       });
 
-      //   describe("Bounded price is lower than lowest ask", () => {
-      //     beforeEach(async () => {
-      //       boundPrice = lowestAsk[2].subn(10);
-      //       const boundedParams = {
-      //         boundPrice,
-      //         reclaimDate,
-      //         reclaimAddress: quoteAddress,
-      //         depositAddress: baseAddress,
-      //         orderSide,
-      //         bound,
-      //         transferAmount: quoteTransferAmount,
-      //       };
-      //       await initializeBoundedStrategy(
-      //         program,
-      //         DEX_ID,
-      //         serumMarket.address,
-      //         serumMarket.quoteMintAddress,
-      //         boundedParams
-      //       );
-      //       ({ boundedStrategy: boundedStrategyKey } =
-      //         await deriveAllBoundedStrategyKeys(
-      //           program,
-      //           serumMarket.address,
-      //           serumMarket.quoteMintAddress,
-      //           boundedParams
-      //         ));
-      //       boundedStrategy = await program.account.boundedStrategy.fetch(
-      //         boundedStrategyKey
-      //       );
-      //     });
-      //     it("should error from bound validation", async () => {
-      //       const ix = await boundedTradeIx(
-      //         program,
-      //         boundedStrategyKey,
-      //         serumMarket,
-      //         boundedStrategy
-      //       );
-      //       const transaction = new web3.Transaction().add(ix);
-      //       try {
-      //         await program.provider.sendAndConfirm(transaction);
-      //         assert.ok(false);
-      //       } catch (error) {
-      //         const parsedError = parseTranactionError(error);
-      //         assert.equal(parsedError.msg, "Market price is out of bounds");
-      //       }
-      //       assert.ok(true);
-      //     });
-      //   });
+      describe("Bounded price is lower than lowest ask", () => {
+        beforeEach(async () => {
+          const boundPriceNumerator = new anchor.BN(90_000_000);
+          const boundPriceDenominator = new anchor.BN(1_000_000_000);
+          ({ boundedStrategyKey } = await initBoundedStrategy(
+            nonce,
+            boundPriceNumerator,
+            boundPriceDenominator,
+            baseAddress,
+            quoteAddress,
+            serumMarket.quoteMintAddress,
+            quoteTransferAmount
+          ));
+          boundedStrategy = await program.account.boundedStrategyV2.fetch(
+            boundedStrategyKey
+          );
+        });
+        it("should error from bound validation", async () => {
+          const remainingAccounts = await OpenBookDex.tradeAccounts(
+            program.programId,
+            serumMarket,
+            boundedStrategyKey,
+            boundedStrategy.collateralAccount,
+            boundedStrategy.depositAddress
+          );
+          const ix = await program.methods
+            .boundedTradeV2()
+            .accounts({
+              payer: program.provider.publicKey,
+              strategy: boundedStrategyKey,
+              orderPayer: boundedStrategy.collateralAccount,
+              depositAccount: boundedStrategy.depositAddress,
+            })
+            .remainingAccounts(remainingAccounts)
+            .instruction();
+          const transaction = new web3.Transaction().add(ix);
+          try {
+            await program.provider.sendAndConfirm(transaction);
+            assert.ok(false);
+          } catch (error) {
+            const parsedError = parseTranactionError(error);
+            assert.equal(parsedError.msg, "Market price is out of bounds");
+          }
+          assert.ok(true);
+        });
+      });
     });
     describe("LowerBound", () => {
       // LOWER BOUNDED BUYS WOULD BE STUPID AND SHOULDNT BE SUPPORTED
     });
   }); // End of UpperBound
-  //   describe("Order side is Ask", () => {
-  //     beforeEach(() => {
-  //       orderSide = 1;
-  //     });
-  //     describe("UpperBound", () => {
-  //       // UPPER BOUNDED SELLS WOULD BE STUPID AND SHOULDNT BE SUPPORTED
-  //     });
-  //     describe("LowerBound", () => {
-  //       beforeEach(() => {
-  //         bound = 0;
-  //       });
-  //       describe("Bounded price is higher than highest bid", () => {
-  //         beforeEach(async () => {
-  //           boundPrice = highestBid[2].addn(10);
-  //           const boundedParams = {
-  //             boundPrice,
-  //             reclaimDate,
-  //             reclaimAddress: baseAddress,
-  //             depositAddress: quoteAddress,
-  //             orderSide,
-  //             bound,
-  //             transferAmount: quoteTransferAmount,
-  //           };
-  //           await initializeBoundedStrategy(
-  //             program,
-  //             DEX_ID,
-  //             serumMarket.address,
-  //             serumMarket.baseMintAddress,
-  //             boundedParams
-  //           );
-  //           ({ boundedStrategy: boundedStrategyKey } =
-  //             await deriveAllBoundedStrategyKeys(
-  //               program,
-  //               serumMarket.address,
-  //               serumMarket.baseMintAddress,
-  //               boundedParams
-  //             ));
-  //           boundedStrategy = await program.account.boundedStrategy.fetch(
-  //             boundedStrategyKey
-  //           );
-  //         });
-  //         it("should error", async () => {
-  //           const ix = await boundedTradeIx(
-  //             program,
-  //             boundedStrategyKey,
-  //             serumMarket,
-  //             boundedStrategy
-  //           );
-  //           const transaction = new web3.Transaction().add(ix);
-  //           try {
-  //             await program.provider.sendAndConfirm(transaction);
-  //             assert.ok(false);
-  //           } catch (error) {
-  //             const parsedError = parseTranactionError(error);
-  //             assert.equal(parsedError.msg, "Market price is out of bounds");
-  //           }
-  //           assert.ok(true);
-  //         });
-  //       });
+  describe("Order side is Ask", () => {
+    beforeEach(() => {
+      orderSide = 1;
+    });
+    describe("UpperBound", () => {
+      // UPPER BOUNDED SELLS WOULD BE STUPID AND SHOULDNT BE SUPPORTED
+    });
+    describe("LowerBound", () => {
+      beforeEach(() => {
+        bound = 0;
+      });
+      describe("Bounded price is higher than highest bid", () => {
+        beforeEach(async () => {
+          const boundPriceNumerator = new anchor.BN(1_000_000_000);
+          const boundPriceDenominator = new anchor.BN(100_000_000);
+          ({ boundedStrategyKey } = await initBoundedStrategy(
+            nonce,
+            boundPriceNumerator,
+            boundPriceDenominator,
+            quoteAddress,
+            baseAddress,
+            serumMarket.baseMintAddress,
+            baseTransferAmount
+          ));
+          boundedStrategy = await program.account.boundedStrategyV2.fetch(
+            boundedStrategyKey
+          );
+        });
+        it("should error", async () => {
+          const remainingAccounts = await OpenBookDex.tradeAccounts(
+            program.programId,
+            serumMarket,
+            boundedStrategyKey,
+            boundedStrategy.collateralAccount,
+            boundedStrategy.depositAddress
+          );
+          const ix = await program.methods
+            .boundedTradeV2()
+            .accounts({
+              payer: program.provider.publicKey,
+              strategy: boundedStrategyKey,
+              orderPayer: boundedStrategy.collateralAccount,
+              depositAccount: boundedStrategy.depositAddress,
+            })
+            .remainingAccounts(remainingAccounts)
+            .instruction();
+          const transaction = new web3.Transaction().add(ix);
+          try {
+            await program.provider.sendAndConfirm(transaction);
+            assert.ok(false);
+          } catch (error) {
+            console.error(error);
+            const parsedError = parseTranactionError(error);
+            assert.equal(parsedError.msg, "Market price is out of bounds");
+          }
+          assert.ok(true);
+        });
+      });
 
-  //       describe("Bounded price is lower than highest bid", () => {
-  //         beforeEach(async () => {
-  //           boundPrice = highestBid[2].subn(10);
-  //           const boundedParams = {
-  //             boundPrice,
-  //             reclaimDate,
-  //             reclaimAddress: baseAddress,
-  //             depositAddress: quoteAddress,
-  //             orderSide,
-  //             bound,
-  //             transferAmount: baseTransferAmount,
-  //           };
-  //           await initializeBoundedStrategy(
-  //             program,
-  //             DEX_ID,
-  //             serumMarket.address,
-  //             serumMarket.baseMintAddress,
-  //             boundedParams
-  //           );
-  //           ({ boundedStrategy: boundedStrategyKey } =
-  //             await deriveAllBoundedStrategyKeys(
-  //               program,
-  //               serumMarket.address,
-  //               serumMarket.baseMintAddress,
-  //               boundedParams
-  //             ));
-  //           boundedStrategy = await program.account.boundedStrategy.fetch(
-  //             boundedStrategyKey
-  //           );
-  //         });
-  //         it("should execute the trade and settle the assets", async () => {
-  //           const depositTokenAccountBefore =
-  //             await tokenProgram.account.account.fetch(quoteAddress);
-  //           // Create and send the BoundedTrade transaction
-  //           const ix = await boundedTradeIx(
-  //             program,
-  //             boundedStrategyKey,
-  //             serumMarket,
-  //             boundedStrategy
-  //           );
-  //           const transaction = new web3.Transaction().add(ix);
-  //           try {
-  //             await program.provider.sendAndConfirm(transaction);
-  //           } catch (error) {
-  //             const parsedError = parseTranactionError(error);
-  //             console.log("error: ", parsedError.msg);
-  //             assert.ok(false);
-  //           }
-  //           // Calculate the maxmium amount of SOL that can be sold
-  //           const transferNum =
-  //             baseTransferAmount.toNumber() /
-  //             // @ts-ignore
-  //             serumMarket._baseSplTokenMultiplier.toNumber();
-  //           const maxSaleAmt = Math.min(transferNum, highestBid[1]);
-  //           const maxSaleNative = new BN(
-  //             Math.min(maxSaleAmt, highestBid[1]) *
-  //               // @ts-ignore
-  //               serumMarket._baseSplTokenMultiplier.toNumber()
-  //           ) // The div and mul below are to chop off the precision that cannot trade with the market's lot size
-  //             // @ts-ignore
-  //             .div(serumMarket._decoded.baseLotSize)
-  //             // @ts-ignore
-  //             .mul(serumMarket._decoded.baseLotSize);
-  //           // convert the native SOL sale amount to native USDC value
-  //           const usdcBeforeFees = maxSaleNative
-  //             .mul(highestBid[2])
-  //             // @ts-ignore
-  //             .div(serumMarket._quoteSplTokenMultiplier);
-  //           // Subtract the Serum fees (hardcoded at 4bps for the base fee)
-  //           const usdcReceived = usdcBeforeFees.sub(
-  //             new BN(usdcBeforeFees.toNumber() * 0.0004)
-  //           );
+      describe("Bounded price is lower than highest bid", () => {
+        beforeEach(async () => {
+          // Input 1 SOL and get at least 90 USDC for it
+          const boundPriceNumerator = new anchor.BN(1_000_000_000);
+          const boundPriceDenominator = new anchor.BN(90_000_000);
 
-  //           // Validate that the deposit received the amount of USDC
-  //           const depositTokenAccountAfter =
-  //             await tokenProgram.account.account.fetch(quoteAddress);
-  //           const depositTokenDiff = depositTokenAccountAfter.amount.sub(
-  //             depositTokenAccountBefore.amount
-  //           );
-  //           assert.equal(depositTokenDiff.toString(), usdcReceived.toString());
-  //         });
-  //       });
-  //     });
-  //   }); // End of LowerBound
+          ({ boundedStrategyKey } = await initBoundedStrategy(
+            nonce,
+            boundPriceNumerator,
+            boundPriceDenominator,
+            quoteAddress,
+            baseAddress,
+            serumMarket.baseMintAddress,
+            baseTransferAmount
+          ));
+          boundedStrategy = await program.account.boundedStrategyV2.fetch(
+            boundedStrategyKey
+          );
+        });
+        it("should execute the trade and settle the assets", async () => {
+          const depositTokenAccountBefore =
+            await tokenProgram.account.account.fetch(quoteAddress);
+          // Create and send the BoundedTrade transaction
+          const remainingAccounts = await OpenBookDex.tradeAccounts(
+            program.programId,
+            serumMarket,
+            boundedStrategyKey,
+            boundedStrategy.collateralAccount,
+            boundedStrategy.depositAddress
+          );
+          const ix = await program.methods
+            .boundedTradeV2()
+            .accounts({
+              payer: program.provider.publicKey,
+              strategy: boundedStrategyKey,
+              orderPayer: boundedStrategy.collateralAccount,
+              depositAccount: boundedStrategy.depositAddress,
+            })
+            .remainingAccounts(remainingAccounts)
+            .instruction();
+          const transaction = new web3.Transaction().add(ix);
+          try {
+            await program.provider.sendAndConfirm(transaction);
+          } catch (error) {
+            const parsedError = parseTranactionError(error);
+            console.log("error: ", parsedError.msg);
+            assert.ok(false);
+          }
+          // Calculate the maxmium amount of SOL that can be sold
+          const transferNum =
+            baseTransferAmount.toNumber() /
+            // @ts-ignore
+            serumMarket._baseSplTokenMultiplier.toNumber();
+          const maxSaleAmt = Math.min(transferNum, highestBid[1]);
+          const maxSaleNative = new BN(
+            Math.min(maxSaleAmt, highestBid[1]) *
+              // @ts-ignore
+              serumMarket._baseSplTokenMultiplier.toNumber()
+          ) // The div and mul below are to chop off the precision that cannot trade with the market's lot size
+            // @ts-ignore
+            .div(serumMarket._decoded.baseLotSize)
+            // @ts-ignore
+            .mul(serumMarket._decoded.baseLotSize);
+          // convert the native SOL sale amount to native USDC value
+          const usdcBeforeFees = maxSaleNative
+            .mul(highestBid[2])
+            // @ts-ignore
+            .div(serumMarket._quoteSplTokenMultiplier);
+          // Subtract the Serum fees (hardcoded at 4bps for the base fee)
+          const usdcReceived = usdcBeforeFees.sub(
+            new BN(usdcBeforeFees.toNumber() * 0.0004)
+          );
+
+          // Validate that the deposit received the amount of USDC
+          const depositTokenAccountAfter =
+            await tokenProgram.account.account.fetch(quoteAddress);
+          const depositTokenDiff = depositTokenAccountAfter.amount.sub(
+            depositTokenAccountBefore.amount
+          );
+          assert.equal(depositTokenDiff.toString(), usdcReceived.toString());
+        });
+      });
+    });
+  }); // End of LowerBound
 });

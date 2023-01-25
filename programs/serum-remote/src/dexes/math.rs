@@ -26,7 +26,7 @@ pub fn convert_price_to_decimals(
     pc_lot_size * mul_div_u64(price, coin_decimals_factor, coin_lot_size).unwrap()
 }
 
-pub fn find_maximum<F: Fn(u64) -> u64>(
+pub fn find_maximum_input<F: Fn(u64) -> u64>(
     func: F,
     lower_bound: u64,
     upper_bound: u64,

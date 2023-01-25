@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use super::{leg::Leg, math::find_maximum, Dex, DexList};
+use super::{leg::Leg, math::find_maximum_input, Dex, DexList};
 use anchor_lang::prelude::*;
 
 const MAX_LEGS: usize = 3;
@@ -39,12 +39,11 @@ impl<'a, 'info> Route<'a, 'info> {
     /// bounds
     pub fn simple_price_check(
         &self,
+        input_amount: u64,
         bounded_price_numerator: &u64,
         bounded_price_denominator: &u64,
         bound_direction: &u8,
     ) -> bool {
-        // TODO: actually pull minimum trade size from each Leg and use that to determine the minimum input.
-        let input_amount: u64 = 1_000_000;
         let output = self.simulate_execution(input_amount);
 
         is_in_bounds(
@@ -92,7 +91,7 @@ impl<'a, 'info> Route<'a, 'info> {
         bound_direction: &u8,
         iterations: u8,
     ) -> u64 {
-        find_maximum(
+        find_maximum_input(
             |x| {
                 self.simulate_bounded_execution(
                     x,
@@ -186,22 +185,20 @@ fn is_in_bounds(
     output: u64,
     bounded_price_numerator: &u64,
     bounded_price_denominator: &u64,
-    bound_direction: &u8,
+    _bound_direction: &u8,
 ) -> bool {
     // Normalize input to output to determine whether the price per asset matches the
     //  bound. This must handle the case where output is less than input (i.e. the purchase price is < 1)
     let bounded_numerator = bounded_price_numerator * output;
     let executed_numerator = input * bounded_price_denominator;
-    if bound_direction == &0 && executed_numerator < bounded_numerator {
-        false
-    } else if bound_direction == &1 && executed_numerator > bounded_numerator {
+    if executed_numerator > bounded_numerator {
         false
     } else {
         true
     }
 }
 
-// TODO: Write unit tests for simple_price_check
+// Write unit tests for simple_price_check
 #[cfg(test)]
 mod test {
     use anchor_lang::prelude::AccountInfo;
@@ -213,9 +210,9 @@ mod test {
     fn mock_open_book_route<'a, 'info>(
         route: &mut Route<'a, 'info>,
         accounts: &'a [AccountInfo<'info>],
-        asks: bool,
+        trade_is_bid: bool,
     ) {
-        let order_book = if asks {
+        let order_book = if trade_is_bid {
             vec![
                 OrderBookItem {
                     price: 92750000,
@@ -267,7 +264,7 @@ mod test {
 
         // Create mock OpenBookDex
         let obd = OpenBookDex {
-            trade_is_bid: true,
+            trade_is_bid,
             order_book,
             fee_numerator: 20,
             fee_denominator: 100000,
@@ -293,10 +290,10 @@ mod test {
         // Lower bound
         let bound_direction = 0;
         // Sell 1 SOL for at least 92 USDC
-        let bounded_price_numerator = 92_000_000;
-        let bounded_price_denominator = 1_000_000_000;
-
+        let bounded_price_numerator = 1_000_000_000;
+        let bounded_price_denominator = 92_000_000;
         let res = route.simple_price_check(
+            1_000_000_000,
             &bounded_price_numerator,
             &bounded_price_denominator,
             &bound_direction,
@@ -313,11 +310,12 @@ mod test {
 
         // Lower bound
         let bound_direction = 0;
-        // Sell 1 SOL for at least 93
-        let bounded_price_numerator = 93_000_000;
-        let bounded_price_denominator = 1_000_000_000;
+        // Sell 1 SOL for at least 95
+        let bounded_price_numerator = 1_000_000_000;
+        let bounded_price_denominator = 95_000_000;
 
         let res = route.simple_price_check(
+            1_000_000_000,
             &bounded_price_numerator,
             &bounded_price_denominator,
             &bound_direction,
@@ -339,6 +337,7 @@ mod test {
         let bounded_price_denominator = 1_000_000_000;
 
         let res = route.simple_price_check(
+            1_000_000_000,
             &bounded_price_numerator,
             &bounded_price_denominator,
             &bound_direction,
@@ -360,6 +359,7 @@ mod test {
         let bounded_price_denominator = 1_000_000_000;
 
         let res = route.simple_price_check(
+            1_000_000_000,
             &bounded_price_numerator,
             &bounded_price_denominator,
             &bound_direction,
