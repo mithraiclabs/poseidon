@@ -35,6 +35,18 @@ pub fn find_maximum_input<F: Fn(u64) -> u64>(
     find_max_via_golden_section_search(func, lower_bound, upper_bound, iterations)
 }
 
+/// 
+/// Simulate a constant product trade given the amount in and pool balances. Fees are not 
+/// accounted for
+/// 
+#[inline(always)]
+pub fn constant_product_simulation(post_fee_amount_in: u64, in_pool_balance: u64, out_pool_balance: u64) -> u64 {
+    let new_in_pool_balance = post_fee_amount_in + in_pool_balance;
+    let new_out_pool_balance =
+        mul_div_u64(in_pool_balance, out_pool_balance, new_in_pool_balance).unwrap() + 1;
+    out_pool_balance - new_out_pool_balance
+}
+
 //
 // u64 implementation of Golden Section Search algo
 // https://en.wikipedia.org/wiki/Golden-section_search#Iterative_algorithm
