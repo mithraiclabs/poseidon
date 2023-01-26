@@ -36,7 +36,7 @@ pub fn find_maximum_input<F: Fn(u64) -> u64>(
 }
 
 //
-// u64 implementation of Golden Section Search algo 
+// u64 implementation of Golden Section Search algo
 // https://en.wikipedia.org/wiki/Golden-section_search#Iterative_algorithm
 //
 const SCALE_FACTOR: u64 = 1_000;

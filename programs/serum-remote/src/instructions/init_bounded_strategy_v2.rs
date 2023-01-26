@@ -131,7 +131,6 @@ pub fn handler<'info>(
 
     // Initialize any intermediary token accounts for multi-legged routes
     route.initialize_intermediary_token_accounts(&ctx)?;
-    
 
     // Transfer the assets to the remote execution program
     let cpi_accounts = Transfer {

@@ -44,11 +44,11 @@ pub fn handler<'a, 'b, 'c, 'info>(
     let route = Route::create(
         ctx.remaining_accounts,
         VecDeque::from(bounded_strategy.additional_data.to_vec()),
-        false
+        false,
     )?;
     // Get the input token account balance
     let input_tokens = ctx.accounts.order_payer.amount;
-    // Test the maxiumum amount of tokens the payer has in order to off load all at once. 
+    // Test the maxiumum amount of tokens the payer has in order to off load all at once.
     if route.simple_price_check(
         input_tokens,
         &bounded_strategy.bounded_price_numerator,

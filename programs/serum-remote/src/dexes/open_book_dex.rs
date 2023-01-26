@@ -254,7 +254,7 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
         additional_data: &mut VecDeque<u8>,
-        is_init: bool
+        is_init: bool,
     ) -> anchor_lang::Result<OpenBookDex<'a, 'info>> {
         let base_decimals = additional_data.pop_front().unwrap();
         let base_decimals_factor = 10_u64.pow(base_decimals.into());

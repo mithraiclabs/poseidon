@@ -26,21 +26,14 @@ macro_rules! authority_signer_seeds {
 #[macro_export]
 macro_rules! token_account_seeds {
     ($strategy:expr, $mint:ident) => {
-        &[
-            &$strategy.key().as_ref(),
-            &$mint.as_ref()
-        ]
+        &[&$strategy.key().as_ref(), &$mint.as_ref()]
     };
 }
 
 #[macro_export]
 macro_rules! token_account_signer_seeds {
     ($strategy:expr, $mint:ident, $bump:ident) => {
-        &[
-            &$strategy.key().to_bytes()[..],
-            &$mint.as_ref(),
-            &[$bump]
-        ]
+        &[&$strategy.key().to_bytes()[..], &$mint.as_ref(), &[$bump]]
     };
 }
 

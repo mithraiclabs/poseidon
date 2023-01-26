@@ -1,6 +1,9 @@
 use std::collections::VecDeque;
 
-use crate::{constants::OPEN_ORDERS_SEED, instructions::InitBoundedStrategyV2, token_account_seeds, errors, token_account_signer_seeds};
+use crate::{
+    constants::OPEN_ORDERS_SEED, errors, instructions::InitBoundedStrategyV2, token_account_seeds,
+    token_account_signer_seeds,
+};
 
 use super::{leg::Leg, math::find_maximum_input, Dex, DexList};
 use anchor_lang::prelude::*;
@@ -16,7 +19,7 @@ impl<'a, 'info> Route<'a, 'info> {
     pub fn create(
         remaining_accounts: &'a [AccountInfo<'info>],
         additional_data: VecDeque<u8>,
-        is_init: bool
+        is_init: bool,
     ) -> Result<Self> {
         // Unpack & initalize the routes from remaining accounts
         let mut route = Route::default();
@@ -84,17 +87,20 @@ impl<'a, 'info> Route<'a, 'info> {
     }
 
     ///
-    /// Creates any necessary TokenAccounts for the route. 
-    /// TODO: Gracefully handle when the SPL Token program errors because the token account 
+    /// Creates any necessary TokenAccounts for the route.
+    /// TODO: Gracefully handle when the SPL Token program errors because the token account
     /// exists. Without graceful handling, an adversary could block the usage
-    /// 
-    pub fn initialize_intermediary_token_accounts(&self, ctx: &Context<'_,'_,'a, 'info, InitBoundedStrategyV2<'info>>) -> Result<()> {
+    ///
+    pub fn initialize_intermediary_token_accounts(
+        &self,
+        ctx: &Context<'_, '_, 'a, 'info, InitBoundedStrategyV2<'info>>,
+    ) -> Result<()> {
         // Get all the intermediary token mint addresses
         for (index, leg) in self.legs.iter().enumerate() {
             match leg {
                 Some(leg) => {
                     // If this is the last leg, skip because the destination account is already checked at initialization
-                    if self.legs.get(index+1).is_some() && self.legs[index+1].is_none() {
+                    if self.legs.get(index + 1).is_some() && self.legs[index + 1].is_none() {
                         continue;
                     }
                     // Get the token account as account info
@@ -140,10 +146,10 @@ impl<'a, 'info> Route<'a, 'info> {
                     };
                     let cpi_ctx = anchor_lang::context::CpiContext::new(cpi_program, accounts);
                     anchor_spl::token::initialize_account3(cpi_ctx)?;
-                },
+                }
                 None => {}
             }
-        };
+        }
 
         Ok(())
     }
