@@ -593,6 +593,28 @@ export type SerumRemote = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "reclaimV2",
+      "accounts": [
+        {
+          "name": "receiver",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the SOL"
+          ]
+        },
+        {
+          "name": "strategy",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategyV2 account"
+          ]
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -809,6 +831,20 @@ export type SerumRemote = {
         "variants": [
           {
             "name": "OpenBookV3"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CurveType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "ConstantProduct"
+          },
+          {
+            "name": "Stable"
           }
         ]
       }
@@ -1607,6 +1643,28 @@ export const IDL: SerumRemote = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "reclaimV2",
+      "accounts": [
+        {
+          "name": "receiver",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the SOL"
+          ]
+        },
+        {
+          "name": "strategy",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategyV2 account"
+          ]
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -1823,6 +1881,20 @@ export const IDL: SerumRemote = {
         "variants": [
           {
             "name": "OpenBookV3"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CurveType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "ConstantProduct"
+          },
+          {
+            "name": "Stable"
           }
         ]
       }

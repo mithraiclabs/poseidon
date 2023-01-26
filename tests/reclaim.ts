@@ -49,14 +49,14 @@ describe("Reclaim", () => {
     );
     // This TX may fail with concurrent tests
     // TODO: Write more elegant solution
-    const { instruction, associatedAddress } =
-      await createAssociatedTokenInstruction(program.provider, USDC_MINT);
+    const [
+      { instruction, associatedAddress },
+      { instruction: baseMintAtaIx, associatedAddress: baseAta },
+    ] = await Promise.all([
+      createAssociatedTokenInstruction(program.provider, USDC_MINT),
+      createAssociatedTokenInstruction(program.provider, WRAPPED_SOL_MINT),
+    ]);
     quoteAddress = associatedAddress;
-    const { instruction: baseMintAtaIx, associatedAddress: baseAta } =
-      await createAssociatedTokenInstruction(
-        program.provider,
-        WRAPPED_SOL_MINT
-      );
     baseAddress = baseAta;
     const createAtaTx = new web3.Transaction()
       .add(instruction)

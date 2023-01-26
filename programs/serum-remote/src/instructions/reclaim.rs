@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    dex::{close_open_orders, CloseOpenOrders, Dex},
+    dex::{CloseOpenOrders},
     token::{self, CloseAccount, Token, TokenAccount, Transfer},
 };
 
