@@ -1,3 +1,4 @@
+import { splTokenProgram } from "@coral-xyz/spl-token";
 import { Provider, web3 } from "@project-serum/anchor";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -22,8 +23,8 @@ export const initNewTokenMintInstructions = async (
   owner: web3.PublicKey,
   decimals: number
 ) => {
-  // @ts-ignore: TODO: Remove after anchor npm upgrade
-  const payerKey = provider.wallet.publicKey;
+  const tokenProgram = splTokenProgram();
+  const payerKey = provider.publicKey;
   const mintAccount = new web3.Keypair();
   const instructions: web3.TransactionInstruction[] = [];
   // Create the Option Mint Account with rent exemption
@@ -43,13 +44,12 @@ export const initNewTokenMintInstructions = async (
     })
   );
   instructions.push(
-    Token.createInitMintInstruction(
-      TOKEN_PROGRAM_ID,
-      mintAccount.publicKey,
-      decimals,
-      owner,
-      null
-    )
+    await tokenProgram.methods
+      .initializeMint2(decimals, owner, null)
+      .accounts({
+        mint: mintAccount.publicKey,
+      })
+      .instruction()
   );
   return {
     instructions,
@@ -62,8 +62,7 @@ export const createAssociatedTokenInstruction = async (
   mint: web3.PublicKey,
   owner: web3.PublicKey | undefined = undefined
 ) => {
-  // @ts-ignore: TODO: Remove after anchor npm upgrade
-  const payerKey = provider.wallet.publicKey;
+  const payerKey = provider.publicKey;
   const associatedAddress = await Token.getAssociatedTokenAddress(
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,

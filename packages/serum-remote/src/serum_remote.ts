@@ -814,6 +814,20 @@ export type SerumRemote = {
       }
     },
     {
+      "name": "CurveType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "ConstantProduct"
+          },
+          {
+            "name": "Stable"
+          }
+        ]
+      }
+    },
+    {
       "name": "FeeTier",
       "type": {
         "kind": "enum",
@@ -1823,6 +1837,20 @@ export const IDL: SerumRemote = {
         "variants": [
           {
             "name": "OpenBookV3"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CurveType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "ConstantProduct"
+          },
+          {
+            "name": "Stable"
           }
         ]
       }

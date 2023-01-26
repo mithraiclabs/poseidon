@@ -2,30 +2,27 @@ import * as anchor from "@project-serum/anchor";
 import { BN } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Program, web3 } from "@project-serum/anchor";
-import { Market, OpenOrders } from "@project-serum/serum";
-import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
+import { Market } from "@project-serum/serum";
 import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
-import { initBoundedStrategyIx } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
-import {
-  deriveAllBoundedStrategyKeys,
-  deriveAllBoundedStrategyKeysV2,
-} from "../packages/serum-remote/src/pdas";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {
   createAssociatedTokenInstruction,
   DEX_ID,
+  initNewTokenMintInstructions,
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
 } from "./utils";
 
 let timesRun = 0;
-describe("InitBoundedStrategyV2", () => {
+describe("OpenBook + Raydium Trade", () => {
   // Configure the client to use the local cluster.
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
-  const payerKey = program.provider.publicKey;
+  // @ts-ignore: TODO: Remove after anchor npm upgrade
+  const payerKey = program.provider.wallet.publicKey;
   const tokenProgram = splTokenProgram();
 
   let boundPriceNumerator = new anchor.BN(95_700_000);
@@ -39,9 +36,6 @@ describe("InitBoundedStrategyV2", () => {
   let serumMarket: Market;
 
   before(async () => {
-    const accountInfo = await program.provider.connection.getAccountInfo(
-      SOL_USDC_SERUM_MARKET
-    );
     serumMarket = await Market.load(
       program.provider.connection,
       SOL_USDC_SERUM_MARKET,
@@ -78,6 +72,22 @@ describe("InitBoundedStrategyV2", () => {
     );
     transaction.add(mintToInstruction);
     await program.provider.sendAndConfirm(transaction);
+
+    // Create a new mint
+    const { instructions, mintAccount } = await initNewTokenMintInstructions(
+      program.provider,
+      payerKey,
+      6
+    );
+    const tx = new web3.Transaction();
+    instructions.forEach((ix) => tx.add(ix));
+    // TODO: Mint a bunch of COIN to payer
+
+    // TODO: Spin up COIN/USDC pool on Raydium
+
+    // TODO: Deposit COIN/USDC liquidity to new pool on Raydium
+
+    await program.provider.sendAndConfirm(tx, [mintAccount]);
   });
   beforeEach(async () => {
     // timesRun is used to generate unique seeds for the strategy, otherwise
@@ -224,5 +234,8 @@ describe("InitBoundedStrategyV2", () => {
       collateralTokenAccountAfter.amount.toString(),
       transferAmount.toString()
     );
+
+    // TODO: Remove this once the test is actually testing the multi-legged route
+    assert.ok(false);
   });
 });

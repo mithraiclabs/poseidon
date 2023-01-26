@@ -31,8 +31,7 @@ describe("BoundedTrade", () => {
   // Configure the client to use the local cluster.
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
 
-  // @ts-ignore: TODO: Remove after anchor npm upgrade
-  const payerKey = program.provider.wallet.publicKey;
+  const payerKey = program.provider.publicKey;
   const tokenProgram = splTokenProgram({ programId: SPL_TOKEN_PROGRAM_ID });
 
   let boundPrice = new anchor.BN(957);

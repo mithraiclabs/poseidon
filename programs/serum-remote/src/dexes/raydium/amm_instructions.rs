@@ -68,7 +68,7 @@ pub struct SwapInstructionBaseOut {
 /// Instructions supported by the AmmInfo program.
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]
-pub enum AmmInstruction {
+pub(crate) enum AmmInstruction {
     ///   Initializes a new AmmInfo.
     ///
     ///   0. `[]` Spl Token program id
