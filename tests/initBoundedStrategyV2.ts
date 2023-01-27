@@ -2,17 +2,12 @@ import * as anchor from "@project-serum/anchor";
 import { BN } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Program, web3 } from "@project-serum/anchor";
-import { Market, OpenOrders } from "@project-serum/serum";
-import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
-import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
+import { Market } from "@project-serum/serum";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
-import { initBoundedStrategyIx } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
-import {
-  deriveAllBoundedStrategyKeys,
-  deriveAllBoundedStrategyKeysV2,
-} from "../packages/serum-remote/src/pdas";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {
   createAssociatedTokenInstruction,
@@ -67,15 +62,14 @@ describe("InitBoundedStrategyV2", () => {
     try {
       await program.provider.sendAndConfirm(createAtaTx);
     } catch (err) {}
-
-    const mintToInstruction = Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      USDC_MINT,
-      associatedAddress,
-      payerKey,
-      [],
-      transferAmount.muln(10).toNumber()
-    );
+    const mintToInstruction = await tokenProgram.methods
+      .mintTo(transferAmount.muln(10))
+      .accounts({
+        mint: USDC_MINT,
+        account: associatedAddress,
+        owner: payerKey,
+      })
+      .instruction();
     transaction.add(mintToInstruction);
     await program.provider.sendAndConfirm(transaction);
   });

@@ -2,11 +2,6 @@ import * as fs from "fs";
 import * as os from "os";
 import { web3 } from "@project-serum/anchor";
 import { DexInstructions, Market, OpenOrders } from "@project-serum/serum";
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  Token,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
 
 export const loadPayer = (keypairPath: string): web3.Keypair => {
   if (keypairPath) {

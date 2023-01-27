@@ -2,8 +2,9 @@ import { splTokenProgram } from "@coral-xyz/spl-token";
 import { Provider, web3 } from "@project-serum/anchor";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountInstruction,
+  getAssociatedTokenAddress,
   MintLayout,
-  Token,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
@@ -63,19 +64,15 @@ export const createAssociatedTokenInstruction = async (
   owner: web3.PublicKey | undefined = undefined
 ) => {
   const payerKey = provider.publicKey;
-  const associatedAddress = await Token.getAssociatedTokenAddress(
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
+  const associatedAddress = await getAssociatedTokenAddress(
     mint,
     owner || payerKey
   );
-  const instruction = Token.createAssociatedTokenAccountInstruction(
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    mint,
+  const instruction = createAssociatedTokenAccountInstruction(
+    payerKey,
     associatedAddress,
     owner || payerKey,
-    payerKey
+    mint
   );
   return { instruction, associatedAddress };
 };

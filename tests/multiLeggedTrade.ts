@@ -3,7 +3,7 @@ import { BN } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Program, web3 } from "@project-serum/anchor";
 import { Market } from "@project-serum/serum";
-import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
@@ -63,14 +63,15 @@ describe("OpenBook + Raydium Trade", () => {
       await program.provider.sendAndConfirm(createAtaTx);
     } catch (err) {}
 
-    const mintToInstruction = Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      USDC_MINT,
-      associatedAddress,
-      payerKey,
-      [],
-      transferAmount.muln(10).toNumber()
-    );
+    const mintToInstruction = await tokenProgram.methods
+      .mintTo(transferAmount.muln(10))
+      .accounts({
+        mint: USDC_MINT,
+        account: associatedAddress,
+        owner: payerKey,
+      })
+      .instruction();
+
     transaction.add(mintToInstruction);
     await program.provider.sendAndConfirm(transaction);
 

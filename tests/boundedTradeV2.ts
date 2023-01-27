@@ -1,20 +1,14 @@
 import * as anchor from "@project-serum/anchor";
 import { BN, Program, web3 } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
-import { Market, DexInstructions } from "@project-serum/serum";
-import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Market } from "@project-serum/serum";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
 import {
-  BoundedStrategy,
   BoundedStrategyV2,
   parseTranactionError,
 } from "../packages/serum-remote/src";
-import { boundedTradeIx } from "../packages/serum-remote/src/instructions/boundedTrade";
-import { initializeBoundedStrategy } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
-import {
-  deriveAllBoundedStrategyKeys,
-  deriveAllBoundedStrategyKeysV2,
-} from "../packages/serum-remote/src/pdas";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {
   createAssociatedTokenInstruction,
@@ -23,8 +17,6 @@ import {
   USDC_MINT,
 } from "./utils";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
-
-let openOrdersAccount: web3.PublicKey;
 
 /**
  * SerumMarket is in the current state Bids and Asks
@@ -118,14 +110,14 @@ describe("BoundedTradeV2", () => {
     );
 
     const transaction = new web3.Transaction();
-    const mintToInstruction = Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      USDC_MINT,
-      associatedAddress,
-      payerKey,
-      [],
-      quoteTransferAmount.muln(10).toNumber()
-    );
+    const mintToInstruction = await tokenProgram.methods
+      .mintTo(quoteTransferAmount.muln(10))
+      .accounts({
+        mint: USDC_MINT,
+        account: associatedAddress,
+        owner: payerKey,
+      })
+      .instruction();
     transaction.add(mintToInstruction);
     // Move SOL to wrapped SOL
     const transferBaseInstruction = web3.SystemProgram.transfer({
