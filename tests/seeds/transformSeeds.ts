@@ -132,8 +132,7 @@ const converFieldValue = (ty: IdlType, value: string | number | undefined) => {
           case "COption<Pubkey>":
             return value ? new web3.PublicKey(value) : null;
           case "COption<u64>":
-            console.log("COption<u64> value ", value);
-            throw new Error();
+            return value ? new BN(value) : null;
           case "AuthorityType":
             console.log("AuthorityType value ", value);
             throw new Error();

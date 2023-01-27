@@ -14,11 +14,10 @@ import {
   DEX_ID,
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
+  wait,
 } from "./utils";
 import { Market } from "@project-serum/serum";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
-
-let timesRun = 0;
 
 describe("ReclaimV2", () => {
   // Configure the client to use the local cluster.
@@ -43,7 +42,65 @@ describe("ReclaimV2", () => {
   let boundedStrategy: BoundedStrategy;
   let boundedStrategyKey: web3.PublicKey,
     authority: web3.PublicKey,
-    orderPayer: web3.PublicKey;
+    collateralAddress: web3.PublicKey;
+
+  const initBoundStrat = async (_reclaimDate: BN) => {
+    reclaimDate = _reclaimDate;
+    const {
+      boundedStrategy: _boundedStrategyKey,
+      collateralAccount: _collateralAccount,
+    } = await deriveAllBoundedStrategyKeysV2(program, USDC_MINT, {
+      transferAmount,
+      boundPriceNumerator,
+      boundPriceDenominator,
+      reclaimDate: _reclaimDate,
+      reclaimAddress,
+      depositAddress,
+      orderSide,
+      bound,
+    });
+    boundedStrategyKey = _boundedStrategyKey;
+    collateralAddress = _collateralAccount;
+    const initAdditionalAccounts = await OpenBookDex.initLegAccounts(
+      program.programId,
+      serumMarket,
+      boundedStrategyKey,
+      collateralAddress,
+      depositAddress,
+      // This a dummy key for the destimation mint. It is not used in single leg transactions
+      web3.SystemProgram.programId
+    );
+    const additionalData = new BN(
+      // @ts-ignore
+      serumMarket._baseSplTokenDecimals
+    ).toArrayLike(Buffer, "le", 1);
+    await program.methods
+      .initBoundedStrategyV2(
+        transferAmount,
+        boundPriceNumerator,
+        boundPriceDenominator,
+        _reclaimDate,
+        orderSide,
+        bound,
+        additionalData
+      )
+      .accounts({
+        payer: program.provider.publicKey,
+        collateralAccount: collateralAddress,
+        mint: USDC_MINT,
+        strategy: boundedStrategyKey,
+        reclaimAccount: reclaimAddress,
+        depositAccount: depositAddress,
+        tokenProgram: SPL_TOKEN_PROGRAM_ID,
+        systemProgram: web3.SystemProgram.programId,
+        rent: web3.SYSVAR_RENT_PUBKEY,
+      })
+      .remainingAccounts(initAdditionalAccounts)
+      .rpc();
+    boundedStrategy = await program.account.boundedStrategyV2.fetch(
+      boundedStrategyKey
+    );
+  };
 
   before(async () => {
     await program.provider.connection.requestAirdrop(
@@ -101,66 +158,10 @@ describe("ReclaimV2", () => {
     transaction.add(syncNativeIx);
     await program.provider.sendAndConfirm(transaction);
   });
-  beforeEach(() => {
-    timesRun += 1;
-    reclaimDate = new BN(new Date().getTime() / 1_000 + 3600 + timesRun);
-  });
 
-  // Reclaim Date has not passed
   describe("Prior to reclaim date", () => {
     beforeEach(async () => {
-      reclaimDate = new BN(new Date().getTime() / 1_000 + 3600 + timesRun);
-      const { boundedStrategy: _boundedStrategyKey, collateralAccount } =
-        await deriveAllBoundedStrategyKeysV2(program, USDC_MINT, {
-          transferAmount,
-          boundPriceNumerator,
-          boundPriceDenominator,
-          reclaimDate,
-          reclaimAddress,
-          depositAddress,
-          orderSide,
-          bound,
-        });
-      boundedStrategyKey = _boundedStrategyKey;
-      const initAdditionalAccounts = await OpenBookDex.initLegAccounts(
-        program.programId,
-        serumMarket,
-        boundedStrategyKey,
-        collateralAccount,
-        depositAddress,
-        // This a dummy key for the destimation mint. It is not used in single leg transactions
-        web3.SystemProgram.programId
-      );
-      const additionalData = new BN(
-        // @ts-ignore
-        serumMarket._baseSplTokenDecimals
-      ).toArrayLike(Buffer, "le", 1);
-      await program.methods
-        .initBoundedStrategyV2(
-          transferAmount,
-          boundPriceNumerator,
-          boundPriceDenominator,
-          reclaimDate,
-          orderSide,
-          bound,
-          additionalData
-        )
-        .accounts({
-          payer: program.provider.publicKey,
-          collateralAccount,
-          mint: USDC_MINT,
-          strategy: boundedStrategyKey,
-          reclaimAccount: reclaimAddress,
-          depositAccount: depositAddress,
-          tokenProgram: SPL_TOKEN_PROGRAM_ID,
-          systemProgram: web3.SystemProgram.programId,
-          rent: web3.SYSVAR_RENT_PUBKEY,
-        })
-        .remainingAccounts(initAdditionalAccounts)
-        .rpc();
-      boundedStrategy = await program.account.boundedStrategyV2.fetch(
-        boundedStrategyKey
-      );
+      await initBoundStrat(new BN(new Date().getTime() / 1_000 + 3600));
     });
 
     it("should error", async () => {
@@ -170,6 +171,9 @@ describe("ReclaimV2", () => {
           .accounts({
             receiver: program.provider.publicKey,
             strategy: boundedStrategyKey,
+            collateralAccount: collateralAddress,
+            reclaimAccount: reclaimAddress,
+            tokenProgram: TOKEN_PROGRAM_ID,
           })
           .rpc();
         throw new Error("should not get here");
@@ -180,6 +184,53 @@ describe("ReclaimV2", () => {
         );
       }
       assert.ok(true);
+    });
+  });
+
+  describe("Post reclaim date", () => {
+    beforeEach(async () => {
+      await initBoundStrat(new BN(new Date().getTime() / 1_000 + 1));
+      await wait(2000);
+    });
+
+    it("should return assets", async () => {
+      const [reclaimAccountBefore, collateralAccountBefore] = await Promise.all(
+        [
+          tokenProgram.account.account.fetch(reclaimAddress),
+          tokenProgram.account.account.fetch(collateralAddress),
+        ]
+      );
+      try {
+        await program.methods
+          .reclaimV2()
+          .accounts({
+            receiver: program.provider.publicKey,
+            strategy: boundedStrategyKey,
+            collateralAccount: collateralAddress,
+            reclaimAccount: reclaimAddress,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .rpc();
+      } catch (err) {
+        console.log(err);
+        assert.ok(false);
+      }
+
+      const [reclaimAccountAfter, collateralAccountAfter, boundedStrategyInfo] =
+        await Promise.all([
+          tokenProgram.account.account.fetch(reclaimAddress),
+          program.provider.connection.getAccountInfo(collateralAddress),
+          program.provider.connection.getAccountInfo(boundedStrategyKey),
+        ]);
+      const reclaimDiff = reclaimAccountAfter.amount.sub(
+        reclaimAccountBefore.amount
+      );
+      assert.equal(
+        reclaimDiff.toString(),
+        collateralAccountBefore.amount.toString()
+      );
+      assert.ok(!collateralAccountAfter);
+      assert.ok(!boundedStrategyInfo);
     });
   });
 });
