@@ -16,6 +16,7 @@ import {
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
 } from "./utils";
+import { createRaydiumPool } from "./utils/raydium";
 
 let timesRun = 0;
 describe("OpenBook + Raydium Trade", () => {
@@ -73,21 +74,47 @@ describe("OpenBook + Raydium Trade", () => {
     transaction.add(mintToInstruction);
     await program.provider.sendAndConfirm(transaction);
 
+    const tx = new web3.Transaction();
     // Create a new mint
     const { instructions, mintAccount } = await initNewTokenMintInstructions(
       program.provider,
       payerKey,
       6
     );
-    const tx = new web3.Transaction();
     instructions.forEach((ix) => tx.add(ix));
-    // TODO: Mint a bunch of COIN to payer
+    // Createa $COIN ATA for payer
+    const { instruction: coinMintIx, associatedAddress: coinAta } =
+      await createAssociatedTokenInstruction(
+        program.provider,
+        mintAccount.publicKey
+      );
+    tx.add(coinMintIx);
+
+    // Mint $COIN to payer
+    const mintCoinIx = await tokenProgram.methods
+      .mintTo(new BN(1_000_000_000_000))
+      .accounts({
+        mint: mintAccount.publicKey,
+        account: coinAta,
+        owner: payerKey,
+      })
+      .instruction();
+    tx.add(mintCoinIx);
 
     // TODO: Spin up COIN/USDC pool on Raydium
-
     // TODO: Deposit COIN/USDC liquidity to new pool on Raydium
+    await createRaydiumPool(
+      program.provider,
+      payerKey,
+      mintAccount.publicKey,
+      6,
+      USDC_MINT,
+      6,
+      new BN(10_000_000_000),
+      new BN(10_000_000_000)
+    );
 
-    await program.provider.sendAndConfirm(tx, [mintAccount]);
+    // await program.provider.sendAndConfirm(tx, [mintAccount]);
   });
   beforeEach(async () => {
     // timesRun is used to generate unique seeds for the strategy, otherwise

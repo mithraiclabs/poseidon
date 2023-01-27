@@ -82,3 +82,17 @@ export const createAssociatedTokenInstruction = async (
 
 export const wait = (delayMS: number) =>
   new Promise((resolve) => setTimeout(resolve, delayMS));
+
+/**
+ * simple but useful shortcut
+ */
+export default function tryCatch<T>(
+  tryFunction: () => T,
+  catchFunction?: (err: unknown) => T
+): T {
+  try {
+    return tryFunction();
+  } catch (err) {
+    return catchFunction?.(err);
+  }
+}
