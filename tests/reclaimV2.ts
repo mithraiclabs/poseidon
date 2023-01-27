@@ -18,6 +18,7 @@ import {
 } from "./utils";
 import { Market } from "@project-serum/serum";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
+import { Transaction } from "@solana/web3.js";
 
 describe("ReclaimV2", () => {
   // Configure the client to use the local cluster.
@@ -231,6 +232,35 @@ describe("ReclaimV2", () => {
       );
       assert.ok(!collateralAccountAfter);
       assert.ok(!boundedStrategyInfo);
+    });
+
+    it("should error on wrong receiver/reclaim address", async () => {
+      const { instruction, associatedAddress: badReclaimAddress } =
+        await createAssociatedTokenInstruction(
+          program.provider,
+          USDC_MINT,
+          new web3.Keypair().publicKey
+        );
+      await program.provider.sendAndConfirm(new Transaction().add(instruction));
+      try {
+        await program.methods
+          .reclaimV2()
+          .accounts({
+            receiver: program.provider.publicKey,
+            strategy: boundedStrategyKey,
+            collateralAccount: collateralAddress,
+            reclaimAccount: badReclaimAddress,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .rpc();
+        throw new Error("should not get here");
+      } catch (err) {
+        assert.equal(
+          err.error.errorMessage,
+          "Cannot reclaim to different address"
+        );
+      }
+      assert.ok(true);
     });
   });
 });
