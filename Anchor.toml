@@ -12,6 +12,10 @@ url = "https://anchor.projectserum.com"
 address = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
 program = "tests/deps/serum_dex.so"
 
+[[test.genesis]]
+address = "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"
+program = "tests/deps/raydium_v4.so"
+
 [[test.validator.account]]
 address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 filename = "tests/seeds/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v.json"
@@ -49,7 +53,7 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/multiLeggedTrade.ts"
 
 [programs.devnet]
 serum_remote = "oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK"

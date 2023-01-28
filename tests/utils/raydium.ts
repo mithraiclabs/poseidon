@@ -5,6 +5,8 @@ import {
   Fraction,
   GetTokenAccountsByOwnerConfig,
   Liquidity,
+  LIQUIDITY_PROGRAMID_TO_VERSION,
+  LIQUIDITY_VERSION_TO_SERUM_VERSION,
   MarketV2,
   Percent,
   Price,
@@ -30,6 +32,7 @@ export const createRaydiumPool = async (
   baseAmount: BN,
   quoteAmount: BN
 ) => {
+  console.log("Raydium: getRichWalletTokenAccounts");
   // Get the payer's token accounts
   const { tokenAccountRawInfos } = await getRichWalletTokenAccounts({
     connection: provider.connection,
@@ -55,17 +58,26 @@ export const createRaydiumPool = async (
     dexProgramId: DEX_ID,
   });
 
-  // TODO: Make sure this works as expected
-  await Promise.all(
-    transactions.map(async (tx) => {
-      return provider.sendAndConfirm(tx.transaction, tx.signer);
-    })
+  console.log("Raydium: makeCreateMarketTransaction 0");
+  await provider.sendAndConfirm(
+    transactions[0].transaction,
+    transactions[0].signer,
+    { skipPreflight: true }
+  );
+  console.log("Raydium: makeCreateMarketTransaction 1");
+  await provider.sendAndConfirm(
+    transactions[1].transaction,
+    transactions[1].signer,
+    { skipPreflight: true }
   );
 
+  console.log("Raydium: getAssociatedPoolKeys");
   // find associated poolKeys for market
+  const liquidityVersion =
+    LIQUIDITY_PROGRAMID_TO_VERSION[RAYDIUM_LIQUIDITY_PROGRAM_ID.toString()];
   const associatedPoolKeys = await Liquidity.getAssociatedPoolKeys({
-    version: 4,
-    marketVersion: 4,
+    version: liquidityVersion,
+    marketVersion: LIQUIDITY_VERSION_TO_SERUM_VERSION[liquidityVersion],
     baseMint,
     quoteMint,
     baseDecimals,
@@ -75,14 +87,18 @@ export const createRaydiumPool = async (
     marketProgramId: DEX_ID,
   });
 
+  console.log("Raydium: makeCreatePoolTransaction");
   const makePoolTx = Liquidity.makeCreatePoolTransaction({
     poolKeys: associatedPoolKeys,
     userKeys: {
       payer,
     },
   });
-  await provider.sendAndConfirm(makePoolTx.transaction, makePoolTx.signers);
+  await provider.sendAndConfirm(makePoolTx.transaction, makePoolTx.signers, {
+    skipPreflight: true,
+  });
 
+  console.log("Raydium: makeInitPoolTransaction");
   // step2: init new pool (inject money into the created pool)
   const { transaction: initPoolTx, signers: initPoolSigners } =
     await Liquidity.makeInitPoolTransaction({

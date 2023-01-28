@@ -3,7 +3,6 @@ import { BN } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Program, web3 } from "@project-serum/anchor";
 import { Market } from "@project-serum/serum";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
@@ -101,6 +100,7 @@ describe("OpenBook + Raydium Trade", () => {
       })
       .instruction();
     tx.add(mintCoinIx);
+    await program.provider.sendAndConfirm(tx, [mintAccount]);
 
     // TODO: Spin up COIN/USDC pool on Raydium
     // TODO: Deposit COIN/USDC liquidity to new pool on Raydium
@@ -114,8 +114,6 @@ describe("OpenBook + Raydium Trade", () => {
       new BN(10_000_000_000),
       new BN(10_000_000_000)
     );
-
-    // await program.provider.sendAndConfirm(tx, [mintAccount]);
   });
   beforeEach(async () => {
     // timesRun is used to generate unique seeds for the strategy, otherwise

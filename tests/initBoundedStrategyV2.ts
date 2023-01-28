@@ -3,7 +3,6 @@ import { BN } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Program, web3 } from "@project-serum/anchor";
 import { Market } from "@project-serum/serum";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";

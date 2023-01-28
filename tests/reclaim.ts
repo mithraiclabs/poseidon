@@ -2,7 +2,6 @@ import * as anchor from "@project-serum/anchor";
 import { BN, Program, web3 } from "@project-serum/anchor";
 import { splTokenProgram } from "@coral-xyz/spl-token";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
 import {
   BoundedStrategy,
