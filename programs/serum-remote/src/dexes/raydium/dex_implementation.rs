@@ -7,7 +7,7 @@ use super::{
         math::{constant_product_simulation, mul_div_u64},
         CurveType, Dex, DexStatic,
     },
-    swap_base_in, quote_total_accessor, base_total_accessor, qnt_accessor, bnt_accessor,
+    base_total_accessor, bnt_accessor, qnt_accessor, quote_total_accessor, swap_base_in,
 };
 
 anchor_lang::declare_id!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
@@ -189,6 +189,13 @@ impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
             signers_seeds,
         )
         .unwrap();
+        Ok(())
+    }
+
+    fn cleanup_accounts(
+        &self,
+        ctx: &Context<'_, '_, 'a, 'info, crate::instructions::ReclaimV2<'info>>,
+    ) -> Result<()> {
         Ok(())
     }
 }

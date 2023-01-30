@@ -612,6 +612,27 @@ export type SerumRemote = {
           "docs": [
             "The BoundedStrategyV2 account"
           ]
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account where the assets to trade with are"
+          ]
+        },
+        {
+          "name": "reclaimAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the assets"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": []
@@ -1662,6 +1683,27 @@ export const IDL: SerumRemote = {
           "docs": [
             "The BoundedStrategyV2 account"
           ]
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account where the assets to trade with are"
+          ]
+        },
+        {
+          "name": "reclaimAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the assets"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": []
