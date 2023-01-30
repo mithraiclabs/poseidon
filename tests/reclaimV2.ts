@@ -20,8 +20,7 @@ import { Transaction } from "@solana/web3.js";
 describe("ReclaimV2", () => {
   // Configure the client to use the local cluster.
   const program = workspace.SerumRemote as Program<SerumRemote>;
-  // @ts-ignore: TODO: Remove after anchor npm upgrade
-  const payerKey = program.provider.wallet.publicKey;
+  const payerKey = program.provider.publicKey;
   const tokenProgram = splTokenProgram();
 
   let boundPriceNumerator = new BN(95_700_000);
