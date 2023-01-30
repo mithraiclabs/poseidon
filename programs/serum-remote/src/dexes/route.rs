@@ -1,8 +1,10 @@
 use std::collections::VecDeque;
 
 use crate::{
-    constants::OPEN_ORDERS_SEED, errors, instructions::InitBoundedStrategyV2, token_account_seeds,
-    token_account_signer_seeds,
+    constants::OPEN_ORDERS_SEED,
+    errors,
+    instructions::{InitBoundedStrategyV2, ReclaimV2},
+    token_account_seeds, token_account_signer_seeds,
 };
 
 use super::{leg::Leg, math::find_maximum_input, Dex, DexList};
@@ -202,6 +204,16 @@ impl<'a, 'info> Route<'a, 'info> {
     }
 
     ///
+    /// Close and clean up and accounts for each Leg
+    ///
+    pub fn cleanup_accounts(
+        &self,
+        ctx: &Context<'_, '_, 'a, 'info, ReclaimV2<'info>>,
+    ) -> Result<()> {
+        self.for_each_leg(|leg| leg.close_dex_accounts(ctx))
+    }
+
+    ///
     /// Simulates the trade execution but returns 0 if the execution price is out of bounds.
     /// This is required to adjust the curve and avoid input amounts where the execution
     /// price is outside the curve.
@@ -233,22 +245,27 @@ impl<'a, 'info> Route<'a, 'info> {
     ///
     fn simulate_execution(&self, input_amount: u64) -> u64 {
         let mut output: u64 = 0;
-        self.for_each_leg(|leg| output = leg.simulate_trade(input_amount));
+        self.for_each_leg(|leg| {
+            output = leg.simulate_trade(input_amount);
+            Ok(())
+        })
+        .unwrap();
         return output;
     }
 
-    fn for_each_leg<F>(&self, mut f: F)
+    fn for_each_leg<F>(&self, mut f: F) -> Result<()>
     where
-        F: FnMut(&Leg),
+        F: FnMut(&Leg<'a, 'info>) -> Result<()>,
     {
         for leg in self.legs.iter() {
             match leg {
                 Some(leg) => {
-                    f(&leg);
+                    f(&leg)?;
                 }
                 None => {}
             }
         }
+        Ok(())
     }
 }
 

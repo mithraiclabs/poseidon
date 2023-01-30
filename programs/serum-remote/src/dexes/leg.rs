@@ -3,7 +3,10 @@ use std::collections::VecDeque;
 use anchor_lang::prelude::*;
 use enum_dispatch::enum_dispatch;
 
-use crate::{dexes::Dex, instructions::InitBoundedStrategyV2};
+use crate::{
+    dexes::Dex,
+    instructions::{InitBoundedStrategyV2, ReclaimV2},
+};
 
 use super::{open_book_dex::OpenBookDex, DexList, DexStatic};
 
@@ -55,6 +58,15 @@ impl<'a, 'info> Leg<'a, 'info> {
     pub fn destination_mint_account(&self) -> AccountInfo<'info> {
         match self {
             Leg::OpenBookV3(open_book_dex) => open_book_dex.destination_mint_account(),
+        }
+    }
+
+    pub fn close_dex_accounts(
+        &self,
+        ctx: &Context<'_, '_, 'a, 'info, ReclaimV2<'info>>,
+    ) -> Result<()> {
+        match self {
+            Leg::OpenBookV3(open_book_dex) => open_book_dex.cleanup_accounts(ctx),
         }
     }
 }

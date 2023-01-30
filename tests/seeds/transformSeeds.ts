@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import YAML from "yaml";
-import { BN, Idl, Spl, web3 } from "@project-serum/anchor";
+import { BN, Idl, web3 } from "@project-serum/anchor";
+import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { IdlField, IdlType } from "./idlTypes";
 import { u64 } from "@solana/spl-token";
 
@@ -14,7 +15,7 @@ const SEEDS_DIR = "tests/seeds";
   const seedsJson = YAML.parse(seeds);
 
   // TODO: Make this more program agnostic with a map of programs
-  const splTokenProgram = Spl.token();
+  const _splTokenProgram = splTokenProgram();
 
   const firstAccount = seedsJson.splToken[0];
   // Extract the meta data that is not actually stored on the account
@@ -23,7 +24,7 @@ const SEEDS_DIR = "tests/seeds";
   delete firstAccount.address;
   delete firstAccount.type;
 
-  const idl = splTokenProgram.idl;
+  const idl = _splTokenProgram.idl;
 
   // Convert the seed data to the appropriate types
   const convertedAccount = convertSeedToAccount(
@@ -31,19 +32,19 @@ const SEEDS_DIR = "tests/seeds";
     accountType,
     firstAccount,
     {
-      anchorWallet: splTokenProgram.provider.wallet.publicKey,
+      anchorWallet: _splTokenProgram.provider.publicKey,
     }
   );
 
   // Encode the data and write it to the account
-  const encodedData = await splTokenProgram.coder.accounts.encode(
+  const encodedData = await _splTokenProgram.coder.accounts.encode(
     accountType,
     convertedAccount
   );
   await writeToSeedFile(
     address,
     encodedData.toString("base64"),
-    splTokenProgram.programId.toString()
+    _splTokenProgram.programId.toString()
   );
 })();
 
@@ -97,7 +98,7 @@ const converFieldValue = (ty: IdlType, value: string | number | undefined) => {
     case "f32":
       return new BN(value);
     case "u64":
-      return new u64(value);
+      return new BN(value);
     case "i64":
       return new BN(value);
     case "f64":
@@ -105,6 +106,10 @@ const converFieldValue = (ty: IdlType, value: string | number | undefined) => {
     case "u128":
       return new BN(value);
     case "i128":
+      return new BN(value);
+    case "u256":
+      return new BN(value);
+    case "i256":
       return new BN(value);
     case "bytes":
       throw new Error("TODO");
@@ -123,7 +128,23 @@ const converFieldValue = (ty: IdlType, value: string | number | undefined) => {
         return value ? converFieldValue(ty.coption, value) : undefined;
       }
       if ("defined" in ty) {
-        throw new Error("TODO");
+        switch (ty.defined) {
+          case "COption<Pubkey>":
+            return value ? new web3.PublicKey(value) : null;
+          case "COption<u64>":
+            return value ? new BN(value) : null;
+          case "AuthorityType":
+            console.log("AuthorityType value ", value);
+            throw new Error();
+          case "AccountState":
+            console.log("AccountState value ", value);
+            throw new Error();
+          case "&'astr":
+            console.log("&'astr value ", value);
+            throw new Error();
+          default:
+            throw new Error('no definition for "defined" type');
+        }
       }
       if ("array" in ty) {
         throw new Error("TODO");

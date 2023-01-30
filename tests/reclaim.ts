@@ -49,14 +49,14 @@ describe("Reclaim", () => {
     );
     // This TX may fail with concurrent tests
     // TODO: Write more elegant solution
-    const { instruction, associatedAddress } =
-      await createAssociatedTokenInstruction(program.provider, USDC_MINT);
+    const [
+      { instruction, associatedAddress },
+      { instruction: baseMintAtaIx, associatedAddress: baseAta },
+    ] = await Promise.all([
+      createAssociatedTokenInstruction(program.provider, USDC_MINT),
+      createAssociatedTokenInstruction(program.provider, WRAPPED_SOL_MINT),
+    ]);
     quoteAddress = associatedAddress;
-    const { instruction: baseMintAtaIx, associatedAddress: baseAta } =
-      await createAssociatedTokenInstruction(
-        program.provider,
-        WRAPPED_SOL_MINT
-      );
     baseAddress = baseAta;
     const createAtaTx = new web3.Transaction()
       .add(instruction)
@@ -189,12 +189,10 @@ describe("Reclaim", () => {
       await wait(2_000);
     });
     it("should return the assets to the reclaim address", async () => {
-      const reclaimAccountBefore = await tokenProgram.account.account.fetch(
-        quoteAddress
-      );
-      const orderPayerBefore = await tokenProgram.account.account.fetch(
-        orderPayer
-      );
+      const [reclaimAccountBefore, orderPayerBefore] = await Promise.all([
+        tokenProgram.account.account.fetch(quoteAddress),
+        tokenProgram.account.account.fetch(orderPayer),
+      ]);
 
       const ix = reclaimIx(
         program,
@@ -206,33 +204,31 @@ describe("Reclaim", () => {
       try {
         await program.provider.sendAndConfirm(transaction);
       } catch (error) {
-        console.log("*** error", error);
         const parsedError = parseTranactionError(error);
-        console.log("Error: ", parsedError.msg);
         assert.ok(false);
       }
 
-      const reclaimAccountAfter = await tokenProgram.account.account.fetch(
-        quoteAddress
-      );
+      const [
+        reclaimAccountAfter,
+        orderPayerInfo,
+        openOrdersInfo,
+        boundedStrategyInfo,
+      ] = await Promise.all([
+        tokenProgram.account.account.fetch(quoteAddress),
+        program.provider.connection.getAccountInfo(orderPayer),
+        program.provider.connection.getAccountInfo(boundedStrategy.openOrders),
+        program.provider.connection.getAccountInfo(boundedStrategyKey),
+      ]);
       const reclaimDiff = reclaimAccountAfter.amount.sub(
         reclaimAccountBefore.amount
       );
       assert.equal(reclaimDiff.toString(), orderPayerBefore.amount.toString());
 
       // Test that the OrderPayer was closed
-      const orderPayerInfo = await program.provider.connection.getAccountInfo(
-        orderPayer
-      );
       assert.ok(!orderPayerInfo);
       // Test the OpenOrders account was closed
-      const openOrdersInfo = await program.provider.connection.getAccountInfo(
-        boundedStrategy.openOrders
-      );
       assert.ok(!openOrdersInfo);
       // Test the strategy account was closed
-      const boundedStrategyInfo =
-        await program.provider.connection.getAccountInfo(boundedStrategyKey);
       assert.ok(!boundedStrategyInfo);
     });
 
