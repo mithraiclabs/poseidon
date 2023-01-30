@@ -10,12 +10,13 @@ import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pda
 import { SerumRemote } from "../target/types/serum_remote";
 import {
   createAssociatedTokenInstruction,
-  DEX_ID,
   initNewTokenMintInstructions,
-  SOL_USDC_SERUM_MARKET,
+  OPEN_BOOK_DEX_ID,
+  SOL_USDC_OPEN_BOOK_MARKET,
   USDC_MINT,
 } from "./utils";
 import { createRaydiumPool } from "./utils/raydium";
+import { Currency, CurrencyAmount } from "@raydium-io/raydium-sdk";
 
 let timesRun = 0;
 describe("OpenBook + Raydium Trade", () => {
@@ -32,15 +33,15 @@ describe("OpenBook + Raydium Trade", () => {
   let depositAddress: web3.PublicKey;
   let orderSide = 0;
   let bound = 1;
-  let transferAmount = new BN(10_000_000);
+  let transferAmount = new BN(10_000_000_000);
   let serumMarket: Market;
 
   before(async () => {
     serumMarket = await Market.load(
       program.provider.connection,
-      SOL_USDC_SERUM_MARKET,
+      SOL_USDC_OPEN_BOOK_MARKET,
       {},
-      DEX_ID
+      OPEN_BOOK_DEX_ID
     );
     const transaction = new web3.Transaction();
 
@@ -111,8 +112,14 @@ describe("OpenBook + Raydium Trade", () => {
       6,
       USDC_MINT,
       6,
-      new BN(10_000_000_000),
-      new BN(10_000_000_000)
+      new CurrencyAmount(
+        new Currency(6, "COIN"),
+        new BN(10_000_000_000).toString()
+      ),
+      new CurrencyAmount(
+        new Currency(6, "USDC"),
+        new BN(10_000_000_000).toString()
+      )
     );
   });
   beforeEach(async () => {

@@ -25,14 +25,14 @@ export const loadPayer = (keypairPath: string): web3.Keypair => {
   }
 };
 
-const connection = new web3.Connection("https://api.devnet.solana.com");
+const connection = new web3.Connection("https://api.mainnet-beta.solana.com");
 
 const serumMarketKey = new web3.PublicKey(
-  "9qa76HXPrkGDAV9P4kxbq7BTj3cFpTLHaZr8u4Py1fCR"
+  "8BnEgHoWFysVcuFFX7QztDmzuH8r5ZFvyP3sYwn1XTh6"
 );
 
 const DEX_ID = new web3.PublicKey(
-  "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY"
+  "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
 );
 
 const keypairPath = `${os.homedir()}/.config/solana/devnet/id.json`;
@@ -40,6 +40,7 @@ const keypairPath = `${os.homedir()}/.config/solana/devnet/id.json`;
 (async () => {
   const payer = loadPayer(keypairPath);
   const serumMarket = await Market.load(connection, serumMarketKey, {}, DEX_ID);
+  console.log(`decoded ${JSON.stringify(serumMarket.decoded)}`);
 
   const [bids, asks] = await Promise.all([
     serumMarket.loadBids(connection),

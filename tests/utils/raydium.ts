@@ -17,7 +17,7 @@ import {
   TOKEN_PROGRAM_ID,
   ZERO,
 } from "@raydium-io/raydium-sdk";
-import tryCatch, { DEX_ID } from ".";
+import tryCatch, { OPEN_BOOK_DEX_ID } from ".";
 
 export const RAYDIUM_LIQUIDITY_PROGRAM_ID = new web3.PublicKey(
   "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"
@@ -29,8 +29,8 @@ export const createRaydiumPool = async (
   baseDecimals: number,
   quoteMint: web3.PublicKey,
   quoteDecimals: number,
-  baseAmount: BN,
-  quoteAmount: BN
+  baseAmount: CurrencyAmount,
+  quoteAmount: CurrencyAmount
 ) => {
   console.log("Raydium: getRichWalletTokenAccounts");
   // Get the payer's token accounts
@@ -55,7 +55,7 @@ export const createRaydiumPool = async (
     },
     lotSize: 100,
     tickSize: 100,
-    dexProgramId: DEX_ID,
+    dexProgramId: OPEN_BOOK_DEX_ID,
   });
 
   console.log("Raydium: makeCreateMarketTransaction 0");
@@ -84,7 +84,7 @@ export const createRaydiumPool = async (
     quoteDecimals,
     marketId: openBookMarketId,
     programId: RAYDIUM_LIQUIDITY_PROGRAM_ID,
-    marketProgramId: DEX_ID,
+    marketProgramId: OPEN_BOOK_DEX_ID,
   });
 
   console.log("Raydium: makeCreatePoolTransaction");
@@ -98,18 +98,24 @@ export const createRaydiumPool = async (
     skipPreflight: true,
   });
 
-  console.log("Raydium: makeInitPoolTransaction");
+  console.log(
+    "Raydium: makeInitPoolTransaction",
+    baseAmount.toString(),
+    baseAmount.raw
+  );
   // step2: init new pool (inject money into the created pool)
   const { transaction: initPoolTx, signers: initPoolSigners } =
     await Liquidity.makeInitPoolTransaction({
       poolKeys: associatedPoolKeys,
-      startTime: new anchor.BN(new Date().getTime() / 1_000),
+      startTime: new BN(new Date().getTime() / 1_000).toString(),
       baseAmount,
       quoteAmount,
       connection: provider.connection,
       userKeys: { owner: payer, payer, tokenAccounts: tokenAccountRawInfos },
     });
-  await provider.sendAndConfirm(initPoolTx, initPoolSigners);
+  await provider.sendAndConfirm(initPoolTx, initPoolSigners, {
+    skipPreflight: true,
+  });
 };
 
 /////////////////////////////// Buncha stuff ripped from Rayidum UI ///////////////////
