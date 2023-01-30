@@ -141,9 +141,6 @@ describe("InitBoundedStrategyV2", () => {
     try {
       await program.provider.sendAndConfirm(transaction);
     } catch (error) {
-      console.error(error);
-      const parsedError = parseTranactionError(error);
-      console.log("error: ", parsedError.msg);
       assert.ok(false);
     }
 

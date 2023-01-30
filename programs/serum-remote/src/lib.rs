@@ -87,4 +87,8 @@ pub mod serum_remote {
     ) -> Result<()> {
         instructions::bounded_trade_v2::handler(ctx)
     }
+
+    pub fn reclaim_v2<'info>(ctx: Context<'_, '_, '_, 'info, ReclaimV2<'info>>) -> Result<()> {
+        instructions::reclaim_v2::handler(ctx)
+    }
 }

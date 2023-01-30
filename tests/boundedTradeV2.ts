@@ -71,10 +71,6 @@ describe("BoundedTradeV2", () => {
     ]);
     highestBid = bids.getL2(1)[0];
     lowestAsk = asks.getL2(1)[0];
-    console.log(
-      JSON.stringify(bids.getL2(1)[0]),
-      JSON.stringify(asks.getL2(1)[0])
-    );
 
     const referralOwner = new web3.Keypair();
     // This TX may fail with concurrent tests
@@ -258,7 +254,6 @@ describe("BoundedTradeV2", () => {
           } catch (error) {
             console.error(error);
             const parsedError = parseTranactionError(error);
-            console.log("error: ", parsedError.msg);
             assert.ok(false);
           }
           // Calculate the maxmium amount of SOL that can be bought)
@@ -392,7 +387,6 @@ describe("BoundedTradeV2", () => {
             await program.provider.sendAndConfirm(transaction);
             assert.ok(false);
           } catch (error) {
-            console.error(error);
             const parsedError = parseTranactionError(error);
             assert.equal(parsedError.msg, "Market price is out of bounds");
           }
@@ -445,7 +439,6 @@ describe("BoundedTradeV2", () => {
             await program.provider.sendAndConfirm(transaction);
           } catch (error) {
             const parsedError = parseTranactionError(error);
-            console.log("error: ", parsedError.msg);
             assert.ok(false);
           }
           // Calculate the maxmium amount of SOL that can be sold

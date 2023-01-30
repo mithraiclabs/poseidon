@@ -37,7 +37,6 @@ describe("InitBoundedStrategy", () => {
     const accountInfo = await program.provider.connection.getAccountInfo(
       SOL_USDC_SERUM_MARKET
     );
-    console.log("*** market account info", accountInfo);
     serumMarket = await Market.load(
       program.provider.connection,
       SOL_USDC_SERUM_MARKET,
@@ -132,7 +131,6 @@ describe("InitBoundedStrategy", () => {
       await program.provider.sendAndConfirm(transaction);
     } catch (error) {
       const parsedError = parseTranactionError(error);
-      console.log("error: ", parsedError.msg);
       assert.ok(false);
     }
 
@@ -329,7 +327,6 @@ describe("InitBoundedStrategy", () => {
         await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
-        console.log("*** error", error);
         const parsedError = parseTranactionError(error);
         assert.equal(parsedError.msg, "Order side must be 0 or 1");
         assert.ok(true);

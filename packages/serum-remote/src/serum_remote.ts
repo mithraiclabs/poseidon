@@ -593,6 +593,28 @@ export type SerumRemote = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "reclaimV2",
+      "accounts": [
+        {
+          "name": "receiver",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the SOL"
+          ]
+        },
+        {
+          "name": "strategy",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategyV2 account"
+          ]
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -1618,6 +1640,28 @@ export const IDL: SerumRemote = {
           "name": "depositAccount",
           "isMut": true,
           "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "reclaimV2",
+      "accounts": [
+        {
+          "name": "receiver",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the SOL"
+          ]
+        },
+        {
+          "name": "strategy",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The BoundedStrategyV2 account"
+          ]
         }
       ],
       "args": []

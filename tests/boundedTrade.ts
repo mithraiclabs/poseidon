@@ -187,7 +187,6 @@ describe("BoundedTrade", () => {
             await program.provider.sendAndConfirm(transaction);
           } catch (error) {
             const parsedError = parseTranactionError(error);
-            console.log("error: ", parsedError.msg);
             assert.ok(false);
           }
           // Calculate the maxmium amount of SOL that can be bought)
@@ -251,9 +250,7 @@ describe("BoundedTrade", () => {
           try {
             await program.provider.sendAndConfirm(transaction);
           } catch (error) {
-            console.log("*** error", error);
             const parsedError = parseTranactionError(error);
-            console.log("error: ", parsedError.msg);
             assert.ok(false);
           }
           const referralAccountAfter = await tokenProgram.account.account.fetch(
@@ -262,10 +259,6 @@ describe("BoundedTrade", () => {
 
           const referralAmtDiff = referralAccountAfter.amount.sub(
             referralAccountBefore.amount
-          );
-          console.log(
-            "*** referralAmtDiff.toNumber()",
-            referralAmtDiff.toNumber()
           );
           // add the test for the referral account.
           assert.ok(referralAmtDiff.toNumber() > 0);
@@ -439,7 +432,6 @@ describe("BoundedTrade", () => {
             await program.provider.sendAndConfirm(transaction);
           } catch (error) {
             const parsedError = parseTranactionError(error);
-            console.log("error: ", parsedError.msg);
             assert.ok(false);
           }
           // Calculate the maxmium amount of SOL that can be sold

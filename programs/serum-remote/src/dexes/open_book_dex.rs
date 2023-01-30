@@ -9,7 +9,7 @@ use anchor_spl::{
             matching::{OrderType, Side},
             state::{gen_vault_signer_key, Market},
         },
-        InitOpenOrders,
+        CloseOpenOrders, InitOpenOrders,
     },
     token,
 };
@@ -18,8 +18,9 @@ use safe_transmute::transmute_to_bytes;
 
 use crate::{
     constants::{BOUNDED_STRATEGY_SEED, OPEN_ORDERS_SEED},
+    dexes::open_book_dex,
     errors::{self, ErrorCode},
-    instructions::InitBoundedStrategyV2,
+    instructions::{InitBoundedStrategyV2, ReclaimV2},
     open_orders_seeds, open_orders_signer_seeds,
     state::BoundedStrategyV2,
     strategy_signer_seeds,
@@ -463,5 +464,46 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
 
     fn destination_mint_account(&self) -> AccountInfo<'info> {
         self.destination_mint().to_account_info()
+    }
+
+    fn cleanup_accounts(&self, ctx: &Context<'_, '_, 'a, 'info, ReclaimV2<'info>>) -> Result<()> {
+        let bounded_strategy = &ctx.accounts.strategy;
+        let cpi_accounts = CloseOpenOrders {
+            open_orders: self.open_orders_account().to_account_info(),
+            authority: ctx.accounts.strategy.to_account_info(),
+            destination: ctx.accounts.receiver.to_account_info(),
+            market: self.serum_market().to_account_info(),
+        };
+        // Get the canonical OpenOrders bump
+        let (open_orders_key, open_orders_bump) = Pubkey::find_program_address(
+            open_orders_seeds!(&ctx.accounts.strategy),
+            ctx.program_id,
+        );
+        if open_orders_key != self.open_orders_account().key() {
+            return Err(error!(ErrorCode::BadOpenOrdersKey));
+        }
+        let cpi_ctx = CpiContext {
+            program: self.dex_program().to_account_info(),
+            accounts: cpi_accounts,
+            signer_seeds: &[
+                open_orders_signer_seeds!(&ctx.accounts.strategy, open_orders_bump),
+                strategy_signer_seeds!(bounded_strategy),
+            ],
+            remaining_accounts: Vec::new(),
+        };
+        let ix = anchor_spl::dex::serum_dex::instruction::close_open_orders(
+            &open_book_dex::ID,
+            cpi_ctx.accounts.open_orders.key,
+            cpi_ctx.accounts.authority.key,
+            cpi_ctx.accounts.destination.key,
+            cpi_ctx.accounts.market.key,
+        )
+        .map_err(|pe| ProgramError::from(pe))?;
+        anchor_lang::solana_program::program::invoke_signed(
+            &ix,
+            &ToAccountInfos::to_account_infos(&cpi_ctx),
+            cpi_ctx.signer_seeds,
+        )?;
+        Ok(())
     }
 }
