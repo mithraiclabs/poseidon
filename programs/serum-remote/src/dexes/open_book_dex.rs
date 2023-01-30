@@ -35,12 +35,9 @@ pub const MAX_ORDER_BOOK_DEPTH: usize = 3;
 const OPEN_ORDERS_MEM_SIZE: u64 = 3228;
 
 #[cfg(not(feature = "devnet"))]
-#[cfg(not(feature = "localnet"))]
 anchor_lang::declare_id!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX");
 #[cfg(feature = "devnet")]
 anchor_lang::declare_id!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj");
-#[cfg(feature = "localnet")]
-anchor_lang::declare_id!("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
 
 #[derive(Clone)]
 pub struct OpenBookDexV3;

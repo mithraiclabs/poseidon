@@ -12,13 +12,13 @@ export const USDC_MINT = new web3.PublicKey(
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 );
 export const SOL_USDC_SERUM_MARKET = new web3.PublicKey(
-  "9wFFyRfZBsuAha4YcuxcXLKwMxJR43S7fPfQLusDBzvT"
+  "8BnEgHoWFysVcuFFX7QztDmzuH8r5ZFvyP3sYwn1XTh6"
 );
 export const SOL_USDC_OPEN_BOOK_MARKET = new web3.PublicKey(
   "8BnEgHoWFysVcuFFX7QztDmzuH8r5ZFvyP3sYwn1XTh6"
 );
 export const DEX_ID = new web3.PublicKey(
-  "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
+  "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
 );
 
 export const OPEN_BOOK_DEX_ID = new web3.PublicKey(

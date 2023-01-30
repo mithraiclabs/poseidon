@@ -19,7 +19,7 @@ import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
 
 /**
  * SerumMarket is in the current state Bids and Asks
- * [ [ 92.687, 300, <BN: 16a0f>, <BN: bb8> ] ] [ [ 92.75, 191.5, <BN: 16a4e>, <BN: 77b> ] ]
+ * [23.709,29.329,"5c9d","7291"] [23.727,204.945,"5caf","032091"]
  */
 
 describe("BoundedTradeV2", () => {
@@ -292,7 +292,7 @@ describe("BoundedTradeV2", () => {
 
       describe("Bounded price is lower than lowest ask", () => {
         beforeEach(async () => {
-          const boundPriceNumerator = new anchor.BN(90_000_000);
+          const boundPriceNumerator = new anchor.BN(20_000_000);
           const boundPriceDenominator = new anchor.BN(1_000_000_000);
           ({ boundedStrategyKey } = await initBoundedStrategy(
             nonce,
@@ -402,9 +402,9 @@ describe("BoundedTradeV2", () => {
 
       describe("Bounded price is lower than highest bid", () => {
         beforeEach(async () => {
-          // Input 1 SOL and get at least 90 USDC for it
+          // Input 1 SOL and get at least 20 USDC for it
           const boundPriceNumerator = new anchor.BN(1_000_000_000);
-          const boundPriceDenominator = new anchor.BN(90_000_000);
+          const boundPriceDenominator = new anchor.BN(20_000_000);
 
           ({ boundedStrategyKey } = await initBoundedStrategy(
             nonce,
