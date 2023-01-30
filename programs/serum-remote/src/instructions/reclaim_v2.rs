@@ -1,11 +1,10 @@
+use std::collections::VecDeque;
+
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    dex::CloseOpenOrders,
-    token::{self, CloseAccount, Token, TokenAccount, Transfer},
-};
+use anchor_spl::token::{self, CloseAccount, Token, TokenAccount, Transfer};
 
 use crate::{
-    constants::BOUNDED_STRATEGY_SEED, errors::ErrorCode, state::BoundedStrategyV2,
+    constants::BOUNDED_STRATEGY_SEED, dexes::Route, errors::ErrorCode, state::BoundedStrategyV2,
     strategy_signer_seeds,
 };
 
@@ -37,11 +36,17 @@ pub struct ReclaimV2<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-pub fn handler(ctx: Context<ReclaimV2>) -> Result<()> {
+pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, ReclaimV2<'info>>) -> Result<()> {
     let bounded_strategy = &ctx.accounts.strategy;
     if bounded_strategy.reclaim_date > Clock::get()?.unix_timestamp {
         return Err(ErrorCode::ReclaimDateHasNotPassed.into());
     }
+
+    let route = Route::create(
+        ctx.remaining_accounts,
+        VecDeque::from(bounded_strategy.additional_data.to_vec()),
+        false,
+    )?;
 
     let cpi_accounts = Transfer {
         from: ctx.accounts.collateral_account.to_account_info(),
@@ -71,5 +76,5 @@ pub fn handler(ctx: Context<ReclaimV2>) -> Result<()> {
     };
     token::close_account(cpi_ctx)?;
 
-    Ok(())
+    route.cleanup_accounts(&ctx)
 }

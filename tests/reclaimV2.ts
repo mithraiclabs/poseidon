@@ -3,10 +3,7 @@ import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
-import {
-  BoundedStrategy,
-  parseTranactionError,
-} from "../packages/serum-remote/src";
+import { BoundedStrategyV2 } from "../packages/serum-remote/src";
 import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {
@@ -29,24 +26,21 @@ describe("ReclaimV2", () => {
 
   let boundPriceNumerator = new BN(95_700_000);
   let boundPriceDenominator = new BN(1_000_000_000);
-  let reclaimDate = new BN(new Date().getTime() / 1_000 + 3600);
   let reclaimAddress: web3.PublicKey;
   let depositAddress: web3.PublicKey;
   let orderSide = 0;
   let bound = 1;
   let transferAmount = new BN(10_000_000);
   let serumMarket: Market;
-  let boundPrice = new BN(957);
   let baseAddress: web3.PublicKey;
   let quoteTransferAmount = new BN(10_000_000);
   let baseTransferAmount = new BN(10_000_000_000);
-  let boundedStrategy: BoundedStrategy;
+  let boundedStrategy: BoundedStrategyV2;
   let boundedStrategyKey: web3.PublicKey,
-    authority: web3.PublicKey,
-    collateralAddress: web3.PublicKey;
+    collateralAddress: web3.PublicKey,
+    openOrdersKey: web3.PublicKey;
 
   const initBoundStrat = async (_reclaimDate: BN) => {
-    reclaimDate = _reclaimDate;
     const {
       boundedStrategy: _boundedStrategyKey,
       collateralAccount: _collateralAccount,
@@ -98,6 +92,7 @@ describe("ReclaimV2", () => {
       })
       .remainingAccounts(initAdditionalAccounts)
       .rpc();
+    openOrdersKey = initAdditionalAccounts[4].pubkey;
     boundedStrategy = await program.account.boundedStrategyV2.fetch(
       boundedStrategyKey
     );
@@ -195,12 +190,18 @@ describe("ReclaimV2", () => {
     });
 
     it("should return assets", async () => {
-      const [reclaimAccountBefore, collateralAccountBefore] = await Promise.all(
-        [
+      const [reclaimAccountBefore, collateralAccountBefore, remainingAccounts] =
+        await Promise.all([
           tokenProgram.account.account.fetch(reclaimAddress),
           tokenProgram.account.account.fetch(collateralAddress),
-        ]
-      );
+          OpenBookDex.reclaimAccounts(
+            program.programId,
+            serumMarket,
+            boundedStrategyKey,
+            boundedStrategy.collateralAccount,
+            boundedStrategy.depositAddress
+          ),
+        ]);
       try {
         await program.methods
           .reclaimV2()
@@ -211,18 +212,24 @@ describe("ReclaimV2", () => {
             reclaimAccount: reclaimAddress,
             tokenProgram: TOKEN_PROGRAM_ID,
           })
+          .remainingAccounts(remainingAccounts)
           .rpc();
       } catch (err) {
         console.log(err);
         assert.ok(false);
       }
 
-      const [reclaimAccountAfter, collateralAccountAfter, boundedStrategyInfo] =
-        await Promise.all([
-          tokenProgram.account.account.fetch(reclaimAddress),
-          program.provider.connection.getAccountInfo(collateralAddress),
-          program.provider.connection.getAccountInfo(boundedStrategyKey),
-        ]);
+      const [
+        reclaimAccountAfter,
+        collateralAccountAfter,
+        boundedStrategyInfo,
+        openOrdersInfo,
+      ] = await Promise.all([
+        tokenProgram.account.account.fetch(reclaimAddress),
+        program.provider.connection.getAccountInfo(collateralAddress),
+        program.provider.connection.getAccountInfo(boundedStrategyKey),
+        program.provider.connection.getAccountInfo(openOrdersKey),
+      ]);
       const reclaimDiff = reclaimAccountAfter.amount.sub(
         reclaimAccountBefore.amount
       );
@@ -232,6 +239,7 @@ describe("ReclaimV2", () => {
       );
       assert.ok(!collateralAccountAfter);
       assert.ok(!boundedStrategyInfo);
+      assert.ok(!openOrdersInfo);
     });
 
     it("should error on wrong receiver/reclaim address", async () => {

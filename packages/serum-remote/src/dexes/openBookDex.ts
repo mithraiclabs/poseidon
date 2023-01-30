@@ -130,8 +130,61 @@ export default class OpenBookDex {
       // TODO: Maybe actually implement this?
       { pubkey: web3.SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
       { pubkey: strategyKey, isWritable: false, isSigner: false },
-      { pubkey: collateralAccount, isWritable: true, isSigner: false },
+      { pubkey: collateralAccount, isWritable: false, isSigner: false },
       { pubkey: tradeDestinationAccount, isWritable: true, isSigner: false },
+    ];
+  }
+
+  static async reclaimAccounts(
+    remoteProgramId: web3.PublicKey,
+    serumMarket: Market,
+    strategyKey: web3.PublicKey,
+    collateralAccount: web3.PublicKey,
+    destinationAccount: web3.PublicKey
+  ): Promise<web3.AccountMeta[]> {
+    const [[openOrdersKey], vaultSigner] = await Promise.all([
+      this.deriveOpenOrders(remoteProgramId, strategyKey),
+      this.deriveVaultSigner(serumMarket),
+    ]);
+    return [
+      { pubkey: serumMarket.programId, isWritable: false, isSigner: false },
+      { pubkey: serumMarket.address, isWritable: false, isSigner: false },
+      { pubkey: serumMarket.bidsAddress, isWritable: false, isSigner: false },
+      { pubkey: serumMarket.asksAddress, isWritable: false, isSigner: false },
+      { pubkey: openOrdersKey, isWritable: true, isSigner: false },
+      {
+        // @ts-ignore
+        pubkey: serumMarket._decoded.requestQueue,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        // @ts-ignore
+        pubkey: serumMarket._decoded.eventQueue,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        // @ts-ignore
+        pubkey: serumMarket._decoded.baseVault,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        // @ts-ignore
+        pubkey: serumMarket._decoded.quoteVault,
+        isWritable: false,
+        isSigner: false,
+      },
+      { pubkey: vaultSigner, isWritable: false, isSigner: false },
+      { pubkey: TOKEN_PROGRAM_ID, isWritable: false, isSigner: false },
+      { pubkey: web3.SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
+      // This is the SRM referral account
+      // TODO: Maybe actually implement this?
+      { pubkey: web3.SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
+      { pubkey: strategyKey, isWritable: false, isSigner: false },
+      { pubkey: collateralAccount, isWritable: true, isSigner: false },
+      { pubkey: destinationAccount, isWritable: false, isSigner: false },
     ];
   }
 }
