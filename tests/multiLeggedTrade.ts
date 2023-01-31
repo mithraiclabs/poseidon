@@ -17,6 +17,7 @@ import {
 } from "./utils";
 import { createRaydiumPool } from "./utils/raydium";
 import { Currency, CurrencyAmount } from "@raydium-io/raydium-sdk";
+import Raydium from "../packages/serum-remote/src/dexes/raydium";
 
 let timesRun = 0;
 describe("OpenBook + Raydium Trade", () => {
@@ -35,6 +36,7 @@ describe("OpenBook + Raydium Trade", () => {
   let bound = 1;
   let transferAmount = new BN(10_000_000_000);
   let serumMarket: Market;
+  let coinMint: web3.PublicKey, coinUsdcSerumMarket: Market;
 
   before(async () => {
     serumMarket = await Market.load(
@@ -83,6 +85,7 @@ describe("OpenBook + Raydium Trade", () => {
       6
     );
     instructions.forEach((ix) => tx.add(ix));
+    coinMint = mintAccount.publicKey;
     // Createa $COIN ATA for payer
     const { instruction: coinMintIx, associatedAddress: coinAta } =
       await createAssociatedTokenInstruction(
@@ -103,23 +106,29 @@ describe("OpenBook + Raydium Trade", () => {
     tx.add(mintCoinIx);
     await program.provider.sendAndConfirm(tx, [mintAccount]);
 
-    // TODO: Spin up COIN/USDC pool on Raydium
-    // TODO: Deposit COIN/USDC liquidity to new pool on Raydium
-    await createRaydiumPool(
-      program.provider,
-      payerKey,
-      mintAccount.publicKey,
-      6,
-      USDC_MINT,
-      6,
-      new CurrencyAmount(
-        new Currency(6, "COIN"),
-        new BN(10_000_000_000).toString()
-      ),
-      new CurrencyAmount(
-        new Currency(6, "USDC"),
-        new BN(10_000_000_000).toString()
-      )
+    // Spin up COIN/USDC pool on Raydium and deposit COIN/USDC liquidity
+    const { serumMarketAddress: coinUsdcMarketAddress } =
+      await createRaydiumPool(
+        program.provider,
+        payerKey,
+        mintAccount.publicKey,
+        6,
+        USDC_MINT,
+        6,
+        new CurrencyAmount(
+          new Currency(6, "COIN"),
+          new BN(10_000_000_000).toString()
+        ),
+        new CurrencyAmount(
+          new Currency(6, "USDC"),
+          new BN(10_000_000_000).toString()
+        )
+      );
+    coinUsdcSerumMarket = await Market.load(
+      program.provider.connection,
+      coinUsdcMarketAddress,
+      {},
+      OPEN_BOOK_DEX_ID
     );
   });
   beforeEach(async () => {
@@ -135,6 +144,8 @@ describe("OpenBook + Raydium Trade", () => {
   });
 
   // Test the BoundedStrategy account is created with the right info
+  // As set up, this will be Buying COIN using SOL. Sell SOL for USDC on OpenBookDEX and buy COIN
+  //  using USDC from Raydium
   it("Should store all the information for a BoundedStretegyV2", async () => {
     const { boundedStrategy: boundedStrategyKey, collateralAccount } =
       await deriveAllBoundedStrategyKeysV2(program, USDC_MINT, {
@@ -150,15 +161,29 @@ describe("OpenBook + Raydium Trade", () => {
     const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
-    const initAdditionalAccounts = await OpenBookDex.initLegAccounts(
+    const initOpenBookRemainingAccounts = await OpenBookDex.initLegAccounts(
       program.programId,
       serumMarket,
       boundedStrategyKey,
       collateralAccount,
       depositAddress,
-      // This a dummy key for the destimation mint. It is not used in single leg transactions
-      web3.SystemProgram.programId
+      USDC_MINT
     );
+    const raydiumInitAccounts = Raydium.initLegAccounts(
+      coinMint,
+      6,
+      USDC_MINT,
+      6,
+      coinUsdcSerumMarket,
+      boundedStrategyKey,
+      collateralAccount,
+      depositAddress,
+      coinMint
+    );
+    const remainingAccounts = [
+      ...initOpenBookRemainingAccounts,
+      ...raydiumInitAccounts,
+    ];
     const additionalData = new BN(
       // @ts-ignore
       serumMarket._baseSplTokenDecimals
@@ -185,7 +210,7 @@ describe("OpenBook + Raydium Trade", () => {
         systemProgram: web3.SystemProgram.programId,
         rent: web3.SYSVAR_RENT_PUBKEY,
       })
-      .remainingAccounts(initAdditionalAccounts)
+      .remainingAccounts(remainingAccounts)
       .instruction();
     const transaction = new web3.Transaction().add(instruction);
     try {
@@ -234,7 +259,7 @@ describe("OpenBook + Raydium Trade", () => {
     assert.equal(boundedStrategy.bound, bound);
     // check additional accounts array
     boundedStrategy.accountList.forEach((key, index) => {
-      const expectedKey = initAdditionalAccounts[index];
+      const expectedKey = remainingAccounts[index];
       if (expectedKey) {
         assert.ok(key.equals(expectedKey.pubkey));
       } else {

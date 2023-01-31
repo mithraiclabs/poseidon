@@ -31,7 +31,7 @@ export const createRaydiumPool = async (
   quoteDecimals: number,
   baseAmount: CurrencyAmount,
   quoteAmount: CurrencyAmount
-) => {
+): Promise<{ serumMarketAddress: web3.PublicKey }> => {
   // Get the payer's token accounts
   const { tokenAccountRawInfos } = await getRichWalletTokenAccounts({
     connection: provider.connection,
@@ -106,6 +106,10 @@ export const createRaydiumPool = async (
   await provider.sendAndConfirm(initPoolTx, initPoolSigners, {
     skipPreflight: true,
   });
+
+  return {
+    serumMarketAddress: openBookMarketId,
+  };
 };
 
 /////////////////////////////// Buncha stuff ripped from Rayidum UI ///////////////////
