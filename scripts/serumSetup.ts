@@ -1,29 +1,7 @@
-import * as fs from "fs";
 import * as os from "os";
 import { web3 } from "@project-serum/anchor";
 import { DexInstructions, Market, OpenOrders } from "@project-serum/serum";
-
-export const loadPayer = (keypairPath: string): web3.Keypair => {
-  if (keypairPath) {
-    return web3.Keypair.fromSecretKey(
-      Buffer.from(
-        JSON.parse(
-          fs.readFileSync(keypairPath, {
-            encoding: "utf-8",
-          })
-        )
-      )
-    );
-  } else if (process.env.SECRET_KEY) {
-    return web3.Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(process.env.SECRET_KEY))
-    );
-  } else {
-    throw new Error(
-      "You must specify option --keypair or SECRET_KEY env variable"
-    );
-  }
-};
+import { loadPayer } from "../tests/utils";
 
 const connection = new web3.Connection("https://api.mainnet-beta.solana.com");
 

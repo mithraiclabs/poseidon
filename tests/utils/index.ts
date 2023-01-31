@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import { splTokenProgram } from "@coral-xyz/spl-token";
 import { Provider, web3 } from "@project-serum/anchor";
 import {
@@ -100,3 +101,25 @@ export default function tryCatch<T>(
     return catchFunction?.(err);
   }
 }
+
+export const loadPayer = (keypairPath: string): web3.Keypair => {
+  if (keypairPath) {
+    return web3.Keypair.fromSecretKey(
+      Buffer.from(
+        JSON.parse(
+          fs.readFileSync(keypairPath, {
+            encoding: "utf-8",
+          })
+        )
+      )
+    );
+  } else if (process.env.SECRET_KEY) {
+    return web3.Keypair.fromSecretKey(
+      Buffer.from(JSON.parse(process.env.SECRET_KEY))
+    );
+  } else {
+    throw new Error(
+      "You must specify option --keypair or SECRET_KEY env variable"
+    );
+  }
+};

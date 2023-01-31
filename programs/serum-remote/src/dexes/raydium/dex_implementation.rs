@@ -10,8 +10,6 @@ use super::{
     base_total_accessor, bnt_accessor, qnt_accessor, quote_total_accessor, swap_base_in,
 };
 
-anchor_lang::declare_id!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
-
 /**
  * RAYDIUM V4 SWAP ACCOUNT ORDER
  * 0 - Raydium program ID

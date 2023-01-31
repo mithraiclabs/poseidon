@@ -11,9 +11,11 @@ import { SerumRemote } from "../target/types/serum_remote";
 import {
   createAssociatedTokenInstruction,
   initNewTokenMintInstructions,
+  loadPayer,
   OPEN_BOOK_DEX_ID,
   SOL_USDC_OPEN_BOOK_MARKET,
   USDC_MINT,
+  wait,
 } from "./utils";
 import { createRaydiumPool } from "./utils/raydium";
 import { Currency, CurrencyAmount } from "@raydium-io/raydium-sdk";
@@ -23,8 +25,8 @@ let timesRun = 0;
 describe("OpenBook + Raydium Trade", () => {
   // Configure the client to use the local cluster.
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
-  // @ts-ignore: TODO: Remove after anchor npm upgrade
-  const payerKey = program.provider.wallet.publicKey;
+  const payerKey = program.provider.publicKey;
+  const payerKeypair = loadPayer(process.env.ANCHOR_WALLET);
   const tokenProgram = splTokenProgram();
 
   let boundPriceNumerator = new anchor.BN(95_700_000);
@@ -132,9 +134,8 @@ describe("OpenBook + Raydium Trade", () => {
     );
   });
   beforeEach(async () => {
-    // timesRun is used to generate unique seeds for the strategy, otherwise
-    //  the tests can fail with accounts already in use.
     timesRun += 1;
+    // TODO: do the math on the boundedPrice stuff
     boundPriceNumerator = new anchor.BN(95_700_000);
     boundPriceDenominator = new anchor.BN(1_000_000_000);
     reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600 + timesRun);
@@ -188,6 +189,40 @@ describe("OpenBook + Raydium Trade", () => {
       // @ts-ignore
       serumMarket._baseSplTokenDecimals
     ).toArrayLike(Buffer, "le", 1);
+    const initialTx = new web3.Transaction();
+    // Create ALT
+    const slot = await program.provider.connection.getSlot();
+    const [lookupTableInst, lookupTableAddress] =
+      web3.AddressLookupTableProgram.createLookupTable({
+        authority: payerKey,
+        payer: payerKey,
+        recentSlot: slot,
+      });
+    initialTx.add(lookupTableInst);
+    // extend ALT with chunk of accounts
+    const extendInstruction = web3.AddressLookupTableProgram.extendLookupTable({
+      payer: payerKey,
+      authority: payerKey,
+      lookupTable: lookupTableAddress,
+      addresses: remainingAccounts.map((x) => x.pubkey).slice(0, 20),
+    });
+    initialTx.add(extendInstruction);
+    await program.provider.sendAndConfirm(initialTx, [], {
+      skipPreflight: true,
+    });
+
+    // extend ALT with
+    const secondExtendTx = new web3.Transaction();
+    const extendInstruction2 = web3.AddressLookupTableProgram.extendLookupTable(
+      {
+        payer: payerKey,
+        authority: payerKey,
+        lookupTable: lookupTableAddress,
+        addresses: remainingAccounts.map((x) => x.pubkey).slice(20),
+      }
+    );
+    secondExtendTx.add(extendInstruction2);
+    await program.provider.sendAndConfirm(secondExtendTx);
 
     const instruction = await program.methods
       .initBoundedStrategyV2(
@@ -212,9 +247,36 @@ describe("OpenBook + Raydium Trade", () => {
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
-    const transaction = new web3.Transaction().add(instruction);
+    const instructions = [instruction];
+    let blockhash = await program.provider.connection
+      .getLatestBlockhash()
+      .then((res) => res.blockhash);
+    const lookupTableAccount = await program.provider.connection
+      // @ts-ignore: This is actually on the object, the IDE is wrong
+      .getAddressLookupTable(lookupTableAddress)
+      .then((res) => res.value);
+    // Wait until the current slot is greater than the last extended slot
+    let currentSlot = lookupTableAccount.state.lastExtendedSlot as number;
+    while (currentSlot <= lookupTableAccount.state.lastExtendedSlot) {
+      currentSlot = await program.provider.connection.getSlot();
+      await wait(250);
+    }
+    const messageV0 = new web3.TransactionMessage({
+      payerKey: payerKey,
+      recentBlockhash: blockhash,
+      instructions,
+    }).compileToV0Message([lookupTableAccount]);
+    const transaction = new web3.VersionedTransaction(messageV0);
     try {
-      await program.provider.sendAndConfirm(transaction);
+      // Create an versioned transaction and send with the ALT
+      transaction.sign([payerKeypair]);
+      const txid = await web3.sendAndConfirmRawTransaction(
+        program.provider.connection,
+        Buffer.from(transaction.serialize()),
+        {
+          skipPreflight: true,
+        }
+      );
     } catch (error) {
       console.error(error);
       const parsedError = parseTranactionError(error);

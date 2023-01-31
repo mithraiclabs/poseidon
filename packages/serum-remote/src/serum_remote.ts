@@ -852,6 +852,9 @@ export type SerumRemote = {
         "variants": [
           {
             "name": "OpenBookV3"
+          },
+          {
+            "name": "Raydium"
           }
         ]
       }
@@ -1923,6 +1926,9 @@ export const IDL: SerumRemote = {
         "variants": [
           {
             "name": "OpenBookV3"
+          },
+          {
+            "name": "Raydium"
           }
         ]
       }
