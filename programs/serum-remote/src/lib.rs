@@ -13,6 +13,10 @@ use crate::instructions::*;
 
 declare_id!("oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK");
 
+mod address_lut_program {
+    anchor_lang::declare_id!("AddressLookupTab1e1111111111111111111111111");
+}
+
 #[program]
 pub mod serum_remote {
     use super::*;

@@ -516,6 +516,14 @@ export type SerumRemote = {
           ]
         },
         {
+          "name": "lookupTable",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The look up table address."
+          ]
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -715,6 +723,14 @@ export type SerumRemote = {
               "The bump for the strategy's derived address"
             ],
             "type": "u8"
+          },
+          {
+            "name": "lookupTable",
+            "docs": [
+              "The address of the look up table. This needs to be stored on-chain for keeping clients",
+              "in sync"
+            ],
+            "type": "publicKey"
           },
           {
             "name": "accountList",
@@ -1590,6 +1606,14 @@ export const IDL: SerumRemote = {
           ]
         },
         {
+          "name": "lookupTable",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The look up table address."
+          ]
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -1789,6 +1813,14 @@ export const IDL: SerumRemote = {
               "The bump for the strategy's derived address"
             ],
             "type": "u8"
+          },
+          {
+            "name": "lookupTable",
+            "docs": [
+              "The address of the look up table. This needs to be stored on-chain for keeping clients",
+              "in sync"
+            ],
+            "type": "publicKey"
           },
           {
             "name": "accountList",

@@ -253,6 +253,7 @@ describe("OpenBook + Raydium Trade", () => {
         strategy: boundedStrategyKey,
         reclaimAccount: reclaimAddress,
         depositAccount: depositAddress,
+        lookupTable: lookupTableAddress,
         tokenProgram: SPL_TOKEN_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
         rent: web3.SYSVAR_RENT_PUBKEY,
@@ -331,6 +332,10 @@ describe("OpenBook + Raydium Trade", () => {
     );
     assert.equal(boundedStrategy.orderSide, orderSide);
     assert.equal(boundedStrategy.bound, bound);
+    assert.equal(
+      boundedStrategy.lookupTable.toString(),
+      lookupTableAddress.toString()
+    );
     // check additional accounts array
     boundedStrategy.accountList.forEach((key, index) => {
       const expectedKey = remainingAccounts[index];
