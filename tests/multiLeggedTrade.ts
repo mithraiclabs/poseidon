@@ -6,7 +6,10 @@ import { Market } from "@project-serum/serum";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
-import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
+import {
+  deriveAllBoundedStrategyKeysV2,
+  deriveTokenAccount,
+} from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {
   createAssociatedTokenInstruction,
@@ -162,12 +165,19 @@ describe("OpenBook + Raydium Trade", () => {
     const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
+    const [leg1TradeDestinationAccount, _] = deriveTokenAccount(
+      program,
+      boundedStrategyKey,
+      USDC_MINT
+    );
     const initOpenBookRemainingAccounts = await OpenBookDex.initLegAccounts(
       program.programId,
       serumMarket,
       boundedStrategyKey,
+      // Becuase this is the first leg, the Trade Source Account is still the collateralAccount
       collateralAccount,
-      depositAddress,
+      // Because this is a multi-leg route, with a following leg, the Trade Destination Account is a derived intermediary account
+      leg1TradeDestinationAccount,
       USDC_MINT
     );
     const raydiumInitAccounts = Raydium.initLegAccounts(
@@ -177,7 +187,9 @@ describe("OpenBook + Raydium Trade", () => {
       6,
       coinUsdcSerumMarket,
       boundedStrategyKey,
-      collateralAccount,
+      // Because this is the second leg, the Trade Source Account must use the leg 1 Trade Destination Account
+      leg1TradeDestinationAccount,
+      // Because this is the last leg, the Trade Destination Account is the deposit address
       depositAddress,
       coinMint
     );

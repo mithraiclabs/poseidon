@@ -258,7 +258,12 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
         let base_decimals_factor = 10_u64.pow(base_decimals.into());
 
         let base_mint = spl_token_utils::mint(&accounts[7].try_borrow_data()?);
-        let source_mint = spl_token_utils::mint(&accounts[14].try_borrow_data()?);
+        // With multi-legs, during initialization this SPL Token account may not exists. So fill with dummy address
+        let source_mint = if is_init {
+            anchor_lang::system_program::System::id()
+        } else {
+            spl_token_utils::mint(&accounts[14].try_borrow_data()?)
+        };
         let trade_is_bid = source_mint != base_mint;
 
         // Load the Serum Market to extract decimal data
