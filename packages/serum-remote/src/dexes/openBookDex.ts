@@ -95,9 +95,6 @@ export default class OpenBookDex {
     )[0];
 
     const vaultSigner = await this.deriveVaultSigner(serumMarket);
-    console.log(
-      `collateralAccount ${collateralAccount.toString()}\ntradeDestinationAccount ${tradeDestinationAccount.toString()}`
-    );
     return [
       { pubkey: serumMarket.programId, isWritable: false, isSigner: false },
       { pubkey: serumMarket.address, isWritable: true, isSigner: false },

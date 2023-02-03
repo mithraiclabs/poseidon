@@ -282,6 +282,7 @@ describe("OpenBook + Raydium Trade", () => {
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
+
     const instructions = [instruction];
     let blockhash = await program.provider.connection
       .getLatestBlockhash()
@@ -485,7 +486,7 @@ describe("OpenBook + Raydium Trade", () => {
       const depositTokenDiff = depositTokenAccountAfter.amount.sub(
         depositTokenAccountBefore.amount
       );
-      assert.equal(depositTokenDiff.toString(), "0");
+      assert.equal(depositTokenDiff.toString(), "236396");
     });
   });
 });

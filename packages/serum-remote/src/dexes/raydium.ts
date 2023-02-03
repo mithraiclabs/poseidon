@@ -143,7 +143,7 @@ export default class Raydium {
 
     return [
       { pubkey: this.V4_PROGRAM_ID, isWritable: false, isSigner: false },
-      { pubkey: associatedPoolKeys.id, isWritable: false, isSigner: false },
+      { pubkey: associatedPoolKeys.id, isWritable: true, isSigner: false },
       {
         pubkey: associatedPoolKeys.authority,
         isWritable: false,
@@ -151,22 +151,22 @@ export default class Raydium {
       },
       {
         pubkey: associatedPoolKeys.openOrders,
-        isWritable: false,
+        isWritable: true,
         isSigner: false,
       },
       {
         pubkey: associatedPoolKeys.targetOrders,
-        isWritable: false,
+        isWritable: true,
         isSigner: false,
       },
       {
         pubkey: associatedPoolKeys.baseVault,
-        isWritable: false,
+        isWritable: true,
         isSigner: false,
       },
       {
         pubkey: associatedPoolKeys.quoteVault,
-        isWritable: false,
+        isWritable: true,
         isSigner: false,
       },
       {
@@ -176,35 +176,35 @@ export default class Raydium {
       },
       {
         pubkey: associatedPoolKeys.marketId,
-        isWritable: false,
+        isWritable: true,
         isSigner: false,
       },
       {
         pubkey: serumMarket.bidsAddress,
-        isWritable: false,
+        isWritable: true,
         isSigner: false,
       },
-      { pubkey: serumMarket.asksAddress, isWritable: false, isSigner: false },
+      { pubkey: serumMarket.asksAddress, isWritable: true, isSigner: false },
       {
         // @ts-ignore
         pubkey: serumMarket._decoded.eventQueue,
-        isWritable: false,
+        isWritable: true,
         isSigner: false,
       },
       {
         // @ts-ignore
         pubkey: serumMarket._decoded.baseVault,
-        isWritable: false,
+        isWritable: true,
         isSigner: false,
       },
       {
         // @ts-ignore
         pubkey: serumMarket._decoded.quoteVault,
-        isWritable: false,
+        isWritable: true,
         isSigner: false,
       },
       { pubkey: vaultSigner, isWritable: false, isSigner: false },
-      { pubkey: tradeSourceAccount, isWritable: false, isSigner: false },
+      { pubkey: tradeSourceAccount, isWritable: true, isSigner: false },
       // If this is not the final Leg in a Route, than it must be writable.
       { pubkey: tradeDestinationAccount, isWritable: true, isSigner: false },
       { pubkey: strategyKey, isWritable: false, isSigner: false },
