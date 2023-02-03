@@ -87,13 +87,17 @@ export default class OpenBookDex {
     serumMarket: Market,
     strategyKey: web3.PublicKey,
     collateralAccount: web3.PublicKey,
-    tradeDestinationAccount: web3.PublicKey
+    tradeDestinationAccount: web3.PublicKey,
+    destinationMint: web3.PublicKey
   ): Promise<web3.AccountMeta[]> {
     const openOrdersKey = (
       await this.deriveOpenOrders(remoteProgramId, strategyKey)
     )[0];
 
     const vaultSigner = await this.deriveVaultSigner(serumMarket);
+    console.log(
+      `collateralAccount ${collateralAccount.toString()}\ntradeDestinationAccount ${tradeDestinationAccount.toString()}`
+    );
     return [
       { pubkey: serumMarket.programId, isWritable: false, isSigner: false },
       { pubkey: serumMarket.address, isWritable: true, isSigner: false },
@@ -133,6 +137,7 @@ export default class OpenBookDex {
       { pubkey: strategyKey, isWritable: false, isSigner: false },
       { pubkey: collateralAccount, isWritable: false, isSigner: false },
       { pubkey: tradeDestinationAccount, isWritable: true, isSigner: false },
+      { pubkey: destinationMint, isWritable: false, isSigner: false },
     ];
   }
 

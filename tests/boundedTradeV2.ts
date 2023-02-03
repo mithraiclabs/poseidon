@@ -235,7 +235,9 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategyKey,
             boundedStrategy.collateralAccount,
-            boundedStrategy.depositAddress
+            boundedStrategy.depositAddress,
+            // This a dummy key for the destimation mint. It is not used in single leg transactions
+            web3.SystemProgram.programId
           );
           // Create and send the BoundedTradeV2 transaction
           const ix = await program.methods
@@ -308,7 +310,9 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategyKey,
             boundedStrategy.collateralAccount,
-            boundedStrategy.depositAddress
+            boundedStrategy.depositAddress,
+            // This a dummy key for the destimation mint. It is not used in single leg transactions
+            web3.SystemProgram.programId
           );
           const ix = await program.methods
             .boundedTradeV2()
@@ -370,7 +374,9 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategyKey,
             boundedStrategy.collateralAccount,
-            boundedStrategy.depositAddress
+            boundedStrategy.depositAddress,
+            // This a dummy key for the destimation mint. It is not used in single leg transactions
+            web3.SystemProgram.programId
           );
           const ix = await program.methods
             .boundedTradeV2()
@@ -422,7 +428,9 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategyKey,
             boundedStrategy.collateralAccount,
-            boundedStrategy.depositAddress
+            boundedStrategy.depositAddress,
+            // This a dummy key for the destimation mint. It is not used in single leg transactions
+            web3.SystemProgram.programId
           );
           const ix = await program.methods
             .boundedTradeV2()

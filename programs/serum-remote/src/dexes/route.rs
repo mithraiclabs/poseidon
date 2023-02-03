@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 
 use crate::{
-    constants::OPEN_ORDERS_SEED,
     errors,
     instructions::{InitBoundedStrategyV2, ReclaimV2},
     token_account_seeds, token_account_signer_seeds,
@@ -283,6 +282,13 @@ fn is_in_bounds(
     //  bound. This must handle the case where output is less than input (i.e. the purchase price is < 1)
     let bounded_numerator = bounded_price_numerator * output;
     let executed_numerator = input * bounded_price_denominator;
+    msg!(
+        "i {} o {} bpn {} bpd {}",
+        input,
+        output,
+        bounded_price_numerator,
+        bounded_price_denominator
+    );
     if executed_numerator > bounded_numerator {
         false
     } else {

@@ -42,6 +42,7 @@ describe("OpenBook + Raydium Trade", () => {
   let transferAmount = new BN(10_000_000_000);
   let serumMarket: Market;
   let coinMint: web3.PublicKey, coinUsdcSerumMarket: Market;
+  let boundedStrategyKey: web3.PublicKey, collateralAccount: web3.PublicKey;
 
   before(async () => {
     serumMarket = await Market.load(
@@ -50,19 +51,22 @@ describe("OpenBook + Raydium Trade", () => {
       {},
       OPEN_BOOK_DEX_ID
     );
+    await program.provider.connection.requestAirdrop(
+      payerKey,
+      10_000_000_000_000
+    );
     const transaction = new web3.Transaction();
 
     // This TX may fail with concurrent tests
     // TODO: Write more elegant solution
     const { instruction, associatedAddress } =
       await createAssociatedTokenInstruction(program.provider, USDC_MINT);
-    reclaimAddress = associatedAddress;
-    const { instruction: baseMintAtaIx, associatedAddress: baseAta } =
+    const { instruction: baseMintAtaIx, associatedAddress: wSolAta } =
       await createAssociatedTokenInstruction(
         program.provider,
         serumMarket.baseMintAddress
       );
-    depositAddress = baseAta;
+    reclaimAddress = wSolAta;
     const createAtaTx = new web3.Transaction()
       .add(instruction)
       .add(baseMintAtaIx);
@@ -78,8 +82,21 @@ describe("OpenBook + Raydium Trade", () => {
         owner: payerKey,
       })
       .instruction();
-
     transaction.add(mintToInstruction);
+
+    // Send a bunch of SOL to the WSOL address
+    const solTransferIx = web3.SystemProgram.transfer({
+      fromPubkey: payerKey,
+      toPubkey: wSolAta,
+      lamports: 10_000_000_000,
+    });
+    transaction.add(solTransferIx);
+    const syncWSolIx = await tokenProgram.methods
+      .syncNative()
+      .accounts({ account: wSolAta })
+      .instruction();
+    transaction.add(syncWSolIx);
+
     await program.provider.sendAndConfirm(transaction);
 
     const tx = new web3.Transaction();
@@ -98,6 +115,7 @@ describe("OpenBook + Raydium Trade", () => {
         mintAccount.publicKey
       );
     tx.add(coinMintIx);
+    depositAddress = coinAta;
 
     // Mint $COIN to payer
     const mintCoinIx = await tokenProgram.methods
@@ -138,9 +156,9 @@ describe("OpenBook + Raydium Trade", () => {
   });
   beforeEach(async () => {
     timesRun += 1;
-    // TODO: do the math on the boundedPrice stuff
-    boundPriceNumerator = new anchor.BN(95_700_000);
-    boundPriceDenominator = new anchor.BN(1_000_000_000);
+    // Sell 1 SOL for at least 1 COIN (after all legs, fees, etc)
+    boundPriceNumerator = new anchor.BN(1_000_000_000);
+    boundPriceDenominator = new anchor.BN(1_000_000);
     reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600 + timesRun);
     orderSide = 0;
     bound = 1;
@@ -151,17 +169,21 @@ describe("OpenBook + Raydium Trade", () => {
   // As set up, this will be Buying COIN using SOL. Sell SOL for USDC on OpenBookDEX and buy COIN
   //  using USDC from Raydium
   it("Should store all the information for a BoundedStretegyV2", async () => {
-    const { boundedStrategy: boundedStrategyKey, collateralAccount } =
-      await deriveAllBoundedStrategyKeysV2(program, USDC_MINT, {
-        transferAmount,
-        boundPriceNumerator,
-        boundPriceDenominator,
-        reclaimDate,
-        reclaimAddress,
-        depositAddress,
-        orderSide,
-        bound,
-      });
+    ({ boundedStrategy: boundedStrategyKey, collateralAccount } =
+      await deriveAllBoundedStrategyKeysV2(
+        program,
+        serumMarket.baseMintAddress,
+        {
+          transferAmount,
+          boundPriceNumerator,
+          boundPriceDenominator,
+          reclaimDate,
+          reclaimAddress,
+          depositAddress,
+          orderSide,
+          bound,
+        }
+      ));
     const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
@@ -249,7 +271,7 @@ describe("OpenBook + Raydium Trade", () => {
       .accounts({
         payer: program.provider.publicKey,
         collateralAccount,
-        mint: USDC_MINT,
+        mint: serumMarket.baseMintAddress,
         strategy: boundedStrategyKey,
         reclaimAccount: reclaimAddress,
         depositAccount: depositAddress,
@@ -308,7 +330,7 @@ describe("OpenBook + Raydium Trade", () => {
     );
     assert.equal(
       boundedStrategy.collateralMint.toString(),
-      USDC_MINT.toString()
+      serumMarket.baseMintAddress.toString()
     );
     assert.equal(
       boundedStrategy.boundedPriceNumerator.toString(),
@@ -371,8 +393,99 @@ describe("OpenBook + Raydium Trade", () => {
       collateralTokenAccountAfter.amount.toString(),
       transferAmount.toString()
     );
+  });
+  // TODO: Test the execution of a BoundedTradeV2
+  describe("Execution price is lower than the bounded price", () => {
+    it("should execute the trade", async () => {
+      const boundedStrategy = await program.account.boundedStrategyV2.fetch(
+        boundedStrategyKey
+      );
+      const depositTokenAccountBefore =
+        await tokenProgram.account.account.fetch(
+          boundedStrategy.depositAddress
+        );
+      ////////////////// Get the reamining accounts ////////////
+      const [leg1TradeDestinationAccount, _] = deriveTokenAccount(
+        program,
+        boundedStrategyKey,
+        USDC_MINT
+      );
+      const openBookRemainingAccounts = await OpenBookDex.tradeAccounts(
+        program.programId,
+        serumMarket,
+        boundedStrategyKey,
+        // Becuase this is the first leg, the Trade Source Account is still the collateralAccount
+        collateralAccount,
+        // Because this is a multi-leg route, with a following leg, the Trade Destination Account is a derived intermediary account
+        leg1TradeDestinationAccount,
+        USDC_MINT
+      );
+      const raydiumRemainingAccounts = Raydium.tradeAccounts(
+        coinMint,
+        6,
+        USDC_MINT,
+        6,
+        coinUsdcSerumMarket,
+        boundedStrategyKey,
+        // Because this is the second leg, the Trade Source Account must use the leg 1 Trade Destination Account
+        leg1TradeDestinationAccount,
+        // Because this is the last leg, the Trade Destination Account is the deposit address
+        depositAddress,
+        coinMint
+      );
+      const remainingAccounts = [
+        ...openBookRemainingAccounts,
+        ...raydiumRemainingAccounts,
+      ];
+      ////////////////////// Get the LUT info ///////////////
+      const lookupTableAccount = await program.provider.connection
+        // @ts-ignore: This is actually on the object, the IDE is wrong
+        .getAddressLookupTable(boundedStrategy.lookupTable)
+        .then((res) => res.value);
+      const blockhash = await program.provider.connection
+        .getLatestBlockhash()
+        .then((res) => res.blockhash);
+      // Create and send the BoundedTradeV2 transaction
+      const ix = await program.methods
+        .boundedTradeV2()
+        .accounts({
+          payer: program.provider.publicKey,
+          strategy: boundedStrategyKey,
+          orderPayer: boundedStrategy.collateralAccount,
+          depositAccount: boundedStrategy.depositAddress,
+        })
+        .remainingAccounts(remainingAccounts)
+        .instruction();
 
-    // TODO: Remove this once the test is actually testing the multi-legged route
-    assert.ok(false);
+      const messageV0 = new web3.TransactionMessage({
+        payerKey: payerKey,
+        recentBlockhash: blockhash,
+        instructions: [ix],
+      }).compileToV0Message([lookupTableAccount]);
+      const transaction = new web3.VersionedTransaction(messageV0);
+      try {
+        // Create an versioned transaction and send with the ALT
+        transaction.sign([payerKeypair]);
+        const txid = await web3.sendAndConfirmRawTransaction(
+          program.provider.connection,
+          Buffer.from(transaction.serialize()),
+          {
+            skipPreflight: true,
+          }
+        );
+      } catch (error) {
+        console.error(error);
+        assert.ok(false);
+      }
+
+      // Validate that the deposit received the amount of SOL
+      const depositTokenAccountAfter = await tokenProgram.account.account.fetch(
+        boundedStrategy.depositAddress
+      );
+      const depositTokenDiff = depositTokenAccountAfter.amount.sub(
+        depositTokenAccountBefore.amount
+      );
+      assert.equal(depositTokenDiff.toString(), "0");
+    });
   });
 });

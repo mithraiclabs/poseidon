@@ -44,7 +44,9 @@ impl DexList {
         if is_init {
             start + accounts_len + 1
         } else {
-            start + accounts_len
+            // TODO: If we remove the Destination Mint from the account list for anything besides
+            //  init, this additional +1 key can be dropped
+            start + accounts_len + 1
         }
     }
 }

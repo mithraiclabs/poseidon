@@ -160,11 +160,13 @@ impl<'a, 'info> OpenBookDex<'a, 'info> {
         // Validate market and mint information
         let coin_mint = Pubkey::new(&transmute_to_bytes(&identity(market.coin_mint)));
         let pc_mint = Pubkey::new(&transmute_to_bytes(&identity(market.pc_mint)));
-        if bounded_strategy.order_side == 0 && bounded_strategy.collateral_mint != pc_mint {
+
+        // TODO: Review this order side. With multi-legs the order side makes no sense. Direction
+        //  of the trade should be determined by the mint addresses of source and destination
+        if self.trade_is_bid && bounded_strategy.collateral_mint != pc_mint {
             // If Bidding the assets to transfer must the the price currency mint
             return Err(error!(ErrorCode::BidsRequireQuoteCurrency));
-        } else if bounded_strategy.order_side == 1 && bounded_strategy.collateral_mint != coin_mint
-        {
+        } else if !self.trade_is_bid && bounded_strategy.collateral_mint != coin_mint {
             return Err(error!(ErrorCode::AsksRequireBaseCurrency));
         }
 
@@ -259,12 +261,13 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
 
         let base_mint = spl_token_utils::mint(&accounts[7].try_borrow_data()?);
         // With multi-legs, during initialization this SPL Token account may not exists. So fill with dummy address
-        let source_mint = if is_init {
-            anchor_lang::system_program::System::id()
+        let destination_mint = if is_init {
+            accounts[15].key()
         } else {
-            spl_token_utils::mint(&accounts[14].try_borrow_data()?)
+            spl_token_utils::mint(&accounts[15].try_borrow_data()?)
         };
-        let trade_is_bid = source_mint != base_mint;
+        let trade_is_bid = destination_mint == base_mint;
+        msg!("trade_is_bid {}", trade_is_bid);
 
         // Load the Serum Market to extract decimal data
         let market = Market::load(&accounts[1], accounts[0].key)
@@ -297,6 +300,7 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
                 market.pc_lot_size,
             )
         };
+        msg!("trade_is_bid {}", trade_is_bid);
 
         let fee_tier = serum_v3::fees::FeeTier::from_srm_and_msrm_balances(accounts[1].key);
         let (fee_numerator, fee_denominator) = fee_tier.taker_rate_fraction();

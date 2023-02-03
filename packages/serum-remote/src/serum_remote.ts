@@ -1084,6 +1084,11 @@ export type SerumRemote = {
       "code": 6025,
       "name": "BadTokenAccountKeyForLeg",
       "msg": "The intermediary token account key is incorrect"
+    },
+    {
+      "code": 6026,
+      "name": "BadLutProgramAddress",
+      "msg": "Bad LUT program address"
     }
   ]
 };
@@ -2174,6 +2179,11 @@ export const IDL: SerumRemote = {
       "code": 6025,
       "name": "BadTokenAccountKeyForLeg",
       "msg": "The intermediary token account key is incorrect"
+    },
+    {
+      "code": 6026,
+      "name": "BadLutProgramAddress",
+      "msg": "Bad LUT program address"
     }
   ]
 };
