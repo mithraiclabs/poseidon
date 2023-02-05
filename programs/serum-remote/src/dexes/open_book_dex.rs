@@ -262,7 +262,7 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
         let base_mint = spl_token_utils::mint(&accounts[7].try_borrow_data()?);
         // With multi-legs, during initialization this SPL Token account may not exists. So fill with dummy address
         let destination_mint = if is_init {
-            accounts[15].key()
+            accounts[16].key()
         } else {
             spl_token_utils::mint(&accounts[15].try_borrow_data()?)
         };

@@ -8,6 +8,7 @@ import {
   MintLayout,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { parseTranactionError } from "../../packages/serum-remote/src";
 
 export const USDC_MINT = new web3.PublicKey(
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
@@ -121,5 +122,90 @@ export const loadPayer = (keypairPath: string): web3.Keypair => {
     throw new Error(
       "You must specify option --keypair or SECRET_KEY env variable"
     );
+  }
+};
+
+export const createLookUpTable = async (
+  provider: Provider,
+  remainingAccounts: web3.AccountMeta[]
+) => {
+  const payerKey = provider.publicKey;
+  const initialTx = new web3.Transaction();
+  // Create ALT
+  const slot = await provider.connection.getSlot();
+  const [lookupTableInst, lookupTableAddress] =
+    web3.AddressLookupTableProgram.createLookupTable({
+      authority: payerKey,
+      payer: payerKey,
+      recentSlot: slot,
+    });
+  initialTx.add(lookupTableInst);
+  // extend ALT with chunk of accounts
+  const extendInstruction = web3.AddressLookupTableProgram.extendLookupTable({
+    payer: payerKey,
+    authority: payerKey,
+    lookupTable: lookupTableAddress,
+    addresses: remainingAccounts.map((x) => x.pubkey).slice(0, 20),
+  });
+  initialTx.add(extendInstruction);
+  await provider.sendAndConfirm(initialTx, [], {
+    skipPreflight: true,
+  });
+
+  // extend ALT with
+  if (remainingAccounts.length > 20) {
+    const secondExtendTx = new web3.Transaction();
+    const extendInstruction2 = web3.AddressLookupTableProgram.extendLookupTable(
+      {
+        payer: payerKey,
+        authority: payerKey,
+        lookupTable: lookupTableAddress,
+        addresses: remainingAccounts.map((x) => x.pubkey).slice(20),
+      }
+    );
+    secondExtendTx.add(extendInstruction2);
+    await provider.sendAndConfirm(secondExtendTx);
+  }
+  return lookupTableAddress;
+};
+
+export const compileAndSendV0Tx = async (
+  provider: Provider,
+  payerKeypair: web3.Keypair,
+  lookupTableAddress: web3.PublicKey,
+  instructions: web3.TransactionInstruction[],
+  onError: (err: Error) => void = () => {}
+) => {
+  let blockhash = await provider.connection
+    .getLatestBlockhash()
+    .then((res) => res.blockhash);
+  const lookupTableAccount = await provider.connection
+    // @ts-ignore: This is actually on the object, the IDE is wrong
+    .getAddressLookupTable(lookupTableAddress)
+    .then((res) => res.value);
+  // Wait until the current slot is greater than the last extended slot
+  let currentSlot = lookupTableAccount.state.lastExtendedSlot as number;
+  while (currentSlot <= lookupTableAccount.state.lastExtendedSlot) {
+    currentSlot = await provider.connection.getSlot();
+    await wait(250);
+  }
+  const messageV0 = new web3.TransactionMessage({
+    payerKey: provider.publicKey,
+    recentBlockhash: blockhash,
+    instructions,
+  }).compileToV0Message([lookupTableAccount]);
+  const transaction = new web3.VersionedTransaction(messageV0);
+  try {
+    // Create an versioned transaction and send with the ALT
+    transaction.sign([payerKeypair]);
+    const txid = await web3.sendAndConfirmRawTransaction(
+      provider.connection,
+      Buffer.from(transaction.serialize()),
+      {
+        skipPreflight: true,
+      }
+    );
+  } catch (error) {
+    onError(error);
   }
 };

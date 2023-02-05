@@ -7,8 +7,11 @@ import { BoundedStrategyV2 } from "../packages/serum-remote/src";
 import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {
+  compileAndSendV0Tx,
   createAssociatedTokenInstruction,
+  createLookUpTable,
   DEX_ID,
+  loadPayer,
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
   wait,
@@ -21,6 +24,7 @@ describe("ReclaimV2", () => {
   // Configure the client to use the local cluster.
   const program = workspace.SerumRemote as Program<SerumRemote>;
   const payerKey = program.provider.publicKey;
+  const payerKeypair = loadPayer(process.env.ANCHOR_WALLET);
   const tokenProgram = splTokenProgram();
 
   let boundPriceNumerator = new BN(95_700_000);
@@ -61,14 +65,17 @@ describe("ReclaimV2", () => {
       boundedStrategyKey,
       collateralAddress,
       depositAddress,
-      // This a dummy key for the destimation mint. It is not used in single leg transactions
-      web3.SystemProgram.programId
+      WRAPPED_SOL_MINT
     );
     const additionalData = new BN(
       // @ts-ignore
       serumMarket._baseSplTokenDecimals
     ).toArrayLike(Buffer, "le", 1);
-    await program.methods
+    const lookupTableAddress = await createLookUpTable(
+      program.provider,
+      initAdditionalAccounts
+    );
+    const ix = await program.methods
       .initBoundedStrategyV2(
         transferAmount,
         boundPriceNumerator,
@@ -83,6 +90,7 @@ describe("ReclaimV2", () => {
         collateralAccount: collateralAddress,
         mint: USDC_MINT,
         strategy: boundedStrategyKey,
+        lookupTable: lookupTableAddress,
         reclaimAccount: reclaimAddress,
         depositAccount: depositAddress,
         tokenProgram: SPL_TOKEN_PROGRAM_ID,
@@ -90,7 +98,16 @@ describe("ReclaimV2", () => {
         rent: web3.SYSVAR_RENT_PUBKEY,
       })
       .remainingAccounts(initAdditionalAccounts)
-      .rpc();
+      .instruction();
+    await compileAndSendV0Tx(
+      program.provider,
+      payerKeypair,
+      lookupTableAddress,
+      [ix],
+      (err) => {
+        console.error(err);
+      }
+    );
     openOrdersKey = initAdditionalAccounts[4].pubkey;
     boundedStrategy = await program.account.boundedStrategyV2.fetch(
       boundedStrategyKey
@@ -145,11 +162,12 @@ describe("ReclaimV2", () => {
     });
     transaction.add(transferBaseInstruction);
     // Sync the native account after the transfer
-    const syncNativeIx = tokenProgram.instruction.syncNative({
-      accounts: {
+    const syncNativeIx = await tokenProgram.methods
+      .syncNative()
+      .accounts({
         account: baseAddress,
-      },
-    });
+      })
+      .instruction();
     transaction.add(syncNativeIx);
     await program.provider.sendAndConfirm(transaction);
   });
@@ -198,7 +216,8 @@ describe("ReclaimV2", () => {
             serumMarket,
             boundedStrategyKey,
             boundedStrategy.collateralAccount,
-            boundedStrategy.depositAddress
+            boundedStrategy.depositAddress,
+            WRAPPED_SOL_MINT
           ),
         ]);
       try {

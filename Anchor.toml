@@ -53,7 +53,7 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/multiLeggedTrade.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 
 [programs.devnet]
 serum_remote = "oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK"

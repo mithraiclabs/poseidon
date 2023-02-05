@@ -9,17 +9,22 @@ import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
 import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {
+  compileAndSendV0Tx,
   createAssociatedTokenInstruction,
+  createLookUpTable,
   DEX_ID,
+  loadPayer,
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
 } from "./utils";
+import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 
 let timesRun = 0;
 describe("InitBoundedStrategyV2", () => {
   // Configure the client to use the local cluster.
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
   const payerKey = program.provider.publicKey;
+  const payerKeypair = loadPayer(process.env.ANCHOR_WALLET);
   const tokenProgram = splTokenProgram();
 
   let boundPriceNumerator = new anchor.BN(95_700_000);
@@ -33,9 +38,6 @@ describe("InitBoundedStrategyV2", () => {
   let serumMarket: Market;
 
   before(async () => {
-    const accountInfo = await program.provider.connection.getAccountInfo(
-      SOL_USDC_SERUM_MARKET
-    );
     serumMarket = await Market.load(
       program.provider.connection,
       SOL_USDC_SERUM_MARKET,
@@ -106,13 +108,16 @@ describe("InitBoundedStrategyV2", () => {
       boundedStrategyKey,
       collateralAccount,
       depositAddress,
-      // This a dummy key for the destimation mint. It is not used in single leg transactions
-      web3.SystemProgram.programId
+      WRAPPED_SOL_MINT
     );
     const additionalData = new BN(
       // @ts-ignore
       serumMarket._baseSplTokenDecimals
     ).toArrayLike(Buffer, "le", 1);
+    const lookupTableAddress = await createLookUpTable(
+      program.provider,
+      initAdditionalAccounts
+    );
 
     const instruction = await program.methods
       .initBoundedStrategyV2(
@@ -129,6 +134,7 @@ describe("InitBoundedStrategyV2", () => {
         collateralAccount,
         mint: USDC_MINT,
         strategy: boundedStrategyKey,
+        lookupTable: lookupTableAddress,
         reclaimAccount: reclaimAddress,
         depositAccount: depositAddress,
         tokenProgram: SPL_TOKEN_PROGRAM_ID,
@@ -137,12 +143,16 @@ describe("InitBoundedStrategyV2", () => {
       })
       .remainingAccounts(initAdditionalAccounts)
       .instruction();
-    const transaction = new web3.Transaction().add(instruction);
-    try {
-      await program.provider.sendAndConfirm(transaction);
-    } catch (error) {
-      assert.ok(false);
-    }
+    await compileAndSendV0Tx(
+      program.provider,
+      payerKeypair,
+      lookupTableAddress,
+      [instruction],
+      (err) => {
+        console.error(err);
+        assert.ok(false);
+      }
+    );
 
     const boundedStrategy = await program.account.boundedStrategyV2.fetch(
       boundedStrategyKey

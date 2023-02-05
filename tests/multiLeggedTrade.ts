@@ -12,7 +12,9 @@ import {
 } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {
+  compileAndSendV0Tx,
   createAssociatedTokenInstruction,
+  createLookUpTable,
   initNewTokenMintInstructions,
   loadPayer,
   OPEN_BOOK_DEX_ID,
@@ -223,40 +225,10 @@ describe("OpenBook + Raydium Trade", () => {
       // @ts-ignore
       serumMarket._baseSplTokenDecimals
     ).toArrayLike(Buffer, "le", 1);
-    const initialTx = new web3.Transaction();
-    // Create ALT
-    const slot = await program.provider.connection.getSlot();
-    const [lookupTableInst, lookupTableAddress] =
-      web3.AddressLookupTableProgram.createLookupTable({
-        authority: payerKey,
-        payer: payerKey,
-        recentSlot: slot,
-      });
-    initialTx.add(lookupTableInst);
-    // extend ALT with chunk of accounts
-    const extendInstruction = web3.AddressLookupTableProgram.extendLookupTable({
-      payer: payerKey,
-      authority: payerKey,
-      lookupTable: lookupTableAddress,
-      addresses: remainingAccounts.map((x) => x.pubkey).slice(0, 20),
-    });
-    initialTx.add(extendInstruction);
-    await program.provider.sendAndConfirm(initialTx, [], {
-      skipPreflight: true,
-    });
-
-    // extend ALT with
-    const secondExtendTx = new web3.Transaction();
-    const extendInstruction2 = web3.AddressLookupTableProgram.extendLookupTable(
-      {
-        payer: payerKey,
-        authority: payerKey,
-        lookupTable: lookupTableAddress,
-        addresses: remainingAccounts.map((x) => x.pubkey).slice(20),
-      }
+    const lookupTableAddress = await createLookUpTable(
+      program.provider,
+      remainingAccounts
     );
-    secondExtendTx.add(extendInstruction2);
-    await program.provider.sendAndConfirm(secondExtendTx);
 
     const instruction = await program.methods
       .initBoundedStrategyV2(
@@ -284,41 +256,18 @@ describe("OpenBook + Raydium Trade", () => {
       .instruction();
 
     const instructions = [instruction];
-    let blockhash = await program.provider.connection
-      .getLatestBlockhash()
-      .then((res) => res.blockhash);
-    const lookupTableAccount = await program.provider.connection
-      // @ts-ignore: This is actually on the object, the IDE is wrong
-      .getAddressLookupTable(lookupTableAddress)
-      .then((res) => res.value);
-    // Wait until the current slot is greater than the last extended slot
-    let currentSlot = lookupTableAccount.state.lastExtendedSlot as number;
-    while (currentSlot <= lookupTableAccount.state.lastExtendedSlot) {
-      currentSlot = await program.provider.connection.getSlot();
-      await wait(250);
-    }
-    const messageV0 = new web3.TransactionMessage({
-      payerKey: payerKey,
-      recentBlockhash: blockhash,
+    await compileAndSendV0Tx(
+      program.provider,
+      payerKeypair,
+      lookupTableAddress,
       instructions,
-    }).compileToV0Message([lookupTableAccount]);
-    const transaction = new web3.VersionedTransaction(messageV0);
-    try {
-      // Create an versioned transaction and send with the ALT
-      transaction.sign([payerKeypair]);
-      const txid = await web3.sendAndConfirmRawTransaction(
-        program.provider.connection,
-        Buffer.from(transaction.serialize()),
-        {
-          skipPreflight: true,
-        }
-      );
-    } catch (error) {
-      console.error(error);
-      const parsedError = parseTranactionError(error);
-      console.log("error: ", parsedError.msg);
-      assert.ok(false);
-    }
+      (err) => {
+        console.error(err);
+        const parsedError = parseTranactionError(err);
+        console.log("error: ", parsedError.msg);
+        assert.ok(false);
+      }
+    );
 
     const boundedStrategy = await program.account.boundedStrategyV2.fetch(
       boundedStrategyKey
@@ -438,14 +387,6 @@ describe("OpenBook + Raydium Trade", () => {
         ...openBookRemainingAccounts,
         ...raydiumRemainingAccounts,
       ];
-      ////////////////////// Get the LUT info ///////////////
-      const lookupTableAccount = await program.provider.connection
-        // @ts-ignore: This is actually on the object, the IDE is wrong
-        .getAddressLookupTable(boundedStrategy.lookupTable)
-        .then((res) => res.value);
-      const blockhash = await program.provider.connection
-        .getLatestBlockhash()
-        .then((res) => res.blockhash);
       // Create and send the BoundedTradeV2 transaction
       const ix = await program.methods
         .boundedTradeV2()
@@ -457,27 +398,17 @@ describe("OpenBook + Raydium Trade", () => {
         })
         .remainingAccounts(remainingAccounts)
         .instruction();
-
-      const messageV0 = new web3.TransactionMessage({
-        payerKey: payerKey,
-        recentBlockhash: blockhash,
-        instructions: [ix],
-      }).compileToV0Message([lookupTableAccount]);
-      const transaction = new web3.VersionedTransaction(messageV0);
-      try {
-        // Create an versioned transaction and send with the ALT
-        transaction.sign([payerKeypair]);
-        const txid = await web3.sendAndConfirmRawTransaction(
-          program.provider.connection,
-          Buffer.from(transaction.serialize()),
-          {
-            skipPreflight: true,
-          }
-        );
-      } catch (error) {
-        console.error(error);
-        assert.ok(false);
-      }
+      ////////////////////// Get the LUT info ///////////////
+      await compileAndSendV0Tx(
+        program.provider,
+        payerKeypair,
+        boundedStrategy.lookupTable,
+        [ix],
+        (err) => {
+          console.error(err);
+          assert.ok(false);
+        }
+      );
 
       // Validate that the deposit received the amount of SOL
       const depositTokenAccountAfter = await tokenProgram.account.account.fetch(
