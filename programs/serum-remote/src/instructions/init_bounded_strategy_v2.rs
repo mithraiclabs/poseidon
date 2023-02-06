@@ -7,7 +7,7 @@ use crate::{
     constants::{BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
     dexes::{DexList, Leg, Route},
     errors::{self, ErrorCode},
-    state::BoundedStrategyV2,
+    state::{BoundedStrategyV2, MAX_ACCOUNTS},
 };
 
 #[derive(Accounts)]
@@ -25,7 +25,7 @@ pub struct InitBoundedStrategyV2<'info> {
       )]
     pub collateral_account: Box<Account<'info, TokenAccount>>,
 
-    pub mint: Account<'info, Mint>,
+    pub mint: Box<Account<'info, Mint>>,
     /// TODO: The BoundedStrategy seeds will likely need another key. Otherwise DAO's and other
     /// users will be uniquely constrained by these values.
     #[account(
@@ -41,13 +41,19 @@ pub struct InitBoundedStrategyV2<'info> {
     constraint = reclaim_account.mint == mint.key()
       @ ErrorCode::BadReclaimAddress
   )]
-    pub reclaim_account: Account<'info, TokenAccount>,
+    pub reclaim_account: Box<Account<'info, TokenAccount>>,
     /// The account where swapped assets will be transferred to
     #[account(
         constraint = deposit_account.owner == reclaim_account.owner
         @ ErrorCode::BadDepositAddress
     )]
-    pub deposit_account: Account<'info, TokenAccount>,
+    pub deposit_account: Box<Account<'info, TokenAccount>>,
+    /// The look up table address.
+    /// CHECK: owner check is handled
+    #[account(
+        owner = crate::address_lut_program::ID @ ErrorCode::BadLutProgramAddress
+    )]
+    pub lookup_table: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
     #[account(
     constraint = system_program.key() == anchor_lang::solana_program::system_program::ID
@@ -69,6 +75,9 @@ pub fn handler<'info>(
     bound: u8,
     additional_data: Vec<u8>,
 ) -> Result<()> {
+    if ctx.remaining_accounts.len() > MAX_ACCOUNTS {
+        return Err(error!(ErrorCode::TooManyAccounts));
+    }
     // Set BoundedStrategy information
     let strategy_bump = match ctx.bumps.get("strategy") {
         Some(bump) => *bump,
@@ -88,6 +97,7 @@ pub fn handler<'info>(
     bounded_strategy.order_side = order_side;
     bounded_strategy.bound = bound;
     bounded_strategy.bump = strategy_bump;
+    bounded_strategy.lookup_table = ctx.accounts.lookup_table.key();
     for (dst, src) in bounded_strategy
         .additional_data
         .iter_mut()
@@ -107,6 +117,7 @@ pub fn handler<'info>(
     let mut added_data = VecDeque::from(additional_data);
     while let Some(dex_program) = ctx.remaining_accounts.get(account_cursor) {
         let dex = DexList::from_id(dex_program.key())?;
+        msg!("Dex {:?}", dex);
         let end_index = dex.get_end_account_idx(account_cursor, true);
 
         let account_infos = &ctx.remaining_accounts[account_cursor..end_index];

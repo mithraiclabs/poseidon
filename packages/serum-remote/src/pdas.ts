@@ -104,3 +104,13 @@ export const deriveAllBoundedStrategyKeysV2 = (
   const [collateralAccount] = deriveCollateralAccount(program, boundedStrategy);
   return { collateralAccount, boundedStrategy };
 };
+
+export const deriveTokenAccount = (
+  program: Program<SerumRemote>,
+  strategyKey: web3.PublicKey,
+  mint: web3.PublicKey
+): [web3.PublicKey, number] =>
+  web3.PublicKey.findProgramAddressSync(
+    [strategyKey.toBuffer(), mint.toBuffer()],
+    program.programId
+  );

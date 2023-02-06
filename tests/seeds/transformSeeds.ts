@@ -2,8 +2,7 @@ import fs from "fs/promises";
 import YAML from "yaml";
 import { BN, Idl, web3 } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
-import { IdlField, IdlType } from "./idlTypes";
-import { u64 } from "@solana/spl-token";
+import { IdlType } from "./idlTypes";
 
 const SEEDS_DIR = "tests/seeds";
 

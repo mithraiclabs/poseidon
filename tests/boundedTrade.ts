@@ -2,7 +2,6 @@ import * as anchor from "@project-serum/anchor";
 import { BN, Program, web3 } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Market, DexInstructions } from "@project-serum/serum";
-import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
 import {
   BoundedStrategy,
@@ -31,8 +30,7 @@ describe("BoundedTrade", () => {
   // Configure the client to use the local cluster.
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
 
-  // @ts-ignore: TODO: Remove after anchor npm upgrade
-  const payerKey = program.provider.wallet.publicKey;
+  const payerKey = program.provider.publicKey;
   const tokenProgram = splTokenProgram({ programId: SPL_TOKEN_PROGRAM_ID });
 
   let boundPrice = new anchor.BN(957);
@@ -101,14 +99,14 @@ describe("BoundedTrade", () => {
     );
 
     const transaction = new web3.Transaction();
-    const mintToInstruction = Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      USDC_MINT,
-      associatedAddress,
-      payerKey,
-      [],
-      quoteTransferAmount.muln(10).toNumber()
-    );
+    const mintToInstruction = await tokenProgram.methods
+      .mintTo(quoteTransferAmount.muln(10))
+      .accounts({
+        mint: USDC_MINT,
+        account: associatedAddress,
+        owner: payerKey,
+      })
+      .instruction();
     transaction.add(mintToInstruction);
     // Move SOL to wrapped SOL
     const transferBaseInstruction = web3.SystemProgram.transfer({

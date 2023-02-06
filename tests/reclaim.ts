@@ -2,7 +2,6 @@ import * as anchor from "@project-serum/anchor";
 import { BN, Program, web3 } from "@project-serum/anchor";
 import { splTokenProgram } from "@coral-xyz/spl-token";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
-import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { assert } from "chai";
 import {
   BoundedStrategy,
@@ -66,14 +65,14 @@ describe("Reclaim", () => {
     } catch (err) {}
 
     const transaction = new web3.Transaction();
-    const mintToInstruction = Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      USDC_MINT,
-      associatedAddress,
-      payerKey,
-      [],
-      quoteTransferAmount.muln(10).toNumber()
-    );
+    const mintToInstruction = await tokenProgram.methods
+      .mintTo(quoteTransferAmount.muln(10))
+      .accounts({
+        mint: USDC_MINT,
+        account: associatedAddress,
+        owner: payerKey,
+      })
+      .instruction();
     transaction.add(mintToInstruction);
     // Move SOL to wrapped SOL
     const transferBaseInstruction = web3.SystemProgram.transfer({

@@ -33,6 +33,7 @@ export type BoundedStrategyV2 = {
   reclaimDate: BN;
   reclaimAddress: web3.PublicKey;
   depositAddress: web3.PublicKey;
+  lookupTable: web3.PublicKey;
   bound: number;
   boundedPriceNumerator: BN;
   boundedPriceDenominator: BN;

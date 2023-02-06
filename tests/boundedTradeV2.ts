@@ -1,46 +1,40 @@
 import * as anchor from "@project-serum/anchor";
 import { BN, Program, web3 } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
-import { Market, DexInstructions } from "@project-serum/serum";
-import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Market } from "@project-serum/serum";
 import { assert } from "chai";
 import {
-  BoundedStrategy,
   BoundedStrategyV2,
   parseTranactionError,
 } from "../packages/serum-remote/src";
-import { boundedTradeIx } from "../packages/serum-remote/src/instructions/boundedTrade";
-import { initializeBoundedStrategy } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
-import {
-  deriveAllBoundedStrategyKeys,
-  deriveAllBoundedStrategyKeysV2,
-} from "../packages/serum-remote/src/pdas";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
 import { SerumRemote } from "../target/types/serum_remote";
 import {
+  compileAndSendV0Tx,
   createAssociatedTokenInstruction,
+  createLookUpTable,
   DEX_ID,
+  loadPayer,
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
 } from "./utils";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
-
-let openOrdersAccount: web3.PublicKey;
+import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 
 /**
  * SerumMarket is in the current state Bids and Asks
- * [ [ 92.687, 300, <BN: 16a0f>, <BN: bb8> ] ] [ [ 92.75, 191.5, <BN: 16a4e>, <BN: 77b> ] ]
+ * [23.709,29.329,"5c9d","7291"] [23.727,204.945,"5caf","032091"]
  */
 
 describe("BoundedTradeV2", () => {
   // Configure the client to use the local cluster.
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
 
-  // @ts-ignore: TODO: Remove after anchor npm upgrade
-  const payerKey = program.provider.wallet.publicKey;
+  const payerKey = program.provider.publicKey;
+  const payerKeypair = loadPayer(process.env.ANCHOR_WALLET);
+
   const tokenProgram = splTokenProgram({ programId: SPL_TOKEN_PROGRAM_ID });
 
-  let boundPrice = new anchor.BN(957);
-  let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
   let quoteAddress: web3.PublicKey;
   let baseAddress: web3.PublicKey;
   let orderSide = 1;
@@ -51,7 +45,6 @@ describe("BoundedTradeV2", () => {
   let quoteTransferAmount = new BN(10_000_000);
   let baseTransferAmount = new BN(10_000_000_000);
   let boundedStrategy: BoundedStrategyV2;
-  let serumReferralKey: web3.PublicKey;
   let nonce = 1;
   let boundedStrategyKey: web3.PublicKey;
   let initBoundedStrategy: (
@@ -61,6 +54,7 @@ describe("BoundedTradeV2", () => {
     depositAddress: web3.PublicKey,
     reclaimAddress: web3.PublicKey,
     collateralMint: web3.PublicKey,
+    destinationMint: web3.PublicKey,
     transferAmount: BN
   ) => Promise<{
     boundedStrategyKey: web3.PublicKey;
@@ -99,7 +93,6 @@ describe("BoundedTradeV2", () => {
         USDC_MINT,
         referralOwner.publicKey
       );
-    serumReferralKey = referralAta;
     const createAtaTx = new web3.Transaction()
       .add(instruction)
       .add(baseMintAtaIx)
@@ -114,14 +107,14 @@ describe("BoundedTradeV2", () => {
     );
 
     const transaction = new web3.Transaction();
-    const mintToInstruction = Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      USDC_MINT,
-      associatedAddress,
-      payerKey,
-      [],
-      quoteTransferAmount.muln(10).toNumber()
-    );
+    const mintToInstruction = await tokenProgram.methods
+      .mintTo(quoteTransferAmount.muln(10))
+      .accounts({
+        mint: USDC_MINT,
+        account: associatedAddress,
+        owner: payerKey,
+      })
+      .instruction();
     transaction.add(mintToInstruction);
     // Move SOL to wrapped SOL
     const transferBaseInstruction = web3.SystemProgram.transfer({
@@ -146,6 +139,7 @@ describe("BoundedTradeV2", () => {
       depositAddress: web3.PublicKey,
       reclaimAddress: web3.PublicKey,
       collateralMint: web3.PublicKey,
+      destinationMint: web3.PublicKey,
       transferAmount: BN
     ) => {
       const reclaimDate = new anchor.BN(
@@ -168,13 +162,16 @@ describe("BoundedTradeV2", () => {
         boundedStrategyKey,
         collateralAccount,
         depositAddress,
-        // This a dummy key for the destimation mint. It is not used in single leg transactions
-        web3.SystemProgram.programId
+        destinationMint
       );
       const additionalData = new BN(
         // @ts-ignore
         serumMarket._baseSplTokenDecimals
       ).toArrayLike(Buffer, "le", 1);
+      const lookupTableAddress = await createLookUpTable(
+        program.provider,
+        initAdditionalAccounts
+      );
 
       const instruction = await program.methods
         .initBoundedStrategyV2(
@@ -190,6 +187,7 @@ describe("BoundedTradeV2", () => {
           payer: program.provider.publicKey,
           collateralAccount,
           mint: collateralMint,
+          lookupTable: lookupTableAddress,
           strategy: boundedStrategyKey,
           reclaimAccount: reclaimAddress,
           depositAccount: depositAddress,
@@ -199,8 +197,16 @@ describe("BoundedTradeV2", () => {
         })
         .remainingAccounts(initAdditionalAccounts)
         .instruction();
-      const transaction = new web3.Transaction().add(instruction);
-      await program.provider.sendAndConfirm(transaction);
+      await compileAndSendV0Tx(
+        program.provider,
+        payerKeypair,
+        lookupTableAddress,
+        [instruction],
+        (err) => {
+          console.error(err);
+          assert.ok(false);
+        }
+      );
       return {
         boundedStrategyKey,
       };
@@ -230,6 +236,7 @@ describe("BoundedTradeV2", () => {
             baseAddress,
             quoteAddress,
             serumMarket.quoteMintAddress,
+            WRAPPED_SOL_MINT,
             quoteTransferAmount
           ));
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
@@ -244,7 +251,8 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategyKey,
             boundedStrategy.collateralAccount,
-            boundedStrategy.depositAddress
+            boundedStrategy.depositAddress,
+            WRAPPED_SOL_MINT
           );
           // Create and send the BoundedTradeV2 transaction
           const ix = await program.methods
@@ -257,14 +265,15 @@ describe("BoundedTradeV2", () => {
             })
             .remainingAccounts(remainingAccounts)
             .instruction();
-          const transaction = new web3.Transaction().add(ix);
-          try {
-            await program.provider.sendAndConfirm(transaction);
-          } catch (error) {
-            console.error(error);
-            const parsedError = parseTranactionError(error);
-            assert.ok(false);
-          }
+          await compileAndSendV0Tx(
+            program.provider,
+            payerKeypair,
+            boundedStrategy.lookupTable,
+            [ix],
+            (err) => {
+              assert.ok(false);
+            }
+          );
           // Calculate the maxmium amount of SOL that can be bought)
           const transferNum =
             quoteTransferAmount.toNumber() /
@@ -296,7 +305,7 @@ describe("BoundedTradeV2", () => {
 
       describe("Bounded price is lower than lowest ask", () => {
         beforeEach(async () => {
-          const boundPriceNumerator = new anchor.BN(90_000_000);
+          const boundPriceNumerator = new anchor.BN(20_000_000);
           const boundPriceDenominator = new anchor.BN(1_000_000_000);
           ({ boundedStrategyKey } = await initBoundedStrategy(
             nonce,
@@ -305,6 +314,7 @@ describe("BoundedTradeV2", () => {
             baseAddress,
             quoteAddress,
             serumMarket.quoteMintAddress,
+            WRAPPED_SOL_MINT,
             quoteTransferAmount
           ));
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
@@ -317,7 +327,8 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategyKey,
             boundedStrategy.collateralAccount,
-            boundedStrategy.depositAddress
+            boundedStrategy.depositAddress,
+            WRAPPED_SOL_MINT
           );
           const ix = await program.methods
             .boundedTradeV2()
@@ -329,14 +340,16 @@ describe("BoundedTradeV2", () => {
             })
             .remainingAccounts(remainingAccounts)
             .instruction();
-          const transaction = new web3.Transaction().add(ix);
-          try {
-            await program.provider.sendAndConfirm(transaction);
-            assert.ok(false);
-          } catch (error) {
-            const parsedError = parseTranactionError(error);
-            assert.equal(parsedError.msg, "Market price is out of bounds");
-          }
+          await compileAndSendV0Tx(
+            program.provider,
+            payerKeypair,
+            boundedStrategy.lookupTable,
+            [ix],
+            (err) => {
+              const parsedError = parseTranactionError(err);
+              assert.equal(parsedError.msg, "Market price is out of bounds");
+            }
+          );
           assert.ok(true);
         });
       });
@@ -367,6 +380,7 @@ describe("BoundedTradeV2", () => {
             quoteAddress,
             baseAddress,
             serumMarket.baseMintAddress,
+            USDC_MINT,
             baseTransferAmount
           ));
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
@@ -379,7 +393,8 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategyKey,
             boundedStrategy.collateralAccount,
-            boundedStrategy.depositAddress
+            boundedStrategy.depositAddress,
+            USDC_MINT
           );
           const ix = await program.methods
             .boundedTradeV2()
@@ -391,23 +406,25 @@ describe("BoundedTradeV2", () => {
             })
             .remainingAccounts(remainingAccounts)
             .instruction();
-          const transaction = new web3.Transaction().add(ix);
-          try {
-            await program.provider.sendAndConfirm(transaction);
-            assert.ok(false);
-          } catch (error) {
-            const parsedError = parseTranactionError(error);
-            assert.equal(parsedError.msg, "Market price is out of bounds");
-          }
+          await compileAndSendV0Tx(
+            program.provider,
+            payerKeypair,
+            boundedStrategy.lookupTable,
+            [ix],
+            (err) => {
+              const parsedError = parseTranactionError(err);
+              assert.equal(parsedError.msg, "Market price is out of bounds");
+            }
+          );
           assert.ok(true);
         });
       });
 
       describe("Bounded price is lower than highest bid", () => {
         beforeEach(async () => {
-          // Input 1 SOL and get at least 90 USDC for it
+          // Input 1 SOL and get at least 20 USDC for it
           const boundPriceNumerator = new anchor.BN(1_000_000_000);
-          const boundPriceDenominator = new anchor.BN(90_000_000);
+          const boundPriceDenominator = new anchor.BN(20_000_000);
 
           ({ boundedStrategyKey } = await initBoundedStrategy(
             nonce,
@@ -416,6 +433,7 @@ describe("BoundedTradeV2", () => {
             quoteAddress,
             baseAddress,
             serumMarket.baseMintAddress,
+            USDC_MINT,
             baseTransferAmount
           ));
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
@@ -431,7 +449,8 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategyKey,
             boundedStrategy.collateralAccount,
-            boundedStrategy.depositAddress
+            boundedStrategy.depositAddress,
+            USDC_MINT
           );
           const ix = await program.methods
             .boundedTradeV2()
@@ -443,13 +462,15 @@ describe("BoundedTradeV2", () => {
             })
             .remainingAccounts(remainingAccounts)
             .instruction();
-          const transaction = new web3.Transaction().add(ix);
-          try {
-            await program.provider.sendAndConfirm(transaction);
-          } catch (error) {
-            const parsedError = parseTranactionError(error);
-            assert.ok(false);
-          }
+          await compileAndSendV0Tx(
+            program.provider,
+            payerKeypair,
+            boundedStrategy.lookupTable,
+            [ix],
+            (_) => {
+              assert.ok(false);
+            }
+          );
           // Calculate the maxmium amount of SOL that can be sold
           const transferNum =
             baseTransferAmount.toNumber() /

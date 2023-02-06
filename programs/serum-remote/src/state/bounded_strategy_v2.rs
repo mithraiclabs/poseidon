@@ -1,6 +1,8 @@
 use anchor_lang::prelude::*;
 use static_assertions::const_assert;
 
+pub const MAX_ACCOUNTS: usize = 32;
+
 #[account]
 pub struct BoundedStrategyV2 {
     pub collateral_mint: Pubkey,
@@ -29,8 +31,12 @@ pub struct BoundedStrategyV2 {
     pub bounded_price_denominator: u64,
     /// The bump for the strategy's derived address
     pub bump: u8,
+    /// The address of the look up table. This needs to be stored on-chain for keeping clients
+    /// in sync
+    pub lookup_table: Pubkey,
     // A slice that holds the list of account addresses for the route
-    pub account_list: [Pubkey; 30],
+    // TODO: Extend this to 40+ keys
+    pub account_list: [Pubkey; MAX_ACCOUNTS],
     /// A slice that holds additional data for DEXes in the route
     pub additional_data: [u8; 32],
 }
@@ -38,4 +44,4 @@ pub struct BoundedStrategyV2 {
 impl BoundedStrategyV2 {
     pub const LEN: usize = 8 + std::mem::size_of::<BoundedStrategyV2>() + 320;
 }
-const_assert!(BoundedStrategyV2::LEN == 1480);
+const_assert!(BoundedStrategyV2::LEN == 1576);

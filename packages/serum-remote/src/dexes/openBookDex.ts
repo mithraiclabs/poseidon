@@ -29,7 +29,7 @@ export default class OpenBookDex {
     remoteProgramId: web3.PublicKey,
     serumMarket: Market,
     strategyKey: web3.PublicKey,
-    collateralAccount: web3.PublicKey,
+    tradeSourceAccount: web3.PublicKey,
     tradeDestinationAccount: web3.PublicKey,
     destinationMint: web3.PublicKey
   ): Promise<web3.AccountMeta[]> {
@@ -75,8 +75,9 @@ export default class OpenBookDex {
       // TODO: Maybe actually implement this?
       { pubkey: web3.SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
       { pubkey: strategyKey, isWritable: false, isSigner: false },
-      { pubkey: collateralAccount, isWritable: false, isSigner: false },
-      { pubkey: tradeDestinationAccount, isWritable: false, isSigner: false },
+      { pubkey: tradeSourceAccount, isWritable: false, isSigner: false },
+      // If this is not the final Leg in a Route, than it must be writable.
+      { pubkey: tradeDestinationAccount, isWritable: true, isSigner: false },
       { pubkey: destinationMint, isWritable: false, isSigner: false },
     ];
   }
@@ -86,7 +87,8 @@ export default class OpenBookDex {
     serumMarket: Market,
     strategyKey: web3.PublicKey,
     collateralAccount: web3.PublicKey,
-    tradeDestinationAccount: web3.PublicKey
+    tradeDestinationAccount: web3.PublicKey,
+    destinationMint: web3.PublicKey
   ): Promise<web3.AccountMeta[]> {
     const openOrdersKey = (
       await this.deriveOpenOrders(remoteProgramId, strategyKey)
@@ -132,6 +134,7 @@ export default class OpenBookDex {
       { pubkey: strategyKey, isWritable: false, isSigner: false },
       { pubkey: collateralAccount, isWritable: false, isSigner: false },
       { pubkey: tradeDestinationAccount, isWritable: true, isSigner: false },
+      { pubkey: destinationMint, isWritable: false, isSigner: false },
     ];
   }
 
@@ -140,7 +143,8 @@ export default class OpenBookDex {
     serumMarket: Market,
     strategyKey: web3.PublicKey,
     collateralAccount: web3.PublicKey,
-    destinationAccount: web3.PublicKey
+    destinationAccount: web3.PublicKey,
+    destinationMint: web3.PublicKey
   ): Promise<web3.AccountMeta[]> {
     const [[openOrdersKey], vaultSigner] = await Promise.all([
       this.deriveOpenOrders(remoteProgramId, strategyKey),
@@ -185,6 +189,7 @@ export default class OpenBookDex {
       { pubkey: strategyKey, isWritable: false, isSigner: false },
       { pubkey: collateralAccount, isWritable: true, isSigner: false },
       { pubkey: destinationAccount, isWritable: false, isSigner: false },
+      { pubkey: destinationMint, isWritable: false, isSigner: false },
     ];
   }
 }

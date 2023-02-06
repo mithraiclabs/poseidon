@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 
 use crate::{
-    constants::OPEN_ORDERS_SEED,
     errors,
     instructions::{InitBoundedStrategyV2, ReclaimV2},
     token_account_seeds, token_account_signer_seeds,
@@ -102,13 +101,13 @@ impl<'a, 'info> Route<'a, 'info> {
             match leg {
                 Some(leg) => {
                     // If this is the last leg, skip because the destination account is already checked at initialization
-                    if self.legs.get(index + 1).is_some() && self.legs[index + 1].is_none() {
+                    if self.legs.get(index + 1).is_none() || self.legs[index + 1].is_none() {
                         continue;
                     }
                     // Get the token account as account info
                     let destination_account = leg.destination_token_account();
                     let destination_key = destination_account.key();
-                    let destination_mint = leg.end_mint()?;
+                    let destination_mint = leg.destination_mint_account().key();
                     let destination_mint_account = leg.destination_mint_account();
                     // Create the Account with rent exemption
                     let cpi_accounts = anchor_lang::system_program::CreateAccount {
@@ -120,7 +119,7 @@ impl<'a, 'info> Route<'a, 'info> {
                         token_account_seeds!(&ctx.accounts.strategy, destination_mint),
                         ctx.program_id,
                     );
-                    if token_account_key != destination_key {
+                    if destination_key != token_account_key {
                         return Err(error!(errors::ErrorCode::BadTokenAccountKeyForLeg));
                     }
                     let cpi_ctx = CpiContext {
@@ -137,7 +136,7 @@ impl<'a, 'info> Route<'a, 'info> {
                         cpi_ctx,
                         Rent::get()?.minimum_balance(anchor_spl::token::TokenAccount::LEN),
                         anchor_spl::token::TokenAccount::LEN as u64,
-                        ctx.program_id,
+                        ctx.accounts.token_program.key,
                     )?;
                     // Initialize the SPL Token account
                     let cpi_program = ctx.accounts.token_program.to_account_info();
@@ -283,6 +282,13 @@ fn is_in_bounds(
     //  bound. This must handle the case where output is less than input (i.e. the purchase price is < 1)
     let bounded_numerator = bounded_price_numerator * output;
     let executed_numerator = input * bounded_price_denominator;
+    msg!(
+        "i {} o {} bpn {} bpd {}",
+        input,
+        output,
+        bounded_price_numerator,
+        bounded_price_denominator
+    );
     if executed_numerator > bounded_numerator {
         false
     } else {

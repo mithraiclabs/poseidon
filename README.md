@@ -45,7 +45,7 @@ Right now there’s no simple way for a member of a DAO to initiate a proposal t
 
 ### Running Tests
 
-`anchor test -- --features localnet`
+`anchor test`
 
 ## Serum Execution Protocol
 

@@ -1,43 +1,16 @@
-import * as fs from "fs";
 import * as os from "os";
 import { web3 } from "@project-serum/anchor";
 import { DexInstructions, Market, OpenOrders } from "@project-serum/serum";
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  Token,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
+import { loadPayer } from "../tests/utils";
 
-export const loadPayer = (keypairPath: string): web3.Keypair => {
-  if (keypairPath) {
-    return web3.Keypair.fromSecretKey(
-      Buffer.from(
-        JSON.parse(
-          fs.readFileSync(keypairPath, {
-            encoding: "utf-8",
-          })
-        )
-      )
-    );
-  } else if (process.env.SECRET_KEY) {
-    return web3.Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(process.env.SECRET_KEY))
-    );
-  } else {
-    throw new Error(
-      "You must specify option --keypair or SECRET_KEY env variable"
-    );
-  }
-};
-
-const connection = new web3.Connection("https://api.devnet.solana.com");
+const connection = new web3.Connection("https://api.mainnet-beta.solana.com");
 
 const serumMarketKey = new web3.PublicKey(
-  "9qa76HXPrkGDAV9P4kxbq7BTj3cFpTLHaZr8u4Py1fCR"
+  "8BnEgHoWFysVcuFFX7QztDmzuH8r5ZFvyP3sYwn1XTh6"
 );
 
 const DEX_ID = new web3.PublicKey(
-  "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY"
+  "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
 );
 
 const keypairPath = `${os.homedir()}/.config/solana/devnet/id.json`;
@@ -45,6 +18,7 @@ const keypairPath = `${os.homedir()}/.config/solana/devnet/id.json`;
 (async () => {
   const payer = loadPayer(keypairPath);
   const serumMarket = await Market.load(connection, serumMarketKey, {}, DEX_ID);
+  console.log(`decoded ${JSON.stringify(serumMarket.decoded)}`);
 
   const [bids, asks] = await Promise.all([
     serumMarket.loadBids(connection),

@@ -516,6 +516,14 @@ export type SerumRemote = {
           ]
         },
         {
+          "name": "lookupTable",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The look up table address."
+          ]
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -612,6 +620,27 @@ export type SerumRemote = {
           "docs": [
             "The BoundedStrategyV2 account"
           ]
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account where the assets to trade with are"
+          ]
+        },
+        {
+          "name": "reclaimAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the assets"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": []
@@ -696,11 +725,19 @@ export type SerumRemote = {
             "type": "u8"
           },
           {
+            "name": "lookupTable",
+            "docs": [
+              "The address of the look up table. This needs to be stored on-chain for keeping clients",
+              "in sync"
+            ],
+            "type": "publicKey"
+          },
+          {
             "name": "accountList",
             "type": {
               "array": [
                 "publicKey",
-                30
+                32
               ]
             }
           },
@@ -831,6 +868,9 @@ export type SerumRemote = {
         "variants": [
           {
             "name": "OpenBookV3"
+          },
+          {
+            "name": "Raydium"
           }
         ]
       }
@@ -1044,6 +1084,16 @@ export type SerumRemote = {
       "code": 6025,
       "name": "BadTokenAccountKeyForLeg",
       "msg": "The intermediary token account key is incorrect"
+    },
+    {
+      "code": 6026,
+      "name": "BadLutProgramAddress",
+      "msg": "Bad LUT program address"
+    },
+    {
+      "code": 6027,
+      "name": "TooManyAccounts",
+      "msg": "Cannot handle more than 30 accounts"
     }
   ]
 };
@@ -1566,6 +1616,14 @@ export const IDL: SerumRemote = {
           ]
         },
         {
+          "name": "lookupTable",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The look up table address."
+          ]
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -1662,6 +1720,27 @@ export const IDL: SerumRemote = {
           "docs": [
             "The BoundedStrategyV2 account"
           ]
+        },
+        {
+          "name": "collateralAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account where the assets to trade with are"
+          ]
+        },
+        {
+          "name": "reclaimAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account that will receive the assets"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": []
@@ -1746,11 +1825,19 @@ export const IDL: SerumRemote = {
             "type": "u8"
           },
           {
+            "name": "lookupTable",
+            "docs": [
+              "The address of the look up table. This needs to be stored on-chain for keeping clients",
+              "in sync"
+            ],
+            "type": "publicKey"
+          },
+          {
             "name": "accountList",
             "type": {
               "array": [
                 "publicKey",
-                30
+                32
               ]
             }
           },
@@ -1881,6 +1968,9 @@ export const IDL: SerumRemote = {
         "variants": [
           {
             "name": "OpenBookV3"
+          },
+          {
+            "name": "Raydium"
           }
         ]
       }
@@ -2094,6 +2184,16 @@ export const IDL: SerumRemote = {
       "code": 6025,
       "name": "BadTokenAccountKeyForLeg",
       "msg": "The intermediary token account key is incorrect"
+    },
+    {
+      "code": 6026,
+      "name": "BadLutProgramAddress",
+      "msg": "Bad LUT program address"
+    },
+    {
+      "code": 6027,
+      "name": "TooManyAccounts",
+      "msg": "Cannot handle more than 30 accounts"
     }
   ]
 };

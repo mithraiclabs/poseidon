@@ -7,7 +7,7 @@ use super::{
         math::{constant_product_simulation, mul_div_u64},
         CurveType, Dex, DexStatic,
     },
-    swap_base_in, quote_total_accessor, base_total_accessor, qnt_accessor, bnt_accessor,
+    base_total_accessor, bnt_accessor, qnt_accessor, quote_total_accessor, swap_base_in,
 };
 
 /**
@@ -110,14 +110,19 @@ impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
         _additional_data: &mut std::collections::VecDeque<u8>,
-        _is_init: bool,
+        is_init: bool,
     ) -> Result<Self>
     where
         Self: Sized,
     {
         let user_source_token_account = &accounts[15];
         let serum_coin_vault_account = &accounts[12];
-        let source_mint = spl_token_utils::mint(&user_source_token_account.try_borrow_data()?);
+        // With multi-legs, during initialization this SPL Token account may not exists. So fill with dummy address
+        let source_mint = if is_init {
+            anchor_lang::system_program::System::id()
+        } else {
+            spl_token_utils::mint(&user_source_token_account.try_borrow_data()?)
+        };
         let base_mint = spl_token_utils::mint(&serum_coin_vault_account.try_borrow_data()?);
         let base_is_input = base_mint == source_mint;
 
@@ -187,6 +192,13 @@ impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
             signers_seeds,
         )
         .unwrap();
+        Ok(())
+    }
+
+    fn cleanup_accounts(
+        &self,
+        ctx: &Context<'_, '_, 'a, 'info, crate::instructions::ReclaimV2<'info>>,
+    ) -> Result<()> {
         Ok(())
     }
 }
