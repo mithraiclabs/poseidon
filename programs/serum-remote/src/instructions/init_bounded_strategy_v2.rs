@@ -7,7 +7,7 @@ use crate::{
     constants::{BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
     dexes::{DexList, Leg, Route},
     errors::{self, ErrorCode},
-    state::BoundedStrategyV2,
+    state::{BoundedStrategyV2, MAX_ACCOUNTS},
 };
 
 #[derive(Accounts)]
@@ -75,6 +75,9 @@ pub fn handler<'info>(
     bound: u8,
     additional_data: Vec<u8>,
 ) -> Result<()> {
+    if ctx.remaining_accounts.len() > MAX_ACCOUNTS {
+        return Err(error!(ErrorCode::TooManyAccounts));
+    }
     // Set BoundedStrategy information
     let strategy_bump = match ctx.bumps.get("strategy") {
         Some(bump) => *bump,

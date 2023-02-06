@@ -56,4 +56,6 @@ pub enum ErrorCode {
     BadTokenAccountKeyForLeg, // 6025
     #[msg("Bad LUT program address")]
     BadLutProgramAddress, // 6026
+    #[msg("Cannot handle more than 30 accounts")]
+    TooManyAccounts, // 6027
 }

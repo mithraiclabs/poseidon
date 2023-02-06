@@ -737,7 +737,7 @@ export type SerumRemote = {
             "type": {
               "array": [
                 "publicKey",
-                30
+                32
               ]
             }
           },
@@ -1089,6 +1089,11 @@ export type SerumRemote = {
       "code": 6026,
       "name": "BadLutProgramAddress",
       "msg": "Bad LUT program address"
+    },
+    {
+      "code": 6027,
+      "name": "TooManyAccounts",
+      "msg": "Cannot handle more than 30 accounts"
     }
   ]
 };
@@ -1832,7 +1837,7 @@ export const IDL: SerumRemote = {
             "type": {
               "array": [
                 "publicKey",
-                30
+                32
               ]
             }
           },
@@ -2184,6 +2189,11 @@ export const IDL: SerumRemote = {
       "code": 6026,
       "name": "BadLutProgramAddress",
       "msg": "Bad LUT program address"
+    },
+    {
+      "code": 6027,
+      "name": "TooManyAccounts",
+      "msg": "Cannot handle more than 30 accounts"
     }
   ]
 };
