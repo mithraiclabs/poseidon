@@ -176,14 +176,9 @@ describe("OpenBook + Raydium Trade", () => {
         program,
         serumMarket.baseMintAddress,
         {
-          transferAmount,
           boundPriceNumerator,
           boundPriceDenominator,
           reclaimDate,
-          reclaimAddress,
-          depositAddress,
-          orderSide,
-          bound,
         }
       ));
     const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(

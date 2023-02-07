@@ -90,14 +90,9 @@ describe("InitBoundedStrategyV2", () => {
   it("Should store all the information for a BoundedStretegyV2", async () => {
     const { boundedStrategy: boundedStrategyKey, collateralAccount } =
       await deriveAllBoundedStrategyKeysV2(program, USDC_MINT, {
-        transferAmount,
         boundPriceNumerator,
         boundPriceDenominator,
         reclaimDate,
-        reclaimAddress,
-        depositAddress,
-        orderSide,
-        bound,
       });
     const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(
       reclaimAddress

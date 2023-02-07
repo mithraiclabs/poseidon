@@ -1,8 +1,23 @@
 import { BN, web3 } from "@project-serum/anchor";
 import { Market } from "@project-serum/serum";
 import { TOKEN_PROGRAM_ID } from "@project-serum/serum/lib/token-instructions";
+import { SolCluster } from "../types";
 
 export default class OpenBookDex {
+  public static V3_PROGRAM_ID = new web3.PublicKey(
+    "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
+  );
+
+  static programId(cluster: SolCluster) {
+    if (cluster === "devnet") {
+      return this.V3_PROGRAM_ID;
+    } else if (["mainnet", "mainnet-beta"].includes(cluster)) {
+      return this.V3_PROGRAM_ID;
+    } else {
+      throw new Error("Unsupported cluster version");
+    }
+  }
+
   static deriveOpenOrders(
     remoteProgramId: web3.PublicKey,
     strategyKey: web3.PublicKey
@@ -25,19 +40,20 @@ export default class OpenBookDex {
     );
   }
 
-  static async initLegAccounts(
+  static initLegAccounts(
     remoteProgramId: web3.PublicKey,
     serumMarket: Market,
     strategyKey: web3.PublicKey,
     tradeSourceAccount: web3.PublicKey,
     tradeDestinationAccount: web3.PublicKey,
     destinationMint: web3.PublicKey
-  ): Promise<web3.AccountMeta[]> {
-    const openOrdersKey = (
-      await this.deriveOpenOrders(remoteProgramId, strategyKey)
+  ): web3.AccountMeta[] {
+    const openOrdersKey = this.deriveOpenOrders(
+      remoteProgramId,
+      strategyKey
     )[0];
 
-    const vaultSigner = await this.deriveVaultSigner(serumMarket);
+    const vaultSigner = this.deriveVaultSigner(serumMarket);
     return [
       { pubkey: serumMarket.programId, isWritable: false, isSigner: false },
       { pubkey: serumMarket.address, isWritable: false, isSigner: false },

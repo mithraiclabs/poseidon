@@ -147,14 +147,9 @@ describe("BoundedTradeV2", () => {
       );
       const { boundedStrategy: boundedStrategyKey, collateralAccount } =
         await deriveAllBoundedStrategyKeysV2(program, collateralMint, {
-          transferAmount,
           boundPriceNumerator: boundedPriceNumerator,
           boundPriceDenominator: boundedPriceDenominator,
           reclaimDate,
-          reclaimAddress,
-          depositAddress,
-          orderSide,
-          bound,
         });
       const initAdditionalAccounts = await OpenBookDex.initLegAccounts(
         program.programId,

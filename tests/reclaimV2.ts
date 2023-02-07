@@ -48,14 +48,9 @@ describe("ReclaimV2", () => {
       boundedStrategy: _boundedStrategyKey,
       collateralAccount: _collateralAccount,
     } = await deriveAllBoundedStrategyKeysV2(program, USDC_MINT, {
-      transferAmount,
       boundPriceNumerator,
       boundPriceDenominator,
       reclaimDate: _reclaimDate,
-      reclaimAddress,
-      depositAddress,
-      orderSide,
-      bound,
     });
     boundedStrategyKey = _boundedStrategyKey;
     collateralAddress = _collateralAccount;

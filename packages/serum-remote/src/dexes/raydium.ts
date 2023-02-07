@@ -6,12 +6,26 @@ import {
   LIQUIDITY_VERSION_TO_SERUM_VERSION,
   TOKEN_PROGRAM_ID,
 } from "@raydium-io/raydium-sdk";
+import { SolCluster } from "../types";
 import OpenBookDex from "./openBookDex";
 
 export default class Raydium {
   public static V4_PROGRAM_ID: web3.PublicKey = new web3.PublicKey(
     "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"
   );
+  public static V4_DEVNET_PROGRAM_ID: web3.PublicKey = new web3.PublicKey(
+    "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"
+  );
+
+  static programId(cluster: SolCluster) {
+    if (cluster === "devnet") {
+      return this.V4_DEVNET_PROGRAM_ID;
+    } else if (["mainnet", "mainnet-beta"].includes(cluster)) {
+      return this.V4_PROGRAM_ID;
+    } else {
+      throw new Error("Unsupported cluster version");
+    }
+  }
 
   static initLegAccounts(
     baseMint: web3.PublicKey,
