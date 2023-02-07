@@ -50,7 +50,6 @@ impl<'a, 'info> Route<'a, 'info> {
         input_amount: u64,
         bounded_price_numerator: &u64,
         bounded_price_denominator: &u64,
-        bound_direction: &u8,
     ) -> bool {
         let output = self.simulate_execution(input_amount);
 
@@ -59,7 +58,6 @@ impl<'a, 'info> Route<'a, 'info> {
             output,
             bounded_price_numerator,
             bounded_price_denominator,
-            bound_direction,
         )
     }
 
@@ -164,7 +162,6 @@ impl<'a, 'info> Route<'a, 'info> {
         input_tokens_available: u64,
         bounded_price_numerator: &u64,
         bounded_price_denominator: &u64,
-        bound_direction: &u8,
         iterations: u8,
     ) -> u64 {
         find_maximum_input(
@@ -173,7 +170,6 @@ impl<'a, 'info> Route<'a, 'info> {
                     x,
                     bounded_price_numerator,
                     bounded_price_denominator,
-                    bound_direction,
                 )
             },
             0,
@@ -222,7 +218,6 @@ impl<'a, 'info> Route<'a, 'info> {
         input_amount: u64,
         bounded_price_numerator: &u64,
         bounded_price_denominator: &u64,
-        bound_direction: &u8,
     ) -> u64 {
         let output = self.simulate_execution(input_amount);
         // Price check to ensure the input to output ratio is in bounds.
@@ -231,7 +226,6 @@ impl<'a, 'info> Route<'a, 'info> {
             output,
             bounded_price_numerator,
             bounded_price_denominator,
-            bound_direction,
         ) {
             output
         } else {
@@ -276,7 +270,6 @@ fn is_in_bounds(
     output: u64,
     bounded_price_numerator: &u64,
     bounded_price_denominator: &u64,
-    _bound_direction: &u8,
 ) -> bool {
     // Normalize input to output to determine whether the price per asset matches the
     //  bound. This must handle the case where output is less than input (i.e. the purchase price is < 1)
@@ -385,8 +378,6 @@ mod test {
         let mut route = Route::default();
         mock_open_book_route(&mut route, &mock_accounts, false);
 
-        // Lower bound
-        let bound_direction = 0;
         // Sell 1 SOL for at least 92 USDC
         let bounded_price_numerator = 1_000_000_000;
         let bounded_price_denominator = 92_000_000;
@@ -394,7 +385,6 @@ mod test {
             1_000_000_000,
             &bounded_price_numerator,
             &bounded_price_denominator,
-            &bound_direction,
         );
         assert!(res == true);
     }
@@ -406,8 +396,6 @@ mod test {
         let mut route = Route::default();
         mock_open_book_route(&mut route, &mock_accounts, false);
 
-        // Lower bound
-        let bound_direction = 0;
         // Sell 1 SOL for at least 95
         let bounded_price_numerator = 1_000_000_000;
         let bounded_price_denominator = 95_000_000;
@@ -416,7 +404,6 @@ mod test {
             1_000_000_000,
             &bounded_price_numerator,
             &bounded_price_denominator,
-            &bound_direction,
         );
         assert!(res == false);
     }
@@ -428,8 +415,6 @@ mod test {
         let mut route = Route::default();
         mock_open_book_route(&mut route, &mock_accounts, true);
 
-        // Lower bound
-        let bound_direction = 1;
         // Buy 1 SOL for at most 93 USDC
         let bounded_price_numerator = 93_000_000;
         let bounded_price_denominator = 1_000_000_000;
@@ -438,7 +423,6 @@ mod test {
             1_000_000_000,
             &bounded_price_numerator,
             &bounded_price_denominator,
-            &bound_direction,
         );
         assert!(res == true);
     }
@@ -450,8 +434,6 @@ mod test {
         let mut route = Route::default();
         mock_open_book_route(&mut route, &mock_accounts, true);
 
-        // Lower bound
-        let bound_direction = 1;
         // Buy 1 SOL for at most 90 USDC
         let bounded_price_numerator = 90_000_000;
         let bounded_price_denominator = 1_000_000_000;
@@ -460,7 +442,6 @@ mod test {
             1_000_000_000,
             &bounded_price_numerator,
             &bounded_price_denominator,
-            &bound_direction,
         );
         assert!(res == false);
     }

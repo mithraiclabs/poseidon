@@ -557,14 +557,6 @@ export type SerumRemote = {
           "type": "i64"
         },
         {
-          "name": "orderSide",
-          "type": "u8"
-        },
-        {
-          "name": "bound",
-          "type": "u8"
-        },
-        {
           "name": "additionalData",
           "type": "bytes"
         }
@@ -664,14 +656,6 @@ export type SerumRemote = {
             "type": "publicKey"
           },
           {
-            "name": "orderSide",
-            "docs": [
-              "The side of the order book the market order will be placed",
-              "0 for Bid | Buy, 1 for Ask | Sell"
-            ],
-            "type": "u8"
-          },
-          {
             "name": "reclaimDate",
             "docs": [
               "The date at which the DAO's assets can be reclaimed"
@@ -691,13 +675,6 @@ export type SerumRemote = {
               "The address where the swapped asset should be deposited"
             ],
             "type": "publicKey"
-          },
-          {
-            "name": "bound",
-            "docs": [
-              "0 for lower bound, 1 for upper bound"
-            ],
-            "type": "u8"
           },
           {
             "name": "boundedPriceNumerator",
@@ -1657,14 +1634,6 @@ export const IDL: SerumRemote = {
           "type": "i64"
         },
         {
-          "name": "orderSide",
-          "type": "u8"
-        },
-        {
-          "name": "bound",
-          "type": "u8"
-        },
-        {
           "name": "additionalData",
           "type": "bytes"
         }
@@ -1764,14 +1733,6 @@ export const IDL: SerumRemote = {
             "type": "publicKey"
           },
           {
-            "name": "orderSide",
-            "docs": [
-              "The side of the order book the market order will be placed",
-              "0 for Bid | Buy, 1 for Ask | Sell"
-            ],
-            "type": "u8"
-          },
-          {
             "name": "reclaimDate",
             "docs": [
               "The date at which the DAO's assets can be reclaimed"
@@ -1791,13 +1752,6 @@ export const IDL: SerumRemote = {
               "The address where the swapped asset should be deposited"
             ],
             "type": "publicKey"
-          },
-          {
-            "name": "bound",
-            "docs": [
-              "0 for lower bound, 1 for upper bound"
-            ],
-            "type": "u8"
           },
           {
             "name": "boundedPriceNumerator",

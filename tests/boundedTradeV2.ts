@@ -37,8 +37,6 @@ describe("BoundedTradeV2", () => {
 
   let quoteAddress: web3.PublicKey;
   let baseAddress: web3.PublicKey;
-  let orderSide = 1;
-  let bound = 1;
   let serumMarket: Market;
   let highestBid: [number, number, anchor.BN, anchor.BN];
   let lowestAsk: [number, number, anchor.BN, anchor.BN];
@@ -174,8 +172,6 @@ describe("BoundedTradeV2", () => {
           boundedPriceNumerator,
           boundedPriceDenominator,
           reclaimDate,
-          orderSide,
-          bound,
           additionalData
         )
         .accounts({
@@ -212,13 +208,7 @@ describe("BoundedTradeV2", () => {
   });
 
   describe("Order side is Bid", () => {
-    beforeEach(async () => {
-      orderSide = 0;
-    });
     describe("UpperBound", () => {
-      beforeEach(() => {
-        bound = 1;
-      });
       describe("Bounded price is higher than lowest ask", () => {
         // This is a scenario where orders should execute
         beforeEach(async () => {
@@ -354,16 +344,10 @@ describe("BoundedTradeV2", () => {
     });
   }); // End of UpperBound
   describe("Order side is Ask", () => {
-    beforeEach(() => {
-      orderSide = 1;
-    });
     describe("UpperBound", () => {
       // UPPER BOUNDED SELLS WOULD BE STUPID AND SHOULDNT BE SUPPORTED
     });
     describe("LowerBound", () => {
-      beforeEach(() => {
-        bound = 0;
-      });
       describe("Bounded price is higher than highest bid", () => {
         beforeEach(async () => {
           const boundPriceNumerator = new anchor.BN(1_000_000_000);

@@ -68,8 +68,6 @@ pub fn handler<'info>(
     bounded_price_numerator: u64,
     bounded_price_denominator: u64,
     reclaim_date: i64,
-    order_side: u8,
-    bound: u8,
     additional_data: Vec<u8>,
 ) -> Result<()> {
     InitBoundedStrategyV2::account_checks(&ctx)?;
@@ -89,8 +87,6 @@ pub fn handler<'info>(
     bounded_strategy.reclaim_date = reclaim_date;
     bounded_strategy.reclaim_address = ctx.accounts.reclaim_account.key();
     bounded_strategy.deposit_address = ctx.accounts.deposit_account.key();
-    bounded_strategy.order_side = order_side;
-    bounded_strategy.bound = bound;
     bounded_strategy.bump = strategy_bump;
     bounded_strategy.lookup_table = ctx.accounts.lookup_table.key();
     for (dst, src) in bounded_strategy

@@ -31,8 +31,6 @@ describe("ReclaimV2", () => {
   let boundPriceDenominator = new BN(1_000_000_000);
   let reclaimAddress: web3.PublicKey;
   let depositAddress: web3.PublicKey;
-  let orderSide = 0;
-  let bound = 1;
   let transferAmount = new BN(10_000_000);
   let serumMarket: Market;
   let baseAddress: web3.PublicKey;
@@ -76,8 +74,6 @@ describe("ReclaimV2", () => {
         boundPriceNumerator,
         boundPriceDenominator,
         _reclaimDate,
-        orderSide,
-        bound,
         additionalData
       )
       .accounts({

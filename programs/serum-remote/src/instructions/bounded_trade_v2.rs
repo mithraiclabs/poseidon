@@ -53,7 +53,6 @@ pub fn handler<'a, 'b, 'c, 'info>(
         input_tokens,
         &bounded_strategy.bounded_price_numerator,
         &bounded_strategy.bounded_price_denominator,
-        &bounded_strategy.bound,
     ) {
         return route.execute(
             input_tokens,
@@ -65,14 +64,12 @@ pub fn handler<'a, 'b, 'c, 'info>(
         input_tokens,
         &bounded_strategy.bounded_price_numerator,
         &bounded_strategy.bounded_price_denominator,
-        &bounded_strategy.bound,
         16,
     );
     if !route.simple_price_check(
         input_amount,
         &bounded_strategy.bounded_price_numerator,
         &bounded_strategy.bounded_price_denominator,
-        &bounded_strategy.bound,
     ) {
         return Err(error!(ErrorCode::MarketPriceIsOutOfBounds));
     }

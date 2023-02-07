@@ -8,17 +8,12 @@ pub struct BoundedStrategyV2 {
     pub collateral_mint: Pubkey,
     /// The token account where the assets to be traded are held
     pub collateral_account: Pubkey,
-    /// The side of the order book the market order will be placed
-    /// 0 for Bid | Buy, 1 for Ask | Sell
-    pub order_side: u8,
     /// The date at which the DAO's assets can be reclaimed
     pub reclaim_date: i64,
     /// The address that the assets are transferred to when being reclaimed.
     pub reclaim_address: Pubkey,
     /// The address where the swapped asset should be deposited
     pub deposit_address: Pubkey,
-    /// 0 for lower bound, 1 for upper bound
-    pub bound: u8,
     /// Using a numerator and denominator we can back out a price without having to use floating
     /// point math or account for token decimals when price checking.
     ///

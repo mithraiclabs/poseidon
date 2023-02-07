@@ -32,8 +32,6 @@ describe("InitBoundedStrategyV2", () => {
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
   let reclaimAddress: web3.PublicKey;
   let depositAddress: web3.PublicKey;
-  let orderSide = 0;
-  let bound = 1;
   let transferAmount = new BN(10_000_000);
   let serumMarket: Market;
 
@@ -81,8 +79,6 @@ describe("InitBoundedStrategyV2", () => {
     boundPriceNumerator = new anchor.BN(95_700_000);
     boundPriceDenominator = new anchor.BN(1_000_000_000);
     reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600 + timesRun);
-    orderSide = 0;
-    bound = 1;
     transferAmount = new BN(10_000_000);
   });
 
@@ -116,8 +112,6 @@ describe("InitBoundedStrategyV2", () => {
         boundPriceNumerator,
         boundPriceDenominator,
         reclaimDate,
-        orderSide,
-        bound,
         additionalData
       )
       .accounts({
@@ -175,8 +169,6 @@ describe("InitBoundedStrategyV2", () => {
       boundedStrategy.depositAddress.toString(),
       depositAddress.toString()
     );
-    assert.equal(boundedStrategy.orderSide, orderSide);
-    assert.equal(boundedStrategy.bound, bound);
     // check additional accounts array
     boundedStrategy.accountList.forEach((key, index) => {
       const expectedKey = initAdditionalAccounts[index];

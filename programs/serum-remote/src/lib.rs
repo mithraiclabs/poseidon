@@ -70,8 +70,6 @@ pub mod serum_remote {
         bounded_price_numerator: u64,
         bounded_price_denominator: u64,
         reclaim_date: i64,
-        order_side: u8,
-        bound: u8,
         additional_data: Vec<u8>,
     ) -> Result<()> {
         instructions::init_bounded_strategy_v2::handler(
@@ -80,8 +78,6 @@ pub mod serum_remote {
             bounded_price_numerator,
             bounded_price_denominator,
             reclaim_date,
-            order_side,
-            bound,
             additional_data,
         )
     }
