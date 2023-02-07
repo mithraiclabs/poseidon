@@ -109,10 +109,6 @@ describe("InitBoundedStrategyV2", () => {
       // @ts-ignore
       serumMarket._baseSplTokenDecimals
     ).toArrayLike(Buffer, "le", 1);
-    const lookupTableAddress = await createLookUpTable(
-      program.provider,
-      initAdditionalAccounts
-    );
 
     const instruction = await program.methods
       .initBoundedStrategyV2(
@@ -129,7 +125,7 @@ describe("InitBoundedStrategyV2", () => {
         collateralAccount,
         mint: USDC_MINT,
         strategy: boundedStrategyKey,
-        lookupTable: lookupTableAddress,
+        lookupTable: web3.SystemProgram.programId,
         reclaimAccount: reclaimAddress,
         depositAccount: depositAddress,
         tokenProgram: SPL_TOKEN_PROGRAM_ID,
@@ -138,16 +134,13 @@ describe("InitBoundedStrategyV2", () => {
       })
       .remainingAccounts(initAdditionalAccounts)
       .instruction();
-    await compileAndSendV0Tx(
-      program.provider,
-      payerKeypair,
-      lookupTableAddress,
-      [instruction],
-      (err) => {
-        console.error(err);
-        assert.ok(false);
-      }
-    );
+    try {
+      const tx = new web3.Transaction().add(instruction);
+      await program.provider.sendAndConfirm(tx);
+    } catch (err) {
+      console.error(err);
+      assert.ok(false);
+    }
 
     const boundedStrategy = await program.account.boundedStrategyV2.fetch(
       boundedStrategyKey

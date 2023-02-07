@@ -50,9 +50,6 @@ pub struct InitBoundedStrategyV2<'info> {
     pub deposit_account: Box<Account<'info, TokenAccount>>,
     /// The look up table address.
     /// CHECK: owner check is handled
-    #[account(
-        owner = crate::address_lut_program::ID @ ErrorCode::BadLutProgramAddress
-    )]
     pub lookup_table: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
     #[account(
@@ -75,9 +72,7 @@ pub fn handler<'info>(
     bound: u8,
     additional_data: Vec<u8>,
 ) -> Result<()> {
-    if ctx.remaining_accounts.len() > MAX_ACCOUNTS {
-        return Err(error!(ErrorCode::TooManyAccounts));
-    }
+    InitBoundedStrategyV2::account_checks(&ctx)?;
     // Set BoundedStrategy information
     let strategy_bump = match ctx.bumps.get("strategy") {
         Some(bump) => *bump,
@@ -153,4 +148,19 @@ pub fn handler<'info>(
     token::transfer(cpi_ctx, transfer_amount)?;
 
     Ok(())
+}
+
+impl InitBoundedStrategyV2<'_> {
+    fn account_checks(ctx: &Context<InitBoundedStrategyV2>) -> Result<()> {
+        if ctx.remaining_accounts.len() > MAX_ACCOUNTS {
+            return Err(error!(ErrorCode::TooManyAccounts));
+        }
+
+        if ctx.accounts.lookup_table.key != &anchor_lang::system_program::ID
+            && ctx.accounts.lookup_table.owner != &crate::address_lut_program::ID
+        {
+            return Err(error!(ErrorCode::BadLutProgramAddress));
+        }
+        Ok(())
+    }
 }
