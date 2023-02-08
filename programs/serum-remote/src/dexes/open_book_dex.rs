@@ -121,6 +121,10 @@ impl<'a, 'info> OpenBookDex<'a, 'info> {
         &self.accounts[9]
     }
 
+    fn rent(&self) -> &AccountInfo<'info> {
+        &self.accounts[11]
+    }
+
     fn expected_vault_signer(&self, market: &Market) -> Pubkey {
         let res = gen_vault_signer_key(
             market.vault_signer_nonce,
@@ -135,10 +139,6 @@ impl<'a, 'info> OpenBookDex<'a, 'info> {
 
     fn token_program_id(&self) -> &AccountInfo<'info> {
         &self.accounts[10]
-    }
-
-    fn rent(&self) -> &AccountInfo<'info> {
-        &self.accounts[11]
     }
 
     fn payer_source_wallet(&self) -> &AccountInfo<'info> {
@@ -359,7 +359,7 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
             open_orders: self.open_orders_account().to_account_info(),
             authority: ctx.accounts.strategy.to_account_info(),
             market: self.serum_market().to_account_info(),
-            rent: ctx.accounts.rent.to_account_info(),
+            rent: self.rent().to_account_info(),
         };
 
         let init_ctx = CpiContext {

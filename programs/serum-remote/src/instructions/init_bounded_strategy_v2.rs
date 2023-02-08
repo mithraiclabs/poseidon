@@ -57,7 +57,6 @@ pub struct InitBoundedStrategyV2<'info> {
             @ ErrorCode::IncorrectSystemProgram,
   )]
     pub system_program: Program<'info, System>,
-    pub rent: Sysvar<'info, Rent>,
 }
 
 /// The ctx.remaining_accounts should contain a list of account infos in the

@@ -86,7 +86,6 @@ describe("ReclaimV2", () => {
         depositAccount: depositAddress,
         tokenProgram: SPL_TOKEN_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
-        rent: web3.SYSVAR_RENT_PUBKEY,
       })
       .remainingAccounts(initAdditionalAccounts)
       .instruction();
