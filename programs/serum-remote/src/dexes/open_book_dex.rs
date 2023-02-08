@@ -267,7 +267,6 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
             spl_token_utils::mint(&accounts[15].try_borrow_data()?)
         };
         let trade_is_bid = destination_mint == base_mint;
-        msg!("trade_is_bid {}", trade_is_bid);
 
         // Load the Serum Market to extract decimal data
         let market = Market::load(&accounts[1], accounts[0].key)
@@ -300,7 +299,6 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
                 market.pc_lot_size,
             )
         };
-        msg!("trade_is_bid {}", trade_is_bid);
 
         let fee_tier = serum_v3::fees::FeeTier::from_srm_and_msrm_balances(accounts[1].key);
         let (fee_numerator, fee_denominator) = fee_tier.taker_rate_fraction();

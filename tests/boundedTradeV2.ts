@@ -1,7 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import { BN, Program, web3 } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
-import { Market } from "@project-serum/serum";
+import { Market, OpenOrders } from "@project-serum/serum";
 import { assert } from "chai";
 import {
   BoundedStrategyV2,
@@ -45,6 +45,7 @@ describe("BoundedTradeV2", () => {
   let boundedStrategy: BoundedStrategyV2;
   let nonce = 1;
   let boundedStrategyKey: web3.PublicKey;
+  let lookupTableAddress: web3.PublicKey;
   let initBoundedStrategy: (
     nonce: number,
     boundedPriceNumerator: BN,
@@ -57,6 +58,8 @@ describe("BoundedTradeV2", () => {
   ) => Promise<{
     boundedStrategyKey: web3.PublicKey;
   }>;
+  let additionalData: Buffer;
+  let openOrdersKeypair: web3.Keypair;
 
   before(async () => {
     // Load the market
@@ -66,6 +69,10 @@ describe("BoundedTradeV2", () => {
       {},
       DEX_ID
     );
+    additionalData = new BN(
+      // @ts-ignore
+      serumMarket._baseSplTokenDecimals
+    ).toArrayLike(Buffer, "le", 1);
     const [bids, asks] = await Promise.all([
       serumMarket.loadBids(program.provider.connection),
       serumMarket.loadAsks(program.provider.connection),
@@ -103,8 +110,8 @@ describe("BoundedTradeV2", () => {
       payerKey,
       baseTransferAmount.muln(10).toNumber()
     );
-
     const transaction = new web3.Transaction();
+
     const mintToInstruction = await tokenProgram.methods
       .mintTo(quoteTransferAmount.muln(10))
       .accounts({
@@ -122,11 +129,12 @@ describe("BoundedTradeV2", () => {
     });
     transaction.add(transferBaseInstruction);
     // Sync the native account after the transfer
-    const syncNativeIx = tokenProgram.instruction.syncNative({
-      accounts: {
+    const syncNativeIx = await tokenProgram.methods
+      .syncNative()
+      .accounts({
         account: baseAddress,
-      },
-    });
+      })
+      .instruction();
     transaction.add(syncNativeIx);
     await program.provider.sendAndConfirm(transaction);
 
@@ -157,7 +165,7 @@ describe("BoundedTradeV2", () => {
         depositAddress,
         destinationMint
       );
-      const lookupTableAddress = await createLookUpTable(
+      lookupTableAddress = await createLookUpTable(
         program.provider,
         initAdditionalAccounts
       );
@@ -216,6 +224,19 @@ describe("BoundedTradeV2", () => {
             WRAPPED_SOL_MINT,
             quoteTransferAmount
           ));
+          // Create OpenOrders account for the user
+          const transaction = new web3.Transaction();
+          openOrdersKeypair = new web3.Keypair();
+          const createOpenOrdersIx =
+            await OpenOrders.makeCreateAccountTransaction(
+              program.provider.connection,
+              serumMarket.address,
+              payerKey,
+              openOrdersKeypair.publicKey,
+              serumMarket.programId
+            );
+          transaction.add(createOpenOrdersIx);
+          program.provider.sendAndConfirm(transaction, [openOrdersKeypair]);
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
             boundedStrategyKey
           );
@@ -224,16 +245,16 @@ describe("BoundedTradeV2", () => {
           const depositTokenAccountBefore =
             await tokenProgram.account.account.fetch(baseAddress);
           const remainingAccounts = await OpenBookDex.tradeAccounts(
-            program.programId,
             serumMarket,
-            boundedStrategyKey,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
-            WRAPPED_SOL_MINT
+            WRAPPED_SOL_MINT,
+            openOrdersKeypair.publicKey,
+            boundedStrategyKey
           );
           // Create and send the BoundedTradeV2 transaction
           const ix = await program.methods
-            .boundedTradeV2()
+            .boundedTradeV2(additionalData)
             .accounts({
               payer: program.provider.publicKey,
               strategy: boundedStrategyKey,
@@ -245,9 +266,10 @@ describe("BoundedTradeV2", () => {
           await compileAndSendV0Tx(
             program.provider,
             payerKeypair,
-            boundedStrategy.lookupTable,
+            lookupTableAddress,
             [ix],
             (err) => {
+              console.error(err);
               assert.ok(false);
             }
           );
@@ -294,21 +316,34 @@ describe("BoundedTradeV2", () => {
             WRAPPED_SOL_MINT,
             quoteTransferAmount
           ));
+          // Create OpenOrders account for the user
+          const transaction = new web3.Transaction();
+          openOrdersKeypair = new web3.Keypair();
+          const createOpenOrdersIx =
+            await OpenOrders.makeCreateAccountTransaction(
+              program.provider.connection,
+              serumMarket.address,
+              payerKey,
+              openOrdersKeypair.publicKey,
+              serumMarket.programId
+            );
+          transaction.add(createOpenOrdersIx);
+          program.provider.sendAndConfirm(transaction, [openOrdersKeypair]);
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
             boundedStrategyKey
           );
         });
         it("should error from bound validation", async () => {
           const remainingAccounts = await OpenBookDex.tradeAccounts(
-            program.programId,
             serumMarket,
-            boundedStrategyKey,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
-            WRAPPED_SOL_MINT
+            WRAPPED_SOL_MINT,
+            openOrdersKeypair.publicKey,
+            boundedStrategyKey
           );
           const ix = await program.methods
-            .boundedTradeV2()
+            .boundedTradeV2(additionalData)
             .accounts({
               payer: program.provider.publicKey,
               strategy: boundedStrategyKey,
@@ -320,7 +355,7 @@ describe("BoundedTradeV2", () => {
           await compileAndSendV0Tx(
             program.provider,
             payerKeypair,
-            boundedStrategy.lookupTable,
+            lookupTableAddress,
             [ix],
             (err) => {
               const parsedError = parseTranactionError(err);
@@ -354,21 +389,34 @@ describe("BoundedTradeV2", () => {
             USDC_MINT,
             baseTransferAmount
           ));
+          // Create OpenOrders account for the user
+          const transaction = new web3.Transaction();
+          openOrdersKeypair = new web3.Keypair();
+          const createOpenOrdersIx =
+            await OpenOrders.makeCreateAccountTransaction(
+              program.provider.connection,
+              serumMarket.address,
+              payerKey,
+              openOrdersKeypair.publicKey,
+              serumMarket.programId
+            );
+          transaction.add(createOpenOrdersIx);
+          program.provider.sendAndConfirm(transaction, [openOrdersKeypair]);
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
             boundedStrategyKey
           );
         });
         it("should error", async () => {
           const remainingAccounts = await OpenBookDex.tradeAccounts(
-            program.programId,
             serumMarket,
-            boundedStrategyKey,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
-            USDC_MINT
+            USDC_MINT,
+            openOrdersKeypair.publicKey,
+            boundedStrategyKey
           );
           const ix = await program.methods
-            .boundedTradeV2()
+            .boundedTradeV2(additionalData)
             .accounts({
               payer: program.provider.publicKey,
               strategy: boundedStrategyKey,
@@ -380,7 +428,7 @@ describe("BoundedTradeV2", () => {
           await compileAndSendV0Tx(
             program.provider,
             payerKeypair,
-            boundedStrategy.lookupTable,
+            lookupTableAddress,
             [ix],
             (err) => {
               const parsedError = parseTranactionError(err);
@@ -407,6 +455,19 @@ describe("BoundedTradeV2", () => {
             USDC_MINT,
             baseTransferAmount
           ));
+          // Create OpenOrders account for the user
+          const transaction = new web3.Transaction();
+          openOrdersKeypair = new web3.Keypair();
+          const createOpenOrdersIx =
+            await OpenOrders.makeCreateAccountTransaction(
+              program.provider.connection,
+              serumMarket.address,
+              payerKey,
+              openOrdersKeypair.publicKey,
+              serumMarket.programId
+            );
+          transaction.add(createOpenOrdersIx);
+          program.provider.sendAndConfirm(transaction, [openOrdersKeypair]);
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
             boundedStrategyKey
           );
@@ -416,15 +477,16 @@ describe("BoundedTradeV2", () => {
             await tokenProgram.account.account.fetch(quoteAddress);
           // Create and send the BoundedTrade transaction
           const remainingAccounts = await OpenBookDex.tradeAccounts(
-            program.programId,
             serumMarket,
-            boundedStrategyKey,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
-            USDC_MINT
+            USDC_MINT,
+            openOrdersKeypair.publicKey,
+            boundedStrategyKey
           );
+
           const ix = await program.methods
-            .boundedTradeV2()
+            .boundedTradeV2(additionalData)
             .accounts({
               payer: program.provider.publicKey,
               strategy: boundedStrategyKey,
@@ -436,9 +498,10 @@ describe("BoundedTradeV2", () => {
           await compileAndSendV0Tx(
             program.provider,
             payerKeypair,
-            boundedStrategy.lookupTable,
+            lookupTableAddress,
             [ix],
-            (_) => {
+            (err) => {
+              console.error(err);
               assert.ok(false);
             }
           );

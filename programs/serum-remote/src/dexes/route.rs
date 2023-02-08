@@ -265,7 +265,7 @@ impl<'a, 'info> Route<'a, 'info> {
 ///
 /// Check whether the execution price is out of bounds
 ///
-fn is_in_bounds(
+pub fn is_in_bounds(
     input: u64,
     output: u64,
     bounded_price_numerator: &u64,
@@ -275,14 +275,9 @@ fn is_in_bounds(
     //  bound. This must handle the case where output is less than input (i.e. the purchase price is < 1)
     let bounded_numerator = bounded_price_numerator * output;
     let executed_numerator = input * bounded_price_denominator;
-    msg!(
-        "i {} o {} bpn {} bpd {}",
-        input,
-        output,
-        bounded_price_numerator,
-        bounded_price_denominator
-    );
-    if executed_numerator > bounded_numerator {
+    if bounded_numerator == 0 && executed_numerator == 0 {
+        false
+    } else if executed_numerator > bounded_numerator {
         false
     } else {
         true

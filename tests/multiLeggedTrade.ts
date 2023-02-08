@@ -45,6 +45,7 @@ describe("OpenBook + Raydium Trade", () => {
   let serumMarket: Market;
   let coinMint: web3.PublicKey, coinUsdcSerumMarket: Market;
   let boundedStrategyKey: web3.PublicKey, collateralAccount: web3.PublicKey;
+  let additionalData: Buffer;
 
   before(async () => {
     serumMarket = await Market.load(
@@ -53,6 +54,10 @@ describe("OpenBook + Raydium Trade", () => {
       {},
       OPEN_BOOK_DEX_ID
     );
+    additionalData = new BN(
+      // @ts-ignore
+      serumMarket._baseSplTokenDecimals
+    ).toArrayLike(Buffer, "le", 1);
     await program.provider.connection.requestAirdrop(
       payerKey,
       10_000_000_000_000
@@ -379,7 +384,7 @@ describe("OpenBook + Raydium Trade", () => {
       ];
       // Create and send the BoundedTradeV2 transaction
       const ix = await program.methods
-        .boundedTradeV2()
+        .boundedTradeV2(additionalData)
         .accounts({
           payer: program.provider.publicKey,
           strategy: boundedStrategyKey,

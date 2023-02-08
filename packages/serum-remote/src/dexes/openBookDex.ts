@@ -99,17 +99,13 @@ export default class OpenBookDex {
   }
 
   static async tradeAccounts(
-    remoteProgramId: web3.PublicKey,
     serumMarket: Market,
-    strategyKey: web3.PublicKey,
     collateralAccount: web3.PublicKey,
     tradeDestinationAccount: web3.PublicKey,
-    destinationMint: web3.PublicKey
+    destinationMint: web3.PublicKey,
+    openOrdersKey: web3.PublicKey,
+    openOrdersOwner: web3.PublicKey
   ): Promise<web3.AccountMeta[]> {
-    const openOrdersKey = (
-      await this.deriveOpenOrders(remoteProgramId, strategyKey)
-    )[0];
-
     const vaultSigner = await this.deriveVaultSigner(serumMarket);
     return [
       { pubkey: serumMarket.programId, isWritable: false, isSigner: false },
@@ -147,7 +143,7 @@ export default class OpenBookDex {
       // This is the SRM referral account
       // TODO: Maybe actually implement this?
       { pubkey: web3.SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
-      { pubkey: strategyKey, isWritable: false, isSigner: false },
+      { pubkey: openOrdersOwner, isWritable: false, isSigner: false },
       { pubkey: collateralAccount, isWritable: false, isSigner: false },
       { pubkey: tradeDestinationAccount, isWritable: true, isSigner: false },
       { pubkey: destinationMint, isWritable: false, isSigner: false },

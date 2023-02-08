@@ -575,7 +575,12 @@ export type SerumRemote = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "additionalData",
+          "type": "bytes"
+        }
+      ]
     },
     {
       "name": "reclaimV2",
@@ -1635,7 +1640,12 @@ export const IDL: SerumRemote = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "additionalData",
+          "type": "bytes"
+        }
+      ]
     },
     {
       "name": "reclaimV2",
