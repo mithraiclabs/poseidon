@@ -1,7 +1,7 @@
 import * as anchor from "@project-serum/anchor";
-import { BN, Program, Spl, web3 } from "@project-serum/anchor";
+import { BN, Program, web3 } from "@project-serum/anchor";
+import { splTokenProgram } from "@coral-xyz/spl-token";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
-import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { assert } from "chai";
 import {
   BoundedStrategy,
@@ -26,7 +26,7 @@ describe("Reclaim", () => {
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
   // @ts-ignore: TODO: Remove after anchor npm upgrade
   const payerKey = program.provider.wallet.publicKey;
-  const splTokenProgram = Spl.token();
+  const tokenProgram = splTokenProgram();
 
   let boundPrice = new anchor.BN(957);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
@@ -48,14 +48,14 @@ describe("Reclaim", () => {
     );
     // This TX may fail with concurrent tests
     // TODO: Write more elegant solution
-    const { instruction, associatedAddress } =
-      await createAssociatedTokenInstruction(program.provider, USDC_MINT);
+    const [
+      { instruction, associatedAddress },
+      { instruction: baseMintAtaIx, associatedAddress: baseAta },
+    ] = await Promise.all([
+      createAssociatedTokenInstruction(program.provider, USDC_MINT),
+      createAssociatedTokenInstruction(program.provider, WRAPPED_SOL_MINT),
+    ]);
     quoteAddress = associatedAddress;
-    const { instruction: baseMintAtaIx, associatedAddress: baseAta } =
-      await createAssociatedTokenInstruction(
-        program.provider,
-        WRAPPED_SOL_MINT
-      );
     baseAddress = baseAta;
     const createAtaTx = new web3.Transaction()
       .add(instruction)
@@ -65,14 +65,14 @@ describe("Reclaim", () => {
     } catch (err) {}
 
     const transaction = new web3.Transaction();
-    const mintToInstruction = Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      USDC_MINT,
-      associatedAddress,
-      payerKey,
-      [],
-      quoteTransferAmount.muln(10).toNumber()
-    );
+    const mintToInstruction = await tokenProgram.methods
+      .mintTo(quoteTransferAmount.muln(10))
+      .accounts({
+        mint: USDC_MINT,
+        account: associatedAddress,
+        owner: payerKey,
+      })
+      .instruction();
     transaction.add(mintToInstruction);
     // Move SOL to wrapped SOL
     const transferBaseInstruction = web3.SystemProgram.transfer({
@@ -82,7 +82,7 @@ describe("Reclaim", () => {
     });
     transaction.add(transferBaseInstruction);
     // Sync the native account after the transfer
-    const syncNativeIx = splTokenProgram.instruction.syncNative({
+    const syncNativeIx = tokenProgram.instruction.syncNative({
       accounts: {
         account: baseAddress,
       },
@@ -188,12 +188,10 @@ describe("Reclaim", () => {
       await wait(2_000);
     });
     it("should return the assets to the reclaim address", async () => {
-      const reclaimAccountBefore = await splTokenProgram.account.token.fetch(
-        quoteAddress
-      );
-      const orderPayerBefore = await splTokenProgram.account.token.fetch(
-        orderPayer
-      );
+      const [reclaimAccountBefore, orderPayerBefore] = await Promise.all([
+        tokenProgram.account.account.fetch(quoteAddress),
+        tokenProgram.account.account.fetch(orderPayer),
+      ]);
 
       const ix = reclaimIx(
         program,
@@ -205,33 +203,31 @@ describe("Reclaim", () => {
       try {
         await program.provider.sendAndConfirm(transaction);
       } catch (error) {
-        console.log("*** error", error);
         const parsedError = parseTranactionError(error);
-        console.log("Error: ", parsedError.msg);
         assert.ok(false);
       }
 
-      const reclaimAccountAfter = await splTokenProgram.account.token.fetch(
-        quoteAddress
-      );
+      const [
+        reclaimAccountAfter,
+        orderPayerInfo,
+        openOrdersInfo,
+        boundedStrategyInfo,
+      ] = await Promise.all([
+        tokenProgram.account.account.fetch(quoteAddress),
+        program.provider.connection.getAccountInfo(orderPayer),
+        program.provider.connection.getAccountInfo(boundedStrategy.openOrders),
+        program.provider.connection.getAccountInfo(boundedStrategyKey),
+      ]);
       const reclaimDiff = reclaimAccountAfter.amount.sub(
         reclaimAccountBefore.amount
       );
       assert.equal(reclaimDiff.toString(), orderPayerBefore.amount.toString());
 
       // Test that the OrderPayer was closed
-      const orderPayerInfo = await program.provider.connection.getAccountInfo(
-        orderPayer
-      );
       assert.ok(!orderPayerInfo);
       // Test the OpenOrders account was closed
-      const openOrdersInfo = await program.provider.connection.getAccountInfo(
-        boundedStrategy.openOrders
-      );
       assert.ok(!openOrdersInfo);
       // Test the strategy account was closed
-      const boundedStrategyInfo =
-        await program.provider.connection.getAccountInfo(boundedStrategyKey);
       assert.ok(!boundedStrategyInfo);
     });
 

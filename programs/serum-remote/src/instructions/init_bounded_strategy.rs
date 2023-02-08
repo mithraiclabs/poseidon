@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    dex::{self, serum_dex::state::Market, InitOpenOrders},
+    dex::{
+        serum_dex::{self, state::Market},
+        InitOpenOrders,
+    },
     token::{self, Mint, Token, TokenAccount, Transfer},
 };
 use safe_transmute::to_bytes::transmute_to_bytes;
@@ -9,8 +12,9 @@ use std::convert::identity;
 use crate::{
     authority_signer_seeds,
     constants::{AUTHORITY_SEED, BOUNDED_STRATEGY_SEED, OPEN_ORDERS_SEED, ORDER_PAYER_SEED},
+    dexes::open_book_dex,
     errors::ErrorCode,
-    open_orders_seeds, open_serum,
+    open_orders_signer_seeds,
     state::BoundedStrategy,
 };
 
@@ -29,7 +33,7 @@ pub struct InitBoundedStrategy<'info> {
     pub mint: Account<'info, Mint>,
     /// CHECK: Constraints are handled
     #[account(
-    owner = open_serum::ID
+    owner = open_book_dex::ID
   )]
     pub serum_market: UncheckedAccount<'info>,
     #[account(
@@ -58,7 +62,7 @@ pub struct InitBoundedStrategy<'info> {
     /// The account where swapped assets will be transferred to
     #[account(
         constraint = deposit_account.owner == reclaim_account.owner
-        @ ErrorCode::BadDepositAddress 
+        @ ErrorCode::BadDepositAddress
     )]
     pub deposit_account: Account<'info, TokenAccount>,
 
@@ -72,7 +76,7 @@ pub struct InitBoundedStrategy<'info> {
     pub open_orders: UncheckedAccount<'info>,
 
     /// The Serum program
-    pub dex_program: Program<'info, dex::Dex>,
+    pub dex_program: Program<'info, open_book_dex::OpenBookDexV3>,
     pub token_program: Program<'info, Token>,
     #[account(
     constraint = system_program.key() == anchor_lang::solana_program::system_program::ID
@@ -122,7 +126,10 @@ pub fn handler(
         program: ctx.accounts.dex_program.to_account_info(),
         accounts: cpi_accounts,
         remaining_accounts: Vec::new(),
-        signer_seeds: &[open_orders_seeds!(ctx, open_orders_bump)],
+        signer_seeds: &[open_orders_signer_seeds!(
+            ctx.accounts.strategy,
+            open_orders_bump
+        )],
     };
 
     anchor_lang::system_program::create_account(
@@ -153,7 +160,19 @@ pub fn handler(
         remaining_accounts: vec![],
         signer_seeds: &[authority_signer_seeds!(&ctx, authority_bump)],
     };
-    dex::init_open_orders(init_ctx)?;
+    let ix = serum_dex::instruction::init_open_orders(
+        &open_book_dex::ID,
+        ctx.accounts.open_orders.key,
+        ctx.accounts.authority.key,
+        ctx.accounts.serum_market.key,
+        ctx.remaining_accounts.first().map(|acc| acc.key),
+    )
+    .map_err(|pe| ProgramError::from(pe))?;
+    anchor_lang::solana_program::program::invoke_signed(
+        &ix,
+        &ToAccountInfos::to_account_infos(&init_ctx),
+        init_ctx.signer_seeds,
+    )?;
 
     // Transfer the assets
     let cpi_accounts = Transfer {

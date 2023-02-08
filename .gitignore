@@ -7,3 +7,4 @@ node_modules
 dist
 .yarn-error.log
 docker-target
+tests/seeds/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v.json

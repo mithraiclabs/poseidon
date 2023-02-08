@@ -1,10 +1,9 @@
 import * as anchor from "@project-serum/anchor";
-import { Spl } from "@project-serum/anchor";
+import { splTokenProgram } from "@coral-xyz/spl-token";
 import { BN } from "@project-serum/anchor";
 import { Program, web3 } from "@project-serum/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
-import { Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import { initBoundedStrategyIx } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
@@ -23,7 +22,7 @@ describe("InitBoundedStrategy", () => {
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
   // @ts-ignore: TODO: Remove after anchor npm upgrade
   const payerKey = program.provider.wallet.publicKey;
-  const splTokenProgram = Spl.token();
+  const tokenProgram = splTokenProgram();
 
   let boundPrice = new anchor.BN(957);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
@@ -38,7 +37,6 @@ describe("InitBoundedStrategy", () => {
     const accountInfo = await program.provider.connection.getAccountInfo(
       SOL_USDC_SERUM_MARKET
     );
-    console.log("*** market account info", accountInfo);
     serumMarket = await Market.load(
       program.provider.connection,
       SOL_USDC_SERUM_MARKET,
@@ -65,14 +63,15 @@ describe("InitBoundedStrategy", () => {
       await program.provider.sendAndConfirm(createAtaTx);
     } catch (err) {}
 
-    const mintToInstruction = Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      USDC_MINT,
-      associatedAddress,
-      payerKey,
-      [],
-      transferAmount.muln(10).toNumber()
-    );
+    const mintToInstruction = await tokenProgram.methods
+      .mintTo(transferAmount.muln(10))
+      .accounts({
+        mint: USDC_MINT,
+        account: associatedAddress,
+        owner: payerKey,
+      })
+      .instruction();
+
     transaction.add(mintToInstruction);
     await program.provider.sendAndConfirm(transaction);
   });
@@ -108,7 +107,7 @@ describe("InitBoundedStrategy", () => {
         bound,
       }
     );
-    const reclaimTokenAccountBefore = await splTokenProgram.account.token.fetch(
+    const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
 
@@ -132,7 +131,6 @@ describe("InitBoundedStrategy", () => {
       await program.provider.sendAndConfirm(transaction);
     } catch (error) {
       const parsedError = parseTranactionError(error);
-      console.log("error: ", parsedError.msg);
       assert.ok(false);
     }
 
@@ -181,7 +179,7 @@ describe("InitBoundedStrategy", () => {
     assert.ok(openOrders);
 
     // Check that the assets were transfered from the reclaimAddress to the orderPayer
-    const reclaimTokenAccountAfter = await splTokenProgram.account.token.fetch(
+    const reclaimTokenAccountAfter = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
     const reclaimTokenDiff = reclaimTokenAccountAfter.amount.sub(
@@ -190,7 +188,7 @@ describe("InitBoundedStrategy", () => {
     assert.equal(reclaimTokenDiff.toString(), transferAmount.neg().toString());
 
     const orderPayerTokenAccountAfter =
-      await splTokenProgram.account.token.fetch(orderPayer);
+      await tokenProgram.account.account.fetch(orderPayer);
     const orderPayerTokenDiff = orderPayerTokenAccountAfter.amount;
     assert.equal(orderPayerTokenDiff.toString(), transferAmount.toString());
   });
@@ -329,7 +327,6 @@ describe("InitBoundedStrategy", () => {
         await program.provider.sendAndConfirm(transaction);
         assert.ok(false);
       } catch (error) {
-        console.log("*** error", error);
         const parsedError = parseTranactionError(error);
         assert.equal(parsedError.msg, "Order side must be 0 or 1");
         assert.ok(true);

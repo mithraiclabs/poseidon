@@ -1,4 +1,4 @@
-anchor_version = "0.24.2"
+anchor_version = "0.26.0"
 [features]
 seeds = true
 
@@ -9,40 +9,44 @@ serum_remote = "oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK"
 url = "https://anchor.projectserum.com"
 
 [[test.genesis]]
-address = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
-program = "tests/deps/serum_dex.so"
+address = "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"
+program = "tests/deps/raydium_v4.so"
+
+[[test.genesis]]
+address = "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
+program = "tests/deps/open_book_dex.so"
 
 [[test.validator.account]]
 address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 filename = "tests/seeds/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v.json"
 
 [[test.validator.account]]
-address = "9wFFyRfZBsuAha4YcuxcXLKwMxJR43S7fPfQLusDBzvT"
-filename = "tests/seeds/sol-usdc-serum/market_state.json"
+address = "8BnEgHoWFysVcuFFX7QztDmzuH8r5ZFvyP3sYwn1XTh6"
+filename = "tests/seeds/sol-usdc-open-book/market_state.json"
 
 [[test.validator.account]]
-address = "CEQdAFKdycHugujQg9k2wbmxjcpdYZyVLfV9WerTnafJ"
-filename = "tests/seeds/sol-usdc-serum/asks.json"
+address = "EaXdHx7x3mdGA38j5RSmKYSXMzAFzzUXCLNBEDXDn1d5"
+filename = "tests/seeds/sol-usdc-open-book/asks.json"
 
 [[test.validator.account]]
-address = "14ivtgssEBoBjuZJtSAPKYgpUK7DmnSwuPMqJoVTSgKJ"
-filename = "tests/seeds/sol-usdc-serum/bids.json"
+address = "5jWUncPNBMZJ3sTHKmMLszypVkoRK6bfEQMQUHweeQnh"
+filename = "tests/seeds/sol-usdc-open-book/bids.json"
 
 [[test.validator.account]]
-address = "AZG3tFCFtiCqEwyardENBQNpHqxgzbMw8uKeZEw2nRG5"
-filename = "tests/seeds/sol-usdc-serum/request.json"
+address = "CPjXDcggXckEq9e4QeXUieVJBpUNpLEmpihLpg5vWjGF"
+filename = "tests/seeds/sol-usdc-open-book/request.json"
 
 [[test.validator.account]]
-address = "5KKsLVU6TcbVDK4BS6K1DGDxnh4Q9xjYJ8XaDCG5t8ht"
-filename = "tests/seeds/sol-usdc-serum/events.json"
+address = "8CvwxZ9Db6XbLD46NZwwmVDZZRDy7eydFcAGkXKh9axa"
+filename = "tests/seeds/sol-usdc-open-book/events.json"
 
 [[test.validator.account]]
-address = "36c6YqAwyGKQG66XEp2dJc5JqjaBNv7sVghEtJv4c7u6"
-filename = "tests/seeds/sol-usdc-serum/base_vault.json"
+address = "CKxTHwM9fPMRRvZmFnFoqKNd9pQR21c5Aq9bh5h9oghX"
+filename = "tests/seeds/sol-usdc-open-book/base_vault.json"
 
 [[test.validator.account]]
-address = "8CFo8bL8mZQK8abbFyypFMwEDd8tVJjHTTojMLgQTUSZ"
-filename = "tests/seeds/sol-usdc-serum/quote_vault.json"
+address = "6A5NHCj1yF6urc9wZNe6Bcjj4LVszQNj5DwAWG97yzMu"
+filename = "tests/seeds/sol-usdc-open-book/quote_vault.json"
 
 [provider]
 cluster = "localnet"

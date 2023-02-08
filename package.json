@@ -1,10 +1,12 @@
 {
   "dependencies": {
-    "@project-serum/anchor": "^0.24.2",
-    "@project-serum/serum": "^0.13.63"
+    "@coral-xyz/spl-token": "^0.26.0",
+    "@project-serum/anchor": "^0.26.0",
+    "@project-serum/serum": "^0.13.63",
+    "@raydium-io/raydium-sdk": "^1.1.0-beta.55",
+    "@solana/spl-token": "^0.3.6"
   },
   "devDependencies": {
-    "@solana/spl-token": "^0.1.0",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^9.0.0",
     "@types/node": "^17.0.21",

@@ -18,6 +18,12 @@ devnet = ["anchor-spl/devnet"]
 localnet = []
 
 [dependencies]
-anchor-lang = "0.24.2"
-anchor-spl = { version = "0.24.2", features = ["dex"] }
+anchor-lang = "0.26.0"
+anchor-spl = { version = "0.26.0", features = ["dex"] }
 safe-transmute = "0.11.0"
+static_assertions = "1.1.0"
+enum_dispatch = "0.3.8"
+
+arrayref = "0.3.6"
+num_enum = "0.5.7"
+uint = { version = "=0.9.1", default-features = false }

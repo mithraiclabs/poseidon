@@ -1,7 +1,7 @@
 import * as anchor from "@project-serum/anchor";
-import { BN, Program, Spl, web3 } from "@project-serum/anchor";
+import { BN, Program, web3 } from "@project-serum/anchor";
+import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Market, DexInstructions } from "@project-serum/serum";
-import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
 import {
   BoundedStrategy,
@@ -30,9 +30,8 @@ describe("BoundedTrade", () => {
   // Configure the client to use the local cluster.
   const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
 
-  // @ts-ignore: TODO: Remove after anchor npm upgrade
-  const payerKey = program.provider.wallet.publicKey;
-  const splTokenProgram = Spl.token();
+  const payerKey = program.provider.publicKey;
+  const tokenProgram = splTokenProgram({ programId: SPL_TOKEN_PROGRAM_ID });
 
   let boundPrice = new anchor.BN(957);
   let reclaimDate = new anchor.BN(new Date().getTime() / 1_000 + 3600);
@@ -100,14 +99,14 @@ describe("BoundedTrade", () => {
     );
 
     const transaction = new web3.Transaction();
-    const mintToInstruction = Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      USDC_MINT,
-      associatedAddress,
-      payerKey,
-      [],
-      quoteTransferAmount.muln(10).toNumber()
-    );
+    const mintToInstruction = await tokenProgram.methods
+      .mintTo(quoteTransferAmount.muln(10))
+      .accounts({
+        mint: USDC_MINT,
+        account: associatedAddress,
+        owner: payerKey,
+      })
+      .instruction();
     transaction.add(mintToInstruction);
     // Move SOL to wrapped SOL
     const transferBaseInstruction = web3.SystemProgram.transfer({
@@ -117,7 +116,7 @@ describe("BoundedTrade", () => {
     });
     transaction.add(transferBaseInstruction);
     // Sync the native account after the transfer
-    const syncNativeIx = splTokenProgram.instruction.syncNative({
+    const syncNativeIx = tokenProgram.instruction.syncNative({
       accounts: {
         account: baseAddress,
       },
@@ -175,7 +174,7 @@ describe("BoundedTrade", () => {
         });
         it("should execute the trade", async () => {
           const depositTokenAccountBefore =
-            await splTokenProgram.account.token.fetch(baseAddress);
+            await tokenProgram.account.account.fetch(baseAddress);
           // Create and send the BoundedTrade transaction
           const ix = await boundedTradeIx(
             program,
@@ -188,7 +187,6 @@ describe("BoundedTrade", () => {
             await program.provider.sendAndConfirm(transaction);
           } catch (error) {
             const parsedError = parseTranactionError(error);
-            console.log("error: ", parsedError.msg);
             assert.ok(false);
           }
           // Calculate the maxmium amount of SOL that can be bought)
@@ -209,7 +207,7 @@ describe("BoundedTrade", () => {
 
           // Validate that the deposit received the amount of SOL
           const depositTokenAccountAfter =
-            await splTokenProgram.account.token.fetch(baseAddress);
+            await tokenProgram.account.account.fetch(baseAddress);
           const depositTokenDiff = depositTokenAccountAfter.amount.sub(
             depositTokenAccountBefore.amount
           );
@@ -220,7 +218,7 @@ describe("BoundedTrade", () => {
         });
         it("The referral account should receive a commission", async () => {
           const referralAccountBefore =
-            await splTokenProgram.account.token.fetch(serumReferralKey);
+            await tokenProgram.account.account.fetch(serumReferralKey);
           // Create and send the BoundedTrade transaction
           const ix = await boundedTradeIx(
             program,
@@ -252,20 +250,15 @@ describe("BoundedTrade", () => {
           try {
             await program.provider.sendAndConfirm(transaction);
           } catch (error) {
-            console.log("*** error", error);
             const parsedError = parseTranactionError(error);
-            console.log("error: ", parsedError.msg);
             assert.ok(false);
           }
-          const referralAccountAfter =
-            await splTokenProgram.account.token.fetch(serumReferralKey);
+          const referralAccountAfter = await tokenProgram.account.account.fetch(
+            serumReferralKey
+          );
 
           const referralAmtDiff = referralAccountAfter.amount.sub(
             referralAccountBefore.amount
-          );
-          console.log(
-            "*** referralAmtDiff.toNumber()",
-            referralAmtDiff.toNumber()
           );
           // add the test for the referral account.
           assert.ok(referralAmtDiff.toNumber() > 0);
@@ -426,7 +419,7 @@ describe("BoundedTrade", () => {
         });
         it("should execute the trade and settle the assets", async () => {
           const depositTokenAccountBefore =
-            await splTokenProgram.account.token.fetch(quoteAddress);
+            await tokenProgram.account.account.fetch(quoteAddress);
           // Create and send the BoundedTrade transaction
           const ix = await boundedTradeIx(
             program,
@@ -439,7 +432,6 @@ describe("BoundedTrade", () => {
             await program.provider.sendAndConfirm(transaction);
           } catch (error) {
             const parsedError = parseTranactionError(error);
-            console.log("error: ", parsedError.msg);
             assert.ok(false);
           }
           // Calculate the maxmium amount of SOL that can be sold
@@ -469,7 +461,7 @@ describe("BoundedTrade", () => {
 
           // Validate that the deposit received the amount of USDC
           const depositTokenAccountAfter =
-            await splTokenProgram.account.token.fetch(quoteAddress);
+            await tokenProgram.account.account.fetch(quoteAddress);
           const depositTokenDiff = depositTokenAccountAfter.amount.sub(
             depositTokenAccountBefore.amount
           );

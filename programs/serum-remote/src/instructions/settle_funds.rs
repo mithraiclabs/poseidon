@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    dex::{self, settle_funds, SettleFunds},
+    dex::SettleFunds,
     token::{Token, TokenAccount},
 };
 
 use crate::{
-    authority_signer_seeds, constants::AUTHORITY_SEED, errors::ErrorCode,
-    instructions::bounded_trade::SettleWallets, open_serum, settle_funds, state::BoundedStrategy,
+    authority_signer_seeds, constants::AUTHORITY_SEED, dexes::open_book_dex, errors::ErrorCode,
+    instructions::bounded_trade::SettleWallets, settle_funds, state::BoundedStrategy,
 };
 
 #[derive(Accounts)]
@@ -23,12 +23,12 @@ pub struct SettleFundsAccounts<'info> {
     /// CHECK: Checks are made when loading and interacting with the market
     #[account(
         mut,
-      owner = open_serum::ID
+      owner = open_book_dex::ID
     )]
     pub serum_market: UncheckedAccount<'info>,
     #[account(
         mut,
-        owner = open_serum::ID,
+        owner = open_book_dex::ID,
         constraint = open_orders.key() == strategy.open_orders
           @ ErrorCode::WrongOpenOrdersKey
       )]
@@ -36,7 +36,7 @@ pub struct SettleFundsAccounts<'info> {
     pub open_orders: UncheckedAccount<'info>,
     /// CHECK: Constraints are added
     #[account(
-          constraint = authority.key() == strategy.authority 
+          constraint = authority.key() == strategy.authority
               @ ErrorCode::AuthorityMisMatch,
       )]
     pub authority: UncheckedAccount<'info>,
@@ -58,7 +58,7 @@ pub struct SettleFundsAccounts<'info> {
     pub deposit_account: Box<Account<'info, TokenAccount>>,
 
     /// The Serum program
-    pub dex_program: Program<'info, dex::Dex>,
+    pub dex_program: Program<'info, open_book_dex::OpenBookDexV3>,
     /// The SPL Token program id
     pub token_program_id: Program<'info, Token>,
 }

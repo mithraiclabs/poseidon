@@ -1,4 +1,18 @@
 #[macro_export]
+macro_rules! strategy_signer_seeds {
+    ($strategy:expr) => {
+        &[
+            &$strategy.collateral_mint.as_ref(),
+            &$strategy.bounded_price_numerator.to_le_bytes(),
+            &$strategy.bounded_price_denominator.to_le_bytes(),
+            &$strategy.reclaim_date.to_le_bytes(),
+            BOUNDED_STRATEGY_SEED.as_bytes(),
+            &[$strategy.bump],
+        ]
+    };
+}
+
+#[macro_export]
 macro_rules! authority_signer_seeds {
     ($ctx:expr, $bump:ident) => {
         &[
@@ -10,10 +24,31 @@ macro_rules! authority_signer_seeds {
 }
 
 #[macro_export]
+macro_rules! token_account_seeds {
+    ($strategy:expr, $mint:ident) => {
+        &[&$strategy.key().as_ref(), &$mint.as_ref()]
+    };
+}
+
+#[macro_export]
+macro_rules! token_account_signer_seeds {
+    ($strategy:expr, $mint:ident, $bump:ident) => {
+        &[&$strategy.key().to_bytes()[..], &$mint.as_ref(), &[$bump]]
+    };
+}
+
+#[macro_export]
 macro_rules! open_orders_seeds {
-    ($ctx:expr, $bump:ident) => {
+    ($strategy:expr) => {
+        &[&$strategy.key().to_bytes()[..], OPEN_ORDERS_SEED.as_bytes()]
+    };
+}
+
+#[macro_export]
+macro_rules! open_orders_signer_seeds {
+    ($strategy:expr, $bump:ident) => {
         &[
-            &$ctx.accounts.strategy.key().to_bytes()[..],
+            &$strategy.key().to_bytes()[..],
             OPEN_ORDERS_SEED.as_bytes(),
             &[$bump],
         ]
@@ -43,16 +78,36 @@ macro_rules! place_order {
             remaining_accounts: Vec::new(),
             signer_seeds: $signer_seeds,
         };
-        new_order_v3(
-            new_order_ctx,
+        let referral = new_order_ctx.remaining_accounts.get(0);
+        let ix = anchor_spl::dex::serum_dex::instruction::new_order(
+            new_order_ctx.accounts.market.key,
+            new_order_ctx.accounts.open_orders.key,
+            new_order_ctx.accounts.request_queue.key,
+            new_order_ctx.accounts.event_queue.key,
+            new_order_ctx.accounts.market_bids.key,
+            new_order_ctx.accounts.market_asks.key,
+            new_order_ctx.accounts.order_payer_token_account.key,
+            new_order_ctx.accounts.open_orders_authority.key,
+            new_order_ctx.accounts.coin_vault.key,
+            new_order_ctx.accounts.pc_vault.key,
+            new_order_ctx.accounts.token_program.key,
+            new_order_ctx.accounts.rent.key,
+            referral.map(|r| r.key),
+            &open_book_dex::ID,
             $order_info.side,
             $order_info.price,
             $order_info.max_coin_qty,
-            $order_info.max_pc_qty,
-            SelfTradeBehavior::DecrementTake,
             OrderType::ImmediateOrCancel,
             420,
+            SelfTradeBehavior::DecrementTake,
             u16::MAX,
+            $order_info.max_pc_qty,
+        )
+        .map_err(|pe| ProgramError::from(pe))?;
+        anchor_lang::solana_program::program::invoke_signed(
+            &ix,
+            &ToAccountInfos::to_account_infos(&new_order_ctx),
+            new_order_ctx.signer_seeds,
         )?;
     };
 }
@@ -78,6 +133,25 @@ macro_rules! settle_funds {
             remaining_accounts: $ctx.remaining_accounts.to_vec(),
             signer_seeds: $signer_seeds,
         };
-        settle_funds(settle_funds_ctx)?;
+        let referral = settle_funds_ctx.remaining_accounts.get(0);
+        let ix = anchor_spl::dex::serum_dex::instruction::settle_funds(
+            &open_book_dex::ID,
+            settle_funds_ctx.accounts.market.key,
+            settle_funds_ctx.accounts.token_program.key,
+            settle_funds_ctx.accounts.open_orders.key,
+            settle_funds_ctx.accounts.open_orders_authority.key,
+            settle_funds_ctx.accounts.coin_vault.key,
+            settle_funds_ctx.accounts.coin_wallet.key,
+            settle_funds_ctx.accounts.pc_vault.key,
+            settle_funds_ctx.accounts.pc_wallet.key,
+            referral.map(|r| r.key),
+            settle_funds_ctx.accounts.vault_signer.key,
+        )
+        .map_err(|pe| ProgramError::from(pe))?;
+        anchor_lang::solana_program::program::invoke_signed(
+            &ix,
+            &ToAccountInfos::to_account_infos(&settle_funds_ctx),
+            settle_funds_ctx.signer_seeds,
+        )?;
     };
 }

@@ -26,6 +26,20 @@ export type BoundedStrategy = {
   serumDexId: web3.PublicKey;
 };
 
+export type BoundedStrategyV2 = {
+  collateralMint: web3.PublicKey;
+  collateralAccount: web3.PublicKey;
+  reclaimDate: BN;
+  reclaimAddress: web3.PublicKey;
+  depositAddress: web3.PublicKey;
+  lookupTable: web3.PublicKey;
+  boundedPriceNumerator: BN;
+  boundedPriceDenominator: BN;
+  bump: number;
+  accountList: web3.PublicKey[];
+  additionalData: number[];
+};
+
 export type BoundedStrategyParams = {
   transferAmount: BN;
   boundPrice: BN;
@@ -34,4 +48,10 @@ export type BoundedStrategyParams = {
   depositAddress: web3.PublicKey;
   orderSide: number;
   bound: number;
+};
+
+export type BoundedStrategyParamsV2 = {
+  boundPriceNumerator: BN;
+  boundPriceDenominator: BN;
+  reclaimDate: BN;
 };
