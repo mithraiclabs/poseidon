@@ -516,14 +516,6 @@ export type SerumRemote = {
           ]
         },
         {
-          "name": "lookupTable",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The look up table address."
-          ]
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -550,10 +542,6 @@ export type SerumRemote = {
         {
           "name": "reclaimDate",
           "type": "i64"
-        },
-        {
-          "name": "additionalData",
-          "type": "bytes"
         }
       ]
     },
@@ -1588,14 +1576,6 @@ export const IDL: SerumRemote = {
           ]
         },
         {
-          "name": "lookupTable",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The look up table address."
-          ]
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -1622,10 +1602,6 @@ export const IDL: SerumRemote = {
         {
           "name": "reclaimDate",
           "type": "i64"
-        },
-        {
-          "name": "additionalData",
-          "type": "bytes"
         }
       ]
     },

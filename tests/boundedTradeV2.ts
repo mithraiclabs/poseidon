@@ -157,10 +157,6 @@ describe("BoundedTradeV2", () => {
         depositAddress,
         destinationMint
       );
-      const additionalData = new BN(
-        // @ts-ignore
-        serumMarket._baseSplTokenDecimals
-      ).toArrayLike(Buffer, "le", 1);
       const lookupTableAddress = await createLookUpTable(
         program.provider,
         initAdditionalAccounts
@@ -171,21 +167,18 @@ describe("BoundedTradeV2", () => {
           transferAmount,
           boundedPriceNumerator,
           boundedPriceDenominator,
-          reclaimDate,
-          additionalData
+          reclaimDate
         )
         .accounts({
           payer: program.provider.publicKey,
           collateralAccount,
           mint: collateralMint,
-          lookupTable: lookupTableAddress,
           strategy: boundedStrategyKey,
           reclaimAccount: reclaimAddress,
           depositAccount: depositAddress,
           tokenProgram: SPL_TOKEN_PROGRAM_ID,
           systemProgram: web3.SystemProgram.programId,
         })
-        .remainingAccounts(initAdditionalAccounts)
         .instruction();
       await compileAndSendV0Tx(
         program.provider,

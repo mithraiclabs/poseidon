@@ -93,39 +93,24 @@ describe("InitBoundedStrategyV2", () => {
     const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
-    const initAdditionalAccounts = await OpenBookDex.initLegAccounts(
-      program.programId,
-      serumMarket,
-      boundedStrategyKey,
-      collateralAccount,
-      depositAddress,
-      WRAPPED_SOL_MINT
-    );
-    const additionalData = new BN(
-      // @ts-ignore
-      serumMarket._baseSplTokenDecimals
-    ).toArrayLike(Buffer, "le", 1);
 
     const instruction = await program.methods
       .initBoundedStrategyV2(
         transferAmount,
         boundPriceNumerator,
         boundPriceDenominator,
-        reclaimDate,
-        additionalData
+        reclaimDate
       )
       .accounts({
         payer: program.provider.publicKey,
         collateralAccount,
         mint: USDC_MINT,
         strategy: boundedStrategyKey,
-        lookupTable: web3.SystemProgram.programId,
         reclaimAccount: reclaimAddress,
         depositAccount: depositAddress,
         tokenProgram: SPL_TOKEN_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
       })
-      .remainingAccounts(initAdditionalAccounts)
       .instruction();
     try {
       const tx = new web3.Transaction().add(instruction);
@@ -168,25 +153,6 @@ describe("InitBoundedStrategyV2", () => {
       boundedStrategy.depositAddress.toString(),
       depositAddress.toString()
     );
-    // check additional accounts array
-    boundedStrategy.accountList.forEach((key, index) => {
-      const expectedKey = initAdditionalAccounts[index];
-      if (expectedKey) {
-        assert.ok(key.equals(expectedKey.pubkey));
-      } else {
-        assert.ok(key.equals(web3.SystemProgram.programId));
-      }
-    });
-
-    // check additional data
-    boundedStrategy.additionalData.forEach((byte, index) => {
-      const expectedByte = additionalData[index];
-      if (expectedByte) {
-        assert.equal(byte, expectedByte);
-      } else {
-        assert.equal(byte, 0);
-      }
-    });
 
     // Check that the assets were transfered from the reclaimAddress to the orderPayer
     const reclaimTokenAccountAfter = await tokenProgram.account.account.fetch(

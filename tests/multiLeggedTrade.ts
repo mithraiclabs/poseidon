@@ -230,10 +230,7 @@ describe("OpenBook + Raydium Trade", () => {
         transferAmount,
         boundPriceNumerator,
         boundPriceDenominator,
-        reclaimDate,
-        orderSide,
-        bound,
-        additionalData
+        reclaimDate
       )
       .accounts({
         payer: program.provider.publicKey,
@@ -242,10 +239,8 @@ describe("OpenBook + Raydium Trade", () => {
         strategy: boundedStrategyKey,
         reclaimAccount: reclaimAddress,
         depositAccount: depositAddress,
-        lookupTable: lookupTableAddress,
         tokenProgram: SPL_TOKEN_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
-        rent: web3.SYSVAR_RENT_PUBKEY,
       })
       .remainingAccounts(remainingAccounts)
       .instruction();

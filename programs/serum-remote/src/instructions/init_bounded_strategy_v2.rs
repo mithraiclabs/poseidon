@@ -1,13 +1,10 @@
-use std::collections::VecDeque;
-
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::{
     constants::{BOUNDED_STRATEGY_SEED, ORDER_PAYER_SEED},
-    dexes::{DexList, Leg, Route},
-    errors::{self, ErrorCode},
-    state::{BoundedStrategyV2, MAX_ACCOUNTS},
+    errors::ErrorCode,
+    state::BoundedStrategyV2,
 };
 
 #[derive(Accounts)]
@@ -48,9 +45,6 @@ pub struct InitBoundedStrategyV2<'info> {
         @ ErrorCode::BadDepositAddress
     )]
     pub deposit_account: Box<Account<'info, TokenAccount>>,
-    /// The look up table address.
-    /// CHECK: owner check is handled
-    pub lookup_table: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
     #[account(
     constraint = system_program.key() == anchor_lang::solana_program::system_program::ID
@@ -67,9 +61,7 @@ pub fn handler<'info>(
     bounded_price_numerator: u64,
     bounded_price_denominator: u64,
     reclaim_date: i64,
-    additional_data: Vec<u8>,
 ) -> Result<()> {
-    InitBoundedStrategyV2::account_checks(&ctx)?;
     // Set BoundedStrategy information
     let strategy_bump = match ctx.bumps.get("strategy") {
         Some(bump) => *bump,
@@ -87,51 +79,6 @@ pub fn handler<'info>(
     bounded_strategy.reclaim_address = ctx.accounts.reclaim_account.key();
     bounded_strategy.deposit_address = ctx.accounts.deposit_account.key();
     bounded_strategy.bump = strategy_bump;
-    bounded_strategy.lookup_table = ctx.accounts.lookup_table.key();
-    for (dst, src) in bounded_strategy
-        .additional_data
-        .iter_mut()
-        .zip(&additional_data)
-    {
-        *dst = *src
-    }
-    // Copy the remaining accounts to the BoundedStrategy
-    let keys: Vec<Pubkey> = ctx.remaining_accounts.iter().map(|x| x.key()).collect();
-    for (dst, src) in bounded_strategy.account_list.iter_mut().zip(&keys) {
-        *dst = *src
-    }
-
-    // Unpack & initalize the routes from remaining accounts
-    let mut route = Route::default();
-    let (mut account_cursor, mut leg_cursor): (usize, usize) = (0, 0);
-    let mut added_data = VecDeque::from(additional_data);
-    while let Some(dex_program) = ctx.remaining_accounts.get(account_cursor) {
-        let dex = DexList::from_id(dex_program.key())?;
-        msg!("Dex {:?}", dex);
-        let end_index = dex.get_end_account_idx(account_cursor, true);
-
-        let account_infos = &ctx.remaining_accounts[account_cursor..end_index];
-        // Create the Leg
-        let leg = Leg::from_account_slice(dex, account_infos, &mut added_data, true)?;
-        // Initialize from the leg
-        leg.initialize(&ctx)?;
-        // Add the leg to the Route
-        route.legs[leg_cursor] = Some(leg);
-
-        account_cursor = end_index;
-        leg_cursor += 1;
-    }
-
-    // Validate the start and end route mints lines up
-    if ctx.accounts.deposit_account.mint != route.end_mint()? {
-        return Err(error!(errors::ErrorCode::OutputMintMismatch));
-    }
-    if ctx.accounts.reclaim_account.mint != route.start_mint()? {
-        return Err(error!(errors::ErrorCode::InputMintMismatch));
-    }
-
-    // Initialize any intermediary token accounts for multi-legged routes
-    route.initialize_intermediary_token_accounts(&ctx)?;
 
     // Transfer the assets to the remote execution program
     let cpi_accounts = Transfer {
@@ -143,19 +90,4 @@ pub fn handler<'info>(
     token::transfer(cpi_ctx, transfer_amount)?;
 
     Ok(())
-}
-
-impl InitBoundedStrategyV2<'_> {
-    fn account_checks(ctx: &Context<InitBoundedStrategyV2>) -> Result<()> {
-        if ctx.remaining_accounts.len() > MAX_ACCOUNTS {
-            return Err(error!(ErrorCode::TooManyAccounts));
-        }
-
-        if ctx.accounts.lookup_table.key != &anchor_lang::system_program::ID
-            && ctx.accounts.lookup_table.owner != &crate::address_lut_program::ID
-        {
-            return Err(error!(ErrorCode::BadLutProgramAddress));
-        }
-        Ok(())
-    }
 }

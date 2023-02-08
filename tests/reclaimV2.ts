@@ -60,10 +60,6 @@ describe("ReclaimV2", () => {
       depositAddress,
       WRAPPED_SOL_MINT
     );
-    const additionalData = new BN(
-      // @ts-ignore
-      serumMarket._baseSplTokenDecimals
-    ).toArrayLike(Buffer, "le", 1);
     const lookupTableAddress = await createLookUpTable(
       program.provider,
       initAdditionalAccounts
@@ -73,15 +69,13 @@ describe("ReclaimV2", () => {
         transferAmount,
         boundPriceNumerator,
         boundPriceDenominator,
-        _reclaimDate,
-        additionalData
+        _reclaimDate
       )
       .accounts({
         payer: program.provider.publicKey,
         collateralAccount: collateralAddress,
         mint: USDC_MINT,
         strategy: boundedStrategyKey,
-        lookupTable: lookupTableAddress,
         reclaimAccount: reclaimAddress,
         depositAccount: depositAddress,
         tokenProgram: SPL_TOKEN_PROGRAM_ID,
