@@ -39,16 +39,6 @@ impl<'a, 'info> Leg<'a, 'info> {
         Ok(res)
     }
 
-    pub fn initialize(
-        &self,
-        ctx: &Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
-    ) -> Result<()> {
-        match self {
-            Leg::OpenBookV3(open_book_dex) => open_book_dex.initialize(ctx),
-            Leg::Raydium(raydium_swap) => raydium_swap.initialize(ctx),
-        }
-    }
-
     /// Execute the full swap via CPI to the DEX
     pub fn swap(&self, tokens_in: u64, signers_seeds: &[&[&[u8]]]) -> Result<()> {
         match self {

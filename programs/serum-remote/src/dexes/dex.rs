@@ -36,12 +36,6 @@ pub trait DexStatic<'a, 'info> {
     where
         Self: Sized;
 
-    /// Handles any initialization needed for the DEX
-    fn initialize(
-        &self,
-        ctx: &Context<'_, '_, '_, 'info, InitBoundedStrategyV2<'info>>,
-    ) -> Result<()>;
-
     /// Execute the full swap via CPI to the DEX
     fn swap(&self, tokens_in: u64, signers_seeds: &[&[&[u8]]]) -> Result<()>;
 

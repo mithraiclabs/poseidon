@@ -155,14 +155,6 @@ impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
         })
     }
 
-    fn initialize(
-        &self,
-        _ctx: &Context<'_, '_, '_, 'info, crate::instructions::InitBoundedStrategyV2<'info>>,
-    ) -> Result<()> {
-        // Nothing to initialize for Raydium swapping
-        Ok(())
-    }
-
     fn swap(&self, tokens_in: u64, signers_seeds: &[&[&[u8]]]) -> Result<()> {
         let instruction = swap_base_in(
             self.accounts[0].key,
@@ -197,7 +189,7 @@ impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
 
     fn cleanup_accounts(
         &self,
-        ctx: &Context<'_, '_, 'a, 'info, crate::instructions::ReclaimV2<'info>>,
+        _ctx: &Context<'_, '_, 'a, 'info, crate::instructions::ReclaimV2<'info>>,
     ) -> Result<()> {
         Ok(())
     }
