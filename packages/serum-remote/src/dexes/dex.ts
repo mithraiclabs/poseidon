@@ -3,7 +3,7 @@ import { Market } from "@project-serum/serum";
 import { getProgramId } from "../utils";
 import { SolCluster } from "../types";
 import OpenBookDex from "./openBookDex";
-import Raydium from "./raydium";
+import Raydium, { SERUM_V3_PROGRAM_ID } from "./raydium";
 import { LIQUIDITY_STATE_LAYOUT_V4 } from "@raydium-io/raydium-sdk";
 
 /**
@@ -64,8 +64,10 @@ export const getInitLegAccounts = async (
             acct.data
           );
           if (
-            raydiumV4MarketInfo.marketProgramId.toString() !==
-            openBookProgramId.toString()
+            ![
+              SERUM_V3_PROGRAM_ID.toString(),
+              openBookProgramId.toString(),
+            ].includes(raydiumV4MarketInfo.marketProgramId.toString())
           ) {
             throw new Error("Unsupported Raydium market");
           }
@@ -73,7 +75,7 @@ export const getInitLegAccounts = async (
             connection,
             raydiumV4MarketInfo.marketId,
             {},
-            openBookProgramId
+            raydiumV4MarketInfo.marketProgramId
           );
           legAccounts = Raydium.initLegAccounts(
             raydiumV4MarketInfo.baseMint,

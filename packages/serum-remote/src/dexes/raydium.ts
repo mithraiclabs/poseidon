@@ -9,6 +9,10 @@ import {
 import { SolCluster } from "../types";
 import OpenBookDex from "./openBookDex";
 
+export const SERUM_V3_PROGRAM_ID = new web3.PublicKey(
+  "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
+);
+
 export default class Raydium {
   public static V4_PROGRAM_ID: web3.PublicKey = new web3.PublicKey(
     "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"

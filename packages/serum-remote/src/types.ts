@@ -29,12 +29,10 @@ export type BoundedStrategy = {
 export type BoundedStrategyV2 = {
   collateralMint: web3.PublicKey;
   collateralAccount: web3.PublicKey;
-  orderSide: number;
   reclaimDate: BN;
   reclaimAddress: web3.PublicKey;
   depositAddress: web3.PublicKey;
   lookupTable: web3.PublicKey;
-  bound: number;
   boundedPriceNumerator: BN;
   boundedPriceDenominator: BN;
   bump: number;
