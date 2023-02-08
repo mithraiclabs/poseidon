@@ -111,6 +111,16 @@ describe("BoundedTradeV2", () => {
       baseTransferAmount.muln(10).toNumber()
     );
     const transaction = new web3.Transaction();
+    // Create OpenOrders account for the user
+    openOrdersKeypair = new web3.Keypair();
+    const createOpenOrdersIx = await OpenOrders.makeCreateAccountTransaction(
+      program.provider.connection,
+      serumMarket.address,
+      payerKey,
+      openOrdersKeypair.publicKey,
+      serumMarket.programId
+    );
+    transaction.add(createOpenOrdersIx);
 
     const mintToInstruction = await tokenProgram.methods
       .mintTo(quoteTransferAmount.muln(10))
@@ -136,7 +146,7 @@ describe("BoundedTradeV2", () => {
       })
       .instruction();
     transaction.add(syncNativeIx);
-    await program.provider.sendAndConfirm(transaction);
+    await program.provider.sendAndConfirm(transaction, [openOrdersKeypair]);
 
     initBoundedStrategy = async (
       nonce: number,
@@ -224,19 +234,6 @@ describe("BoundedTradeV2", () => {
             WRAPPED_SOL_MINT,
             quoteTransferAmount
           ));
-          // Create OpenOrders account for the user
-          const transaction = new web3.Transaction();
-          openOrdersKeypair = new web3.Keypair();
-          const createOpenOrdersIx =
-            await OpenOrders.makeCreateAccountTransaction(
-              program.provider.connection,
-              serumMarket.address,
-              payerKey,
-              openOrdersKeypair.publicKey,
-              serumMarket.programId
-            );
-          transaction.add(createOpenOrdersIx);
-          program.provider.sendAndConfirm(transaction, [openOrdersKeypair]);
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
             boundedStrategyKey
           );
@@ -250,7 +247,7 @@ describe("BoundedTradeV2", () => {
             boundedStrategy.depositAddress,
             WRAPPED_SOL_MINT,
             openOrdersKeypair.publicKey,
-            boundedStrategyKey
+            payerKey
           );
           // Create and send the BoundedTradeV2 transaction
           const ix = await program.methods
@@ -316,19 +313,6 @@ describe("BoundedTradeV2", () => {
             WRAPPED_SOL_MINT,
             quoteTransferAmount
           ));
-          // Create OpenOrders account for the user
-          const transaction = new web3.Transaction();
-          openOrdersKeypair = new web3.Keypair();
-          const createOpenOrdersIx =
-            await OpenOrders.makeCreateAccountTransaction(
-              program.provider.connection,
-              serumMarket.address,
-              payerKey,
-              openOrdersKeypair.publicKey,
-              serumMarket.programId
-            );
-          transaction.add(createOpenOrdersIx);
-          program.provider.sendAndConfirm(transaction, [openOrdersKeypair]);
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
             boundedStrategyKey
           );
@@ -340,7 +324,7 @@ describe("BoundedTradeV2", () => {
             boundedStrategy.depositAddress,
             WRAPPED_SOL_MINT,
             openOrdersKeypair.publicKey,
-            boundedStrategyKey
+            payerKey
           );
           const ix = await program.methods
             .boundedTradeV2(additionalData)
@@ -389,19 +373,6 @@ describe("BoundedTradeV2", () => {
             USDC_MINT,
             baseTransferAmount
           ));
-          // Create OpenOrders account for the user
-          const transaction = new web3.Transaction();
-          openOrdersKeypair = new web3.Keypair();
-          const createOpenOrdersIx =
-            await OpenOrders.makeCreateAccountTransaction(
-              program.provider.connection,
-              serumMarket.address,
-              payerKey,
-              openOrdersKeypair.publicKey,
-              serumMarket.programId
-            );
-          transaction.add(createOpenOrdersIx);
-          program.provider.sendAndConfirm(transaction, [openOrdersKeypair]);
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
             boundedStrategyKey
           );
@@ -413,7 +384,7 @@ describe("BoundedTradeV2", () => {
             boundedStrategy.depositAddress,
             USDC_MINT,
             openOrdersKeypair.publicKey,
-            boundedStrategyKey
+            payerKey
           );
           const ix = await program.methods
             .boundedTradeV2(additionalData)
@@ -455,19 +426,6 @@ describe("BoundedTradeV2", () => {
             USDC_MINT,
             baseTransferAmount
           ));
-          // Create OpenOrders account for the user
-          const transaction = new web3.Transaction();
-          openOrdersKeypair = new web3.Keypair();
-          const createOpenOrdersIx =
-            await OpenOrders.makeCreateAccountTransaction(
-              program.provider.connection,
-              serumMarket.address,
-              payerKey,
-              openOrdersKeypair.publicKey,
-              serumMarket.programId
-            );
-          transaction.add(createOpenOrdersIx);
-          program.provider.sendAndConfirm(transaction, [openOrdersKeypair]);
           boundedStrategy = await program.account.boundedStrategyV2.fetch(
             boundedStrategyKey
           );
@@ -482,7 +440,7 @@ describe("BoundedTradeV2", () => {
             boundedStrategy.depositAddress,
             USDC_MINT,
             openOrdersKeypair.publicKey,
-            boundedStrategyKey
+            payerKey
           );
 
           const ix = await program.methods

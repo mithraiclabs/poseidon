@@ -573,6 +573,11 @@ export type SerumRemote = {
           "name": "depositAccount",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1637,6 +1642,11 @@ export const IDL: SerumRemote = {
         {
           "name": "depositAccount",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
           "isSigner": false
         }
       ],

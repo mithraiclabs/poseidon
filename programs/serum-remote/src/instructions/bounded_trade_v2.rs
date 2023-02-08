@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use anchor_lang::prelude::*;
-use anchor_spl::token::TokenAccount;
+use anchor_spl::token::{self, Token, TokenAccount};
 
 use crate::{
     constants::BOUNDED_STRATEGY_SEED,
@@ -31,12 +31,14 @@ pub struct BoundedTradeV2<'info> {
             @ ErrorCode::DepositAddressMisMatch
     )]
     pub deposit_account: Box<Account<'info, TokenAccount>>,
+    pub token_program: Program<'info, Token>,
 }
 
 pub fn handler<'a, 'b, 'c, 'info>(
     ctx: Context<'a, 'b, 'c, 'info, BoundedTradeV2<'info>>,
     additional_data: Vec<u8>,
 ) -> Result<()> {
+    // TODO: Validate that the reclaim date has not passed.
     let starting_input_balance = ctx.accounts.order_payer.amount;
     let starting_destination_balance = ctx.accounts.deposit_account.amount;
 
@@ -81,6 +83,20 @@ pub fn handler<'a, 'b, 'c, 'info>(
         }
         input_amount
     };
+    // Delegate the input amount to the trader
+    let token_approve_accts = token::Approve {
+        to: ctx.accounts.order_payer.to_account_info(),
+        delegate: ctx.accounts.payer.to_account_info(),
+        authority: ctx.accounts.strategy.to_account_info(),
+    };
+    let cpi_ctx = CpiContext {
+        program: ctx.accounts.token_program.to_account_info(),
+        accounts: token_approve_accts,
+        remaining_accounts: Vec::new(),
+        signer_seeds: &[strategy_signer_seeds!(ctx.accounts.strategy)],
+    };
+    token::approve(cpi_ctx, input_amount)?;
+
     // Execute the trade route
     route.execute(
         input_amount,
@@ -109,6 +125,19 @@ pub fn handler<'a, 'b, 'c, 'info>(
         // If actual changes are out of bounds, rollback
         return Err(error!(ErrorCode::MarketPriceIsOutOfBounds));
     }
+
+    // Revoke the delegated amount from the trader
+    let token_revoke_accts = token::Revoke {
+        source: ctx.accounts.order_payer.to_account_info(),
+        authority: ctx.accounts.strategy.to_account_info(),
+    };
+    let cpi_ctx = CpiContext {
+        program: ctx.accounts.token_program.to_account_info(),
+        accounts: token_revoke_accts,
+        remaining_accounts: Vec::new(),
+        signer_seeds: &[strategy_signer_seeds!(ctx.accounts.strategy)],
+    };
+    token::revoke(cpi_ctx)?;
 
     Ok(())
 }
