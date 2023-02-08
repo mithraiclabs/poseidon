@@ -1,7 +1,5 @@
 use std::collections::VecDeque;
 
-use crate::instructions::ReclaimV2;
-
 use super::{leg::Leg, math::find_maximum_input, Dex, DexList};
 use anchor_lang::prelude::*;
 
@@ -124,16 +122,6 @@ impl<'a, 'info> Route<'a, 'info> {
             }
         }
         Ok(())
-    }
-
-    ///
-    /// Close and clean up and accounts for each Leg
-    ///
-    pub fn cleanup_accounts(
-        &self,
-        ctx: &Context<'_, '_, 'a, 'info, ReclaimV2<'info>>,
-    ) -> Result<()> {
-        self.for_each_leg(|leg| leg.close_dex_accounts(ctx))
     }
 
     ///

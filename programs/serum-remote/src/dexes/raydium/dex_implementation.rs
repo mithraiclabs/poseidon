@@ -50,11 +50,6 @@ impl<'a, 'info> RaydiumSwap<'a, 'info> {
     fn user_destination_token_account(&self) -> &AccountInfo<'info> {
         &self.accounts[16]
     }
-
-    // This account at index 19 should only exist during initialization
-    fn destination_mint(&self) -> &AccountInfo<'info> {
-        &self.accounts[19]
-    }
 }
 
 impl Dex for RaydiumSwap<'_, '_> {
@@ -98,14 +93,6 @@ impl Dex for RaydiumSwap<'_, '_> {
 impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
     const ACCOUNTS_LEN: usize = 19;
     const INIT_ACCOUNTS_LEN: usize = 20;
-
-    fn destination_mint_account(&self) -> AccountInfo<'info> {
-        self.destination_mint().to_account_info()
-    }
-
-    fn destination_token_account(&self) -> AccountInfo<'info> {
-        self.user_destination_token_account().to_account_info()
-    }
 
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
@@ -184,13 +171,6 @@ impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
             signers_seeds,
         )
         .unwrap();
-        Ok(())
-    }
-
-    fn cleanup_accounts(
-        &self,
-        _ctx: &Context<'_, '_, 'a, 'info, crate::instructions::ReclaimV2<'info>>,
-    ) -> Result<()> {
         Ok(())
     }
 }

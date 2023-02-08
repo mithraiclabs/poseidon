@@ -3,8 +3,6 @@ use std::collections::VecDeque;
 use anchor_lang::prelude::*;
 use enum_dispatch::enum_dispatch;
 
-use crate::instructions::{InitBoundedStrategyV2, ReclaimV2};
-
 #[enum_dispatch]
 pub trait Dex {
     /// Given the amount of tokens_in, return the amount of tokens returned
@@ -38,15 +36,6 @@ pub trait DexStatic<'a, 'info> {
 
     /// Execute the full swap via CPI to the DEX
     fn swap(&self, tokens_in: u64, signers_seeds: &[&[&[u8]]]) -> Result<()>;
-
-    /// Returns the SPL Token account where the assets from the trade are deposited
-    fn destination_token_account(&self) -> AccountInfo<'info>;
-
-    /// Returns the SPL Mint account for the end_mint of a leg
-    fn destination_mint_account(&self) -> AccountInfo<'info>;
-
-    /// Close any accounts and return funds when complete or past execution date
-    fn cleanup_accounts(&self, ctx: &Context<'_, '_, 'a, 'info, ReclaimV2<'info>>) -> Result<()>;
 }
 
 #[derive(Clone, PartialEq)]

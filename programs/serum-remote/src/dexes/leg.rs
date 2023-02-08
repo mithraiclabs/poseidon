@@ -3,10 +3,7 @@ use std::collections::VecDeque;
 use anchor_lang::prelude::*;
 use enum_dispatch::enum_dispatch;
 
-use crate::{
-    dexes::Dex,
-    instructions::{InitBoundedStrategyV2, ReclaimV2},
-};
+use crate::dexes::Dex;
 
 use super::{open_book_dex::OpenBookDex, raydium::RaydiumSwap, DexList, DexStatic};
 
@@ -44,30 +41,6 @@ impl<'a, 'info> Leg<'a, 'info> {
         match self {
             Leg::OpenBookV3(open_book_dex) => open_book_dex.swap(tokens_in, signers_seeds),
             Leg::Raydium(raydium_swap) => raydium_swap.swap(tokens_in, signers_seeds),
-        }
-    }
-
-    pub fn destination_token_account(&self) -> AccountInfo<'info> {
-        match self {
-            Leg::OpenBookV3(open_book_dex) => open_book_dex.destination_token_account(),
-            Leg::Raydium(raydium_swap) => raydium_swap.destination_token_account(),
-        }
-    }
-
-    pub fn destination_mint_account(&self) -> AccountInfo<'info> {
-        match self {
-            Leg::OpenBookV3(open_book_dex) => open_book_dex.destination_mint_account(),
-            Leg::Raydium(raydium_swap) => raydium_swap.destination_mint_account(),
-        }
-    }
-
-    pub fn close_dex_accounts(
-        &self,
-        ctx: &Context<'_, '_, 'a, 'info, ReclaimV2<'info>>,
-    ) -> Result<()> {
-        match self {
-            Leg::OpenBookV3(open_book_dex) => open_book_dex.cleanup_accounts(ctx),
-            Leg::Raydium(raydium_swap) => raydium_swap.cleanup_accounts(ctx),
         }
     }
 }
