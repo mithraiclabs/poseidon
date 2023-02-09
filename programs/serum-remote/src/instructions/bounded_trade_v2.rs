@@ -38,11 +38,17 @@ pub fn handler<'a, 'b, 'c, 'info>(
     ctx: Context<'a, 'b, 'c, 'info, BoundedTradeV2<'info>>,
     additional_data: Vec<u8>,
 ) -> Result<()> {
-    // TODO: Validate that the reclaim date has not passed.
+    let bounded_strategy = &ctx.accounts.strategy;
+
+    // Validate that the reclaim date has not passed.
+    if bounded_strategy.reclaim_date < Clock::get()?.unix_timestamp {
+        return Err(ErrorCode::ReclaimDateHasPassed.into());
+    }
+
+    // store balance data in memory for end of instruction checks
     let starting_input_balance = ctx.accounts.order_payer.amount;
     let starting_destination_balance = ctx.accounts.deposit_account.amount;
 
-    let bounded_strategy = &ctx.accounts.strategy;
     // Build the route
     let route = Route::create(
         ctx.remaining_accounts,
