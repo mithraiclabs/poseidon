@@ -18,18 +18,15 @@ impl<'a, 'info> Leg<'a, 'info> {
         dex: DexList,
         account_infos: &'a [AccountInfo<'info>],
         additional_data: &mut VecDeque<u8>,
-        is_init: bool,
     ) -> Result<Self> {
         let res = match dex {
             DexList::OpenBookV3 => Leg::OpenBookV3(OpenBookDex::from_account_slice(
                 account_infos,
                 additional_data,
-                is_init,
             )?),
             DexList::Raydium => Leg::Raydium(RaydiumSwap::from_account_slice(
                 account_infos,
                 additional_data,
-                is_init,
             )?),
         };
 

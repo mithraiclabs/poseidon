@@ -29,7 +29,6 @@ pub trait DexStatic<'a, 'info> {
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
         additional_data: &mut VecDeque<u8>,
-        is_init: bool,
     ) -> Result<Self>
     where
         Self: Sized;

@@ -168,17 +168,18 @@ describe("BoundedTradeV2", () => {
           boundPriceDenominator: boundedPriceDenominator,
           reclaimDate,
         });
-      const initAdditionalAccounts = await OpenBookDex.initLegAccounts(
-        program.programId,
+
+      const remainingAccounts = await OpenBookDex.tradeAccounts(
         serumMarket,
-        boundedStrategyKey,
         collateralAccount,
         depositAddress,
-        destinationMint
+        openOrdersKeypair.publicKey,
+        payerKey
       );
+
       lookupTableAddress = await createLookUpTable(
         program.provider,
-        initAdditionalAccounts
+        remainingAccounts
       );
 
       const instruction = await program.methods
@@ -246,7 +247,6 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
-            WRAPPED_SOL_MINT,
             openOrdersKeypair.publicKey,
             payerKey
           );
@@ -324,7 +324,6 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
-            WRAPPED_SOL_MINT,
             openOrdersKeypair.publicKey,
             payerKey
           );
@@ -385,7 +384,6 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
-            USDC_MINT,
             openOrdersKeypair.publicKey,
             payerKey
           );
@@ -442,7 +440,6 @@ describe("BoundedTradeV2", () => {
             serumMarket,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
-            USDC_MINT,
             openOrdersKeypair.publicKey,
             payerKey
           );

@@ -334,7 +334,6 @@ describe("OpenBook + Raydium Trade", () => {
         collateralAccount,
         // Because this is a multi-leg route, with a following leg, the Trade Destination Account is an intermediary token account
         traderUsdcKey,
-        USDC_MINT,
         traderOpenOrdersKeypair.publicKey,
         traderKeypair.publicKey
       );
@@ -348,8 +347,7 @@ describe("OpenBook + Raydium Trade", () => {
         traderUsdcKey,
         traderKeypair.publicKey,
         // Because this is the last leg, the Trade Destination Account is the deposit address
-        depositAddress,
-        coinMint
+        depositAddress
       );
       const remainingAccounts = [
         ...openBookRemainingAccounts,

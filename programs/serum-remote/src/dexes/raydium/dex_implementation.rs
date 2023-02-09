@@ -97,19 +97,13 @@ impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
         _additional_data: &mut std::collections::VecDeque<u8>,
-        is_init: bool,
     ) -> Result<Self>
     where
         Self: Sized,
     {
         let user_source_token_account = &accounts[15];
         let serum_coin_vault_account = &accounts[12];
-        // With multi-legs, during initialization this SPL Token account may not exists. So fill with dummy address
-        let source_mint = if is_init {
-            anchor_lang::system_program::System::id()
-        } else {
-            spl_token_utils::mint(&user_source_token_account.try_borrow_data()?)
-        };
+        let source_mint = spl_token_utils::mint(&user_source_token_account.try_borrow_data()?);
         let base_mint = spl_token_utils::mint(&serum_coin_vault_account.try_borrow_data()?);
         let base_is_input = base_mint == source_mint;
 

@@ -14,7 +14,6 @@ impl<'a, 'info> Route<'a, 'info> {
     pub fn create(
         remaining_accounts: &'a [AccountInfo<'info>],
         additional_data: VecDeque<u8>,
-        is_init: bool,
     ) -> Result<Self> {
         // Unpack & initalize the routes from remaining accounts
         let mut route = Route::default();
@@ -22,11 +21,11 @@ impl<'a, 'info> Route<'a, 'info> {
         let mut added_data = additional_data;
         while let Some(dex_program) = remaining_accounts.get(account_cursor) {
             let dex = DexList::from_id(dex_program.key())?;
-            let end_index = dex.get_end_account_idx(account_cursor, is_init);
+            let end_index = dex.get_end_account_idx(account_cursor);
 
             let account_infos = &remaining_accounts[account_cursor..end_index];
             // Create the Leg
-            let leg = Leg::from_account_slice(dex, account_infos, &mut added_data, is_init)?;
+            let leg = Leg::from_account_slice(dex, account_infos, &mut added_data)?;
 
             // Add the leg to the Route
             route.legs[leg_cursor] = Some(leg);

@@ -166,18 +166,12 @@ impl<'a, 'info> DexStatic<'a, 'info> for OpenBookDex<'a, 'info> {
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
         additional_data: &mut VecDeque<u8>,
-        is_init: bool,
     ) -> anchor_lang::Result<OpenBookDex<'a, 'info>> {
         let base_decimals = additional_data.pop_front().unwrap();
         let base_decimals_factor = 10_u64.pow(base_decimals.into());
 
         let base_mint = spl_token_utils::mint(&accounts[7].try_borrow_data()?);
-        // With multi-legs, during initialization this SPL Token account may not exists. So fill with dummy address
-        let destination_mint = if is_init {
-            accounts[16].key()
-        } else {
-            spl_token_utils::mint(&accounts[15].try_borrow_data()?)
-        };
+        let destination_mint = spl_token_utils::mint(&accounts[15].try_borrow_data()?);
         let trade_is_bid = destination_mint == base_mint;
 
         // Load the Serum Market to extract decimal data

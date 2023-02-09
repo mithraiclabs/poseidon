@@ -53,7 +53,6 @@ pub fn handler<'a, 'b, 'c, 'info>(
     let route = Route::create(
         ctx.remaining_accounts,
         VecDeque::from(additional_data.to_vec()),
-        false,
     )?;
     // Validate that the route starts and ends with the right tokens
     if ctx.accounts.order_payer.mint != route.start_mint()? {
