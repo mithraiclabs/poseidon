@@ -693,35 +693,6 @@ export type SerumRemote = {
               "The bump for the strategy's derived address"
             ],
             "type": "u8"
-          },
-          {
-            "name": "lookupTable",
-            "docs": [
-              "The address of the look up table. This needs to be stored on-chain for keeping clients",
-              "in sync"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "accountList",
-            "type": {
-              "array": [
-                "publicKey",
-                32
-              ]
-            }
-          },
-          {
-            "name": "additionalData",
-            "docs": [
-              "A slice that holds additional data for DEXes in the route"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
@@ -1763,35 +1734,6 @@ export const IDL: SerumRemote = {
               "The bump for the strategy's derived address"
             ],
             "type": "u8"
-          },
-          {
-            "name": "lookupTable",
-            "docs": [
-              "The address of the look up table. This needs to be stored on-chain for keeping clients",
-              "in sync"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "accountList",
-            "type": {
-              "array": [
-                "publicKey",
-                32
-              ]
-            }
-          },
-          {
-            "name": "additionalData",
-            "docs": [
-              "A slice that holds additional data for DEXes in the route"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
