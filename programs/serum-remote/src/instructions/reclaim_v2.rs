@@ -1,10 +1,8 @@
-use std::collections::VecDeque;
-
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, CloseAccount, Token, TokenAccount, Transfer};
 
 use crate::{
-    constants::BOUNDED_STRATEGY_SEED, dexes::Route, errors::ErrorCode, state::BoundedStrategyV2,
+    constants::BOUNDED_STRATEGY_SEED, errors::ErrorCode, state::BoundedStrategyV2,
     strategy_signer_seeds,
 };
 
@@ -42,12 +40,6 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, ReclaimV2<'info>>) -> Resu
         return Err(ErrorCode::ReclaimDateHasNotPassed.into());
     }
 
-    let route = Route::create(
-        ctx.remaining_accounts,
-        VecDeque::from(bounded_strategy.additional_data.to_vec()),
-        false,
-    )?;
-
     let cpi_accounts = Transfer {
         from: ctx.accounts.collateral_account.to_account_info(),
         to: ctx.accounts.reclaim_account.to_account_info(),
@@ -74,7 +66,5 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, ReclaimV2<'info>>) -> Resu
         signer_seeds: &[strategy_signer_seeds!(bounded_strategy)],
         remaining_accounts: Vec::new(),
     };
-    token::close_account(cpi_ctx)?;
-
-    route.cleanup_accounts(&ctx)
+    token::close_account(cpi_ctx)
 }

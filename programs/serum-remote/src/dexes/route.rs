@@ -1,11 +1,5 @@
 use std::collections::VecDeque;
 
-use crate::{
-    errors,
-    instructions::{InitBoundedStrategyV2, ReclaimV2},
-    token_account_seeds, token_account_signer_seeds,
-};
-
 use super::{leg::Leg, math::find_maximum_input, Dex, DexList};
 use anchor_lang::prelude::*;
 
@@ -20,7 +14,6 @@ impl<'a, 'info> Route<'a, 'info> {
     pub fn create(
         remaining_accounts: &'a [AccountInfo<'info>],
         additional_data: VecDeque<u8>,
-        is_init: bool,
     ) -> Result<Self> {
         // Unpack & initalize the routes from remaining accounts
         let mut route = Route::default();
@@ -28,11 +21,11 @@ impl<'a, 'info> Route<'a, 'info> {
         let mut added_data = additional_data;
         while let Some(dex_program) = remaining_accounts.get(account_cursor) {
             let dex = DexList::from_id(dex_program.key())?;
-            let end_index = dex.get_end_account_idx(account_cursor, is_init);
+            let end_index = dex.get_end_account_idx(account_cursor);
 
             let account_infos = &remaining_accounts[account_cursor..end_index];
             // Create the Leg
-            let leg = Leg::from_account_slice(dex, account_infos, &mut added_data, is_init)?;
+            let leg = Leg::from_account_slice(dex, account_infos, &mut added_data)?;
 
             // Add the leg to the Route
             route.legs[leg_cursor] = Some(leg);
@@ -86,74 +79,6 @@ impl<'a, 'info> Route<'a, 'info> {
     }
 
     ///
-    /// Creates any necessary TokenAccounts for the route.
-    /// TODO: Gracefully handle when the SPL Token program errors because the token account
-    /// exists. Without graceful handling, an adversary could block the usage
-    ///
-    pub fn initialize_intermediary_token_accounts(
-        &self,
-        ctx: &Context<'_, '_, 'a, 'info, InitBoundedStrategyV2<'info>>,
-    ) -> Result<()> {
-        // Get all the intermediary token mint addresses
-        for (index, leg) in self.legs.iter().enumerate() {
-            match leg {
-                Some(leg) => {
-                    // If this is the last leg, skip because the destination account is already checked at initialization
-                    if self.legs.get(index + 1).is_none() || self.legs[index + 1].is_none() {
-                        continue;
-                    }
-                    // Get the token account as account info
-                    let destination_account = leg.destination_token_account();
-                    let destination_key = destination_account.key();
-                    let destination_mint = leg.destination_mint_account().key();
-                    let destination_mint_account = leg.destination_mint_account();
-                    // Create the Account with rent exemption
-                    let cpi_accounts = anchor_lang::system_program::CreateAccount {
-                        from: ctx.accounts.payer.to_account_info(),
-                        to: destination_account.to_account_info(),
-                    };
-                    // Get the canonical TokenAccount bump
-                    let (token_account_key, token_account_bump) = Pubkey::find_program_address(
-                        token_account_seeds!(&ctx.accounts.strategy, destination_mint),
-                        ctx.program_id,
-                    );
-                    if destination_key != token_account_key {
-                        return Err(error!(errors::ErrorCode::BadTokenAccountKeyForLeg));
-                    }
-                    let cpi_ctx = CpiContext {
-                        program: ctx.accounts.token_program.to_account_info(),
-                        accounts: cpi_accounts,
-                        remaining_accounts: Vec::new(),
-                        signer_seeds: &[token_account_signer_seeds!(
-                            &ctx.accounts.strategy,
-                            destination_mint,
-                            token_account_bump
-                        )],
-                    };
-                    anchor_lang::system_program::create_account(
-                        cpi_ctx,
-                        Rent::get()?.minimum_balance(anchor_spl::token::TokenAccount::LEN),
-                        anchor_spl::token::TokenAccount::LEN as u64,
-                        ctx.accounts.token_program.key,
-                    )?;
-                    // Initialize the SPL Token account
-                    let cpi_program = ctx.accounts.token_program.to_account_info();
-                    let accounts = anchor_spl::token::InitializeAccount3 {
-                        account: destination_account,
-                        mint: destination_mint_account.to_account_info(),
-                        authority: ctx.accounts.strategy.to_account_info(),
-                    };
-                    let cpi_ctx = anchor_lang::context::CpiContext::new(cpi_program, accounts);
-                    anchor_spl::token::initialize_account3(cpi_ctx)?;
-                }
-                None => {}
-            }
-        }
-
-        Ok(())
-    }
-
-    ///
     /// Find the maximum amount of tokens to input in the trade such that the execution price does
     /// not cross the bounded price.
     ///
@@ -196,16 +121,6 @@ impl<'a, 'info> Route<'a, 'info> {
             }
         }
         Ok(())
-    }
-
-    ///
-    /// Close and clean up and accounts for each Leg
-    ///
-    pub fn cleanup_accounts(
-        &self,
-        ctx: &Context<'_, '_, 'a, 'info, ReclaimV2<'info>>,
-    ) -> Result<()> {
-        self.for_each_leg(|leg| leg.close_dex_accounts(ctx))
     }
 
     ///
@@ -265,7 +180,7 @@ impl<'a, 'info> Route<'a, 'info> {
 ///
 /// Check whether the execution price is out of bounds
 ///
-fn is_in_bounds(
+pub fn is_in_bounds(
     input: u64,
     output: u64,
     bounded_price_numerator: &u64,
@@ -275,14 +190,9 @@ fn is_in_bounds(
     //  bound. This must handle the case where output is less than input (i.e. the purchase price is < 1)
     let bounded_numerator = bounded_price_numerator * output;
     let executed_numerator = input * bounded_price_denominator;
-    msg!(
-        "i {} o {} bpn {} bpd {}",
-        input,
-        output,
-        bounded_price_numerator,
-        bounded_price_denominator
-    );
-    if executed_numerator > bounded_numerator {
+    if bounded_numerator == 0 && executed_numerator == 0 {
+        false
+    } else if executed_numerator > bounded_numerator {
         false
     } else {
         true

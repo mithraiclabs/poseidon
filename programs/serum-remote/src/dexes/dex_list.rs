@@ -36,17 +36,11 @@ impl DexList {
         }
     }
 
-    pub fn get_end_account_idx(&self, start: usize, is_init: bool) -> usize {
+    pub fn get_end_account_idx(&self, start: usize) -> usize {
         let accounts_len = match self {
             DexList::OpenBookV3 => OpenBookDex::ACCOUNTS_LEN,
             DexList::Raydium => RaydiumSwap::ACCOUNTS_LEN,
         };
-        if is_init {
-            start + accounts_len + 1
-        } else {
-            // TODO: If we remove the Destination Mint from the account list for anything besides
-            //  init, this additional +1 key can be dropped
-            start + accounts_len + 1
-        }
+        start + accounts_len
     }
 }

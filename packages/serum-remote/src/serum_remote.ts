@@ -516,14 +516,6 @@ export type SerumRemote = {
           ]
         },
         {
-          "name": "lookupTable",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The look up table address."
-          ]
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -550,10 +542,6 @@ export type SerumRemote = {
         {
           "name": "reclaimDate",
           "type": "i64"
-        },
-        {
-          "name": "additionalData",
-          "type": "bytes"
         }
       ]
     },
@@ -585,9 +573,19 @@ export type SerumRemote = {
           "name": "depositAccount",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "additionalData",
+          "type": "bytes"
+        }
+      ]
     },
     {
       "name": "reclaimV2",
@@ -695,35 +693,6 @@ export type SerumRemote = {
               "The bump for the strategy's derived address"
             ],
             "type": "u8"
-          },
-          {
-            "name": "lookupTable",
-            "docs": [
-              "The address of the look up table. This needs to be stored on-chain for keeping clients",
-              "in sync"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "accountList",
-            "type": {
-              "array": [
-                "publicKey",
-                32
-              ]
-            }
-          },
-          {
-            "name": "additionalData",
-            "docs": [
-              "A slice that holds additional data for DEXes in the route"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
@@ -1588,14 +1557,6 @@ export const IDL: SerumRemote = {
           ]
         },
         {
-          "name": "lookupTable",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The look up table address."
-          ]
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -1622,10 +1583,6 @@ export const IDL: SerumRemote = {
         {
           "name": "reclaimDate",
           "type": "i64"
-        },
-        {
-          "name": "additionalData",
-          "type": "bytes"
         }
       ]
     },
@@ -1657,9 +1614,19 @@ export const IDL: SerumRemote = {
           "name": "depositAccount",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "additionalData",
+          "type": "bytes"
+        }
+      ]
     },
     {
       "name": "reclaimV2",
@@ -1767,35 +1734,6 @@ export const IDL: SerumRemote = {
               "The bump for the strategy's derived address"
             ],
             "type": "u8"
-          },
-          {
-            "name": "lookupTable",
-            "docs": [
-              "The address of the look up table. This needs to be stored on-chain for keeping clients",
-              "in sync"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "accountList",
-            "type": {
-              "array": [
-                "publicKey",
-                32
-              ]
-            }
-          },
-          {
-            "name": "additionalData",
-            "docs": [
-              "A slice that holds additional data for DEXes in the route"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }

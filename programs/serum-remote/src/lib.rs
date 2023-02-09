@@ -70,7 +70,6 @@ pub mod serum_remote {
         bounded_price_numerator: u64,
         bounded_price_denominator: u64,
         reclaim_date: i64,
-        additional_data: Vec<u8>,
     ) -> Result<()> {
         instructions::init_bounded_strategy_v2::handler(
             ctx,
@@ -78,14 +77,14 @@ pub mod serum_remote {
             bounded_price_numerator,
             bounded_price_denominator,
             reclaim_date,
-            additional_data,
         )
     }
 
     pub fn bounded_trade_v2<'a, 'b, 'c, 'info>(
         ctx: Context<'a, 'b, 'c, 'info, BoundedTradeV2<'info>>,
+        additional_data: Vec<u8>,
     ) -> Result<()> {
-        instructions::bounded_trade_v2::handler(ctx)
+        instructions::bounded_trade_v2::handler(ctx, additional_data)
     }
 
     pub fn reclaim_v2<'info>(ctx: Context<'_, '_, '_, 'info, ReclaimV2<'info>>) -> Result<()> {

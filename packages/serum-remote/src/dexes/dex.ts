@@ -12,7 +12,7 @@ import { LIQUIDITY_STATE_LAYOUT_V4 } from "@raydium-io/raydium-sdk";
  * @param connection
  * @param marketIds
  */
-export const getInitLegAccounts = async (
+export const getTradeAccounts = async (
   connection: web3.Connection,
   cluster: SolCluster,
   marketIds: web3.PublicKey[],
@@ -44,14 +44,9 @@ export const getInitLegAccounts = async (
             {},
             openBookProgramId
           );
-          legAccounts = OpenBookDex.initLegAccounts(
-            programId,
-            serumMarket,
-            strategyKey,
-            tradeSourceAccount,
-            tradeDestinationAccount,
-            destinationMint
-          );
+          // TODO: Handle creating trade accounts (note OpenOrders account and owner will have
+          //  to be checked or created)
+
           legAdditionalData = new BN(
             // @ts-ignore
             serumMarket._baseSplTokenDecimals
@@ -77,17 +72,8 @@ export const getInitLegAccounts = async (
             {},
             raydiumV4MarketInfo.marketProgramId
           );
-          legAccounts = Raydium.initLegAccounts(
-            raydiumV4MarketInfo.baseMint,
-            raydiumV4MarketInfo.baseDecimal.toNumber(),
-            raydiumV4MarketInfo.quoteMint,
-            raydiumV4MarketInfo.quoteDecimal.toNumber(),
-            market,
-            strategyKey,
-            tradeSourceAccount,
-            tradeDestinationAccount,
-            destinationMint
-          );
+          // TODO: Handle creating trade accounts
+
           legAdditionalData = Buffer.from([]);
           break;
         }

@@ -37,9 +37,7 @@ describe("ReclaimV2", () => {
   let quoteTransferAmount = new BN(10_000_000);
   let baseTransferAmount = new BN(10_000_000_000);
   let boundedStrategy: BoundedStrategyV2;
-  let boundedStrategyKey: web3.PublicKey,
-    collateralAddress: web3.PublicKey,
-    openOrdersKey: web3.PublicKey;
+  let boundedStrategyKey: web3.PublicKey, collateralAddress: web3.PublicKey;
 
   const initBoundStrat = async (_reclaimDate: BN) => {
     const {
@@ -52,53 +50,30 @@ describe("ReclaimV2", () => {
     });
     boundedStrategyKey = _boundedStrategyKey;
     collateralAddress = _collateralAccount;
-    const initAdditionalAccounts = await OpenBookDex.initLegAccounts(
-      program.programId,
-      serumMarket,
-      boundedStrategyKey,
-      collateralAddress,
-      depositAddress,
-      WRAPPED_SOL_MINT
-    );
-    const additionalData = new BN(
-      // @ts-ignore
-      serumMarket._baseSplTokenDecimals
-    ).toArrayLike(Buffer, "le", 1);
-    const lookupTableAddress = await createLookUpTable(
-      program.provider,
-      initAdditionalAccounts
-    );
     const ix = await program.methods
       .initBoundedStrategyV2(
         transferAmount,
         boundPriceNumerator,
         boundPriceDenominator,
-        _reclaimDate,
-        additionalData
+        _reclaimDate
       )
       .accounts({
         payer: program.provider.publicKey,
         collateralAccount: collateralAddress,
         mint: USDC_MINT,
         strategy: boundedStrategyKey,
-        lookupTable: lookupTableAddress,
         reclaimAccount: reclaimAddress,
         depositAccount: depositAddress,
         tokenProgram: SPL_TOKEN_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
       })
-      .remainingAccounts(initAdditionalAccounts)
       .instruction();
-    await compileAndSendV0Tx(
-      program.provider,
-      payerKeypair,
-      lookupTableAddress,
-      [ix],
-      (err) => {
-        console.error(err);
-      }
-    );
-    openOrdersKey = initAdditionalAccounts[4].pubkey;
+    try {
+      const tx = new web3.Transaction().add(ix);
+      await program.provider.sendAndConfirm(tx);
+    } catch (err) {
+      console.error(err);
+    }
     boundedStrategy = await program.account.boundedStrategyV2.fetch(
       boundedStrategyKey
     );
@@ -197,19 +172,12 @@ describe("ReclaimV2", () => {
     });
 
     it("should return assets", async () => {
-      const [reclaimAccountBefore, collateralAccountBefore, remainingAccounts] =
-        await Promise.all([
+      const [reclaimAccountBefore, collateralAccountBefore] = await Promise.all(
+        [
           tokenProgram.account.account.fetch(reclaimAddress),
           tokenProgram.account.account.fetch(collateralAddress),
-          OpenBookDex.reclaimAccounts(
-            program.programId,
-            serumMarket,
-            boundedStrategyKey,
-            boundedStrategy.collateralAccount,
-            boundedStrategy.depositAddress,
-            WRAPPED_SOL_MINT
-          ),
-        ]);
+        ]
+      );
       try {
         await program.methods
           .reclaimV2()
@@ -220,24 +188,18 @@ describe("ReclaimV2", () => {
             reclaimAccount: reclaimAddress,
             tokenProgram: TOKEN_PROGRAM_ID,
           })
-          .remainingAccounts(remainingAccounts)
           .rpc();
       } catch (err) {
         console.log(err);
         assert.ok(false);
       }
 
-      const [
-        reclaimAccountAfter,
-        collateralAccountAfter,
-        boundedStrategyInfo,
-        openOrdersInfo,
-      ] = await Promise.all([
-        tokenProgram.account.account.fetch(reclaimAddress),
-        program.provider.connection.getAccountInfo(collateralAddress),
-        program.provider.connection.getAccountInfo(boundedStrategyKey),
-        program.provider.connection.getAccountInfo(openOrdersKey),
-      ]);
+      const [reclaimAccountAfter, collateralAccountAfter, boundedStrategyInfo] =
+        await Promise.all([
+          tokenProgram.account.account.fetch(reclaimAddress),
+          program.provider.connection.getAccountInfo(collateralAddress),
+          program.provider.connection.getAccountInfo(boundedStrategyKey),
+        ]);
       const reclaimDiff = reclaimAccountAfter.amount.sub(
         reclaimAccountBefore.amount
       );
@@ -247,7 +209,6 @@ describe("ReclaimV2", () => {
       );
       assert.ok(!collateralAccountAfter);
       assert.ok(!boundedStrategyInfo);
-      assert.ok(!openOrdersInfo);
     });
 
     it("should error on wrong receiver/reclaim address", async () => {

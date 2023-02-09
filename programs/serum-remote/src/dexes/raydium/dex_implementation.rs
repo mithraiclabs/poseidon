@@ -50,11 +50,6 @@ impl<'a, 'info> RaydiumSwap<'a, 'info> {
     fn user_destination_token_account(&self) -> &AccountInfo<'info> {
         &self.accounts[16]
     }
-
-    // This account at index 19 should only exist during initialization
-    fn destination_mint(&self) -> &AccountInfo<'info> {
-        &self.accounts[19]
-    }
 }
 
 impl Dex for RaydiumSwap<'_, '_> {
@@ -99,30 +94,16 @@ impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
     const ACCOUNTS_LEN: usize = 19;
     const INIT_ACCOUNTS_LEN: usize = 20;
 
-    fn destination_mint_account(&self) -> AccountInfo<'info> {
-        self.destination_mint().to_account_info()
-    }
-
-    fn destination_token_account(&self) -> AccountInfo<'info> {
-        self.user_destination_token_account().to_account_info()
-    }
-
     fn from_account_slice(
         accounts: &'a [AccountInfo<'info>],
         _additional_data: &mut std::collections::VecDeque<u8>,
-        is_init: bool,
     ) -> Result<Self>
     where
         Self: Sized,
     {
         let user_source_token_account = &accounts[15];
         let serum_coin_vault_account = &accounts[12];
-        // With multi-legs, during initialization this SPL Token account may not exists. So fill with dummy address
-        let source_mint = if is_init {
-            anchor_lang::system_program::System::id()
-        } else {
-            spl_token_utils::mint(&user_source_token_account.try_borrow_data()?)
-        };
+        let source_mint = spl_token_utils::mint(&user_source_token_account.try_borrow_data()?);
         let base_mint = spl_token_utils::mint(&serum_coin_vault_account.try_borrow_data()?);
         let base_is_input = base_mint == source_mint;
 
@@ -155,14 +136,6 @@ impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
         })
     }
 
-    fn initialize(
-        &self,
-        _ctx: &Context<'_, '_, '_, 'info, crate::instructions::InitBoundedStrategyV2<'info>>,
-    ) -> Result<()> {
-        // Nothing to initialize for Raydium swapping
-        Ok(())
-    }
-
     fn swap(&self, tokens_in: u64, signers_seeds: &[&[&[u8]]]) -> Result<()> {
         let instruction = swap_base_in(
             self.accounts[0].key,
@@ -192,13 +165,6 @@ impl<'a, 'info> DexStatic<'a, 'info> for RaydiumSwap<'a, 'info> {
             signers_seeds,
         )
         .unwrap();
-        Ok(())
-    }
-
-    fn cleanup_accounts(
-        &self,
-        ctx: &Context<'_, '_, 'a, 'info, crate::instructions::ReclaimV2<'info>>,
-    ) -> Result<()> {
         Ok(())
     }
 }
