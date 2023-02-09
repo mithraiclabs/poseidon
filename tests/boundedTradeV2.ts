@@ -8,7 +8,7 @@ import {
   parseTranactionError,
 } from "../packages/serum-remote/src";
 import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
-import { SerumRemote } from "../target/types/serum_remote";
+import { Poseidon } from "../target/types/poseidon";
 import {
   compileAndSendV0Tx,
   createAssociatedTokenInstruction,
@@ -29,7 +29,7 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 describe("BoundedTradeV2", () => {
   // Configure the client to use the local cluster.
-  const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const program = anchor.workspace.Poseidon as Program<Poseidon>;
 
   const payerKey = program.provider.publicKey;
   const payerKeypair = loadPayer(process.env.ANCHOR_WALLET);

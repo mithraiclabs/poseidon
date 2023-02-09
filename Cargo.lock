@@ -1221,6 +1221,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "poseidon"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "arrayref",
+ "enum_dispatch",
+ "num_enum",
+ "safe-transmute",
+ "static_assertions",
+ "uint",
+]
+
+[[package]]
 name = "ppv-lite86"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1502,20 +1516,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "serum-remote"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
- "arrayref",
- "enum_dispatch",
- "num_enum",
- "safe-transmute",
- "static_assertions",
- "uint",
 ]
 
 [[package]]

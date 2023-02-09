@@ -10,7 +10,7 @@ import {
 import { reclaimIx } from "../packages/serum-remote/src/instructions";
 import { initializeBoundedStrategy } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
 import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
-import { SerumRemote } from "../target/types/serum_remote";
+import { Poseidon } from "../target/types/poseidon";
 import {
   createAssociatedTokenInstruction,
   DEX_ID,
@@ -23,7 +23,7 @@ let timesRun = 0;
 
 describe("Reclaim", () => {
   // Configure the client to use the local cluster.
-  const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const program = anchor.workspace.Poseidon as Program<Poseidon>;
   // @ts-ignore: TODO: Remove after anchor npm upgrade
   const payerKey = program.provider.wallet.publicKey;
   const tokenProgram = splTokenProgram();

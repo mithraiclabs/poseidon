@@ -1,10 +1,10 @@
 import { Program, web3 } from "@project-serum/anchor";
 import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
-import { SerumRemote } from "../serum_remote";
+import { Poseidon } from "../poseidon";
 import { BoundedStrategy } from "../types";
 
 export const reclaimIx = (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   strategyKey: web3.PublicKey,
   boundedStrategy: BoundedStrategy,
   dexProgramId: web3.PublicKey

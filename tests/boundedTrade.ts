@@ -11,7 +11,7 @@ import { boundedTradeIx } from "../packages/serum-remote/src/instructions/bounde
 import { initializeBoundedStrategy } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
 import { srSettleFundsIx } from "../packages/serum-remote/src/instructions/srSettleFunds";
 import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
-import { SerumRemote } from "../target/types/serum_remote";
+import { Poseidon } from "../target/types/poseidon";
 import {
   createAssociatedTokenInstruction,
   DEX_ID,
@@ -28,7 +28,7 @@ let openOrdersAccount: web3.PublicKey;
 
 describe("BoundedTrade", () => {
   // Configure the client to use the local cluster.
-  const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const program = anchor.workspace.Poseidon as Program<Poseidon>;
 
   const payerKey = program.provider.publicKey;
   const tokenProgram = splTokenProgram({ programId: SPL_TOKEN_PROGRAM_ID });

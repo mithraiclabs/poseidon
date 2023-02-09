@@ -18,7 +18,7 @@ mod address_lut_program {
 }
 
 #[program]
-pub mod serum_remote {
+pub mod poseidon {
     use super::*;
 
     #[access_control(InitBoundedStrategy::valid_arguments(

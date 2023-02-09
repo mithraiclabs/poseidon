@@ -1,11 +1,11 @@
 import { Program, web3 } from "@project-serum/anchor";
 import { Market } from "@project-serum/serum";
 import { BoundedStrategy } from "../types";
-import { SerumRemote } from "../serum_remote";
+import { Poseidon } from "../poseidon";
 import { TOKEN_PROGRAM_ID } from "@project-serum/serum/lib/token-instructions";
 
 export const boundedTradeIx = async (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   strategyKey: web3.PublicKey,
   serumMarket: Market,
   boundedStrategy: BoundedStrategy,

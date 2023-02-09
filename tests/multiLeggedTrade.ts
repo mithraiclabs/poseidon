@@ -10,7 +10,7 @@ import {
   deriveAllBoundedStrategyKeysV2,
   deriveTokenAccount,
 } from "../packages/serum-remote/src/pdas";
-import { IDL, SerumRemote } from "../target/types/serum_remote";
+import { IDL, Poseidon } from "../target/types/poseidon";
 import {
   compileAndSendV0Tx,
   createAssociatedTokenInstruction,
@@ -30,7 +30,7 @@ import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
 let timesRun = 0;
 describe("OpenBook + Raydium Trade", () => {
   // Configure the client to use the local cluster.
-  const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const program = anchor.workspace.Poseidon as Program<Poseidon>;
   const payerKey = program.provider.publicKey;
   const payerKeypair = loadPayer(process.env.ANCHOR_WALLET);
   const tokenProgram = splTokenProgram();
@@ -276,7 +276,7 @@ describe("OpenBook + Raydium Trade", () => {
     let additionalData: Buffer;
     let traderOpenOrdersKeypair = new web3.Keypair();
     let traderUsdcKey: web3.PublicKey;
-    let traderProgram: Program<SerumRemote>;
+    let traderProgram: Program<Poseidon>;
     before(async () => {
       additionalData = new BN(
         // @ts-ignore
@@ -294,7 +294,7 @@ describe("OpenBook + Raydium Trade", () => {
         traderWallet,
         {}
       );
-      traderProgram = new Program<SerumRemote>(
+      traderProgram = new Program<Poseidon>(
         IDL,
         program.programId,
         traderProvider

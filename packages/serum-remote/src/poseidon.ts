@@ -1,6 +1,6 @@
-export type SerumRemote = {
+export type Poseidon = {
   "version": "0.1.0",
-  "name": "serum_remote",
+  "name": "poseidon",
   "instructions": [
     {
       "name": "initBoundedStrategy",
@@ -1039,9 +1039,9 @@ export type SerumRemote = {
   ]
 };
 
-export const IDL: SerumRemote = {
+export const IDL: Poseidon = {
   "version": "0.1.0",
-  "name": "serum_remote",
+  "name": "poseidon",
   "instructions": [
     {
       "name": "initBoundedStrategy",

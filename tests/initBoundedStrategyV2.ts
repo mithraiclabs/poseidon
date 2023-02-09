@@ -7,7 +7,7 @@ import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
 import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
-import { SerumRemote } from "../target/types/serum_remote";
+import { Poseidon } from "../target/types/poseidon";
 import {
   compileAndSendV0Tx,
   createAssociatedTokenInstruction,
@@ -22,7 +22,7 @@ import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 let timesRun = 0;
 describe("InitBoundedStrategyV2", () => {
   // Configure the client to use the local cluster.
-  const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const program = anchor.workspace.Poseidon as Program<Poseidon>;
   const payerKey = program.provider.publicKey;
   const payerKeypair = loadPayer(process.env.ANCHOR_WALLET);
   const tokenProgram = splTokenProgram();

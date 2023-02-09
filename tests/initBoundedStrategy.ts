@@ -8,7 +8,7 @@ import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import { initBoundedStrategyIx } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
 import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
-import { SerumRemote } from "../target/types/serum_remote";
+import { Poseidon } from "../target/types/poseidon";
 import {
   createAssociatedTokenInstruction,
   DEX_ID,
@@ -19,7 +19,7 @@ import {
 let timesRun = 0;
 describe("InitBoundedStrategy", () => {
   // Configure the client to use the local cluster.
-  const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const program = anchor.workspace.Poseidon as Program<Poseidon>;
   // @ts-ignore: TODO: Remove after anchor npm upgrade
   const payerKey = program.provider.wallet.publicKey;
   const tokenProgram = splTokenProgram();
