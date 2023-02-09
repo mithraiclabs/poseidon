@@ -2,7 +2,7 @@ import * as anchor from "@project-serum/anchor";
 import { BN } from "@project-serum/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Program, web3 } from "@project-serum/anchor";
-import { Market } from "@project-serum/serum";
+import { Market, OpenOrders } from "@project-serum/serum";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/serum-remote/src";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
@@ -10,7 +10,7 @@ import {
   deriveAllBoundedStrategyKeysV2,
   deriveTokenAccount,
 } from "../packages/serum-remote/src/pdas";
-import { SerumRemote } from "../target/types/serum_remote";
+import { IDL, SerumRemote } from "../target/types/serum_remote";
 import {
   compileAndSendV0Tx,
   createAssociatedTokenInstruction,
@@ -25,6 +25,7 @@ import {
 import { createRaydiumPool } from "./utils/raydium";
 import { Currency, CurrencyAmount } from "@raydium-io/raydium-sdk";
 import Raydium from "../packages/serum-remote/src/dexes/raydium";
+import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
 
 let timesRun = 0;
 describe("OpenBook + Raydium Trade", () => {
@@ -189,46 +190,6 @@ describe("OpenBook + Raydium Trade", () => {
     const reclaimTokenAccountBefore = await tokenProgram.account.account.fetch(
       reclaimAddress
     );
-    const [leg1TradeDestinationAccount, _] = deriveTokenAccount(
-      program,
-      boundedStrategyKey,
-      USDC_MINT
-    );
-    const initOpenBookRemainingAccounts = await OpenBookDex.initLegAccounts(
-      program.programId,
-      serumMarket,
-      boundedStrategyKey,
-      // Becuase this is the first leg, the Trade Source Account is still the collateralAccount
-      collateralAccount,
-      // Because this is a multi-leg route, with a following leg, the Trade Destination Account is a derived intermediary account
-      leg1TradeDestinationAccount,
-      USDC_MINT
-    );
-    const raydiumInitAccounts = Raydium.initLegAccounts(
-      coinMint,
-      6,
-      USDC_MINT,
-      6,
-      coinUsdcSerumMarket,
-      boundedStrategyKey,
-      // Because this is the second leg, the Trade Source Account must use the leg 1 Trade Destination Account
-      leg1TradeDestinationAccount,
-      // Because this is the last leg, the Trade Destination Account is the deposit address
-      depositAddress,
-      coinMint
-    );
-    const remainingAccounts = [
-      ...initOpenBookRemainingAccounts,
-      ...raydiumInitAccounts,
-    ];
-    const additionalData = new BN(
-      // @ts-ignore
-      serumMarket._baseSplTokenDecimals
-    ).toArrayLike(Buffer, "le", 1);
-    const lookupTableAddress = await createLookUpTable(
-      program.provider,
-      remainingAccounts
-    );
 
     const instruction = await program.methods
       .initBoundedStrategyV2(
@@ -247,22 +208,17 @@ describe("OpenBook + Raydium Trade", () => {
         tokenProgram: SPL_TOKEN_PROGRAM_ID,
         systemProgram: web3.SystemProgram.programId,
       })
-      .remainingAccounts(remainingAccounts)
       .instruction();
 
-    const instructions = [instruction];
-    await compileAndSendV0Tx(
-      program.provider,
-      payerKeypair,
-      lookupTableAddress,
-      instructions,
-      (err) => {
-        console.error(err);
-        const parsedError = parseTranactionError(err);
-        console.log("error: ", parsedError.msg);
-        assert.ok(false);
-      }
-    );
+    try {
+      const tx = new web3.Transaction().add(instruction);
+      await program.provider.sendAndConfirm(tx);
+    } catch (err) {
+      console.error(err);
+      const parsedError = parseTranactionError(err);
+      console.log("error: ", parsedError.msg);
+      assert.ok(false);
+    }
 
     const boundedStrategy = await program.account.boundedStrategyV2.fetch(
       boundedStrategyKey
@@ -297,31 +253,6 @@ describe("OpenBook + Raydium Trade", () => {
       boundedStrategy.depositAddress.toString(),
       depositAddress.toString()
     );
-    assert.equal(boundedStrategy.orderSide, orderSide);
-    assert.equal(boundedStrategy.bound, bound);
-    assert.equal(
-      boundedStrategy.lookupTable.toString(),
-      lookupTableAddress.toString()
-    );
-    // check additional accounts array
-    boundedStrategy.accountList.forEach((key, index) => {
-      const expectedKey = remainingAccounts[index];
-      if (expectedKey) {
-        assert.ok(key.equals(expectedKey.pubkey));
-      } else {
-        assert.ok(key.equals(web3.SystemProgram.programId));
-      }
-    });
-
-    // check additional data
-    boundedStrategy.additionalData.forEach((byte, index) => {
-      const expectedByte = additionalData[index];
-      if (expectedByte) {
-        assert.equal(byte, expectedByte);
-      } else {
-        assert.equal(byte, 0);
-      }
-    });
 
     // Check that the assets were transfered from the reclaimAddress to the orderPayer
     const reclaimTokenAccountAfter = await tokenProgram.account.account.fetch(
@@ -341,6 +272,53 @@ describe("OpenBook + Raydium Trade", () => {
   });
   // TODO: Test the execution of a BoundedTradeV2
   describe("Execution price is lower than the bounded price", () => {
+    let traderKeypair = new web3.Keypair();
+    let additionalData: Buffer;
+    let traderOpenOrdersKeypair = new web3.Keypair();
+    let traderUsdcKey: web3.PublicKey;
+    let traderProgram: Program<SerumRemote>;
+    before(async () => {
+      additionalData = new BN(
+        // @ts-ignore
+        serumMarket._baseSplTokenDecimals
+      ).toArrayLike(Buffer, "le", 1);
+      // Create a new payer for trading
+      const signature = await program.provider.connection.requestAirdrop(
+        traderKeypair.publicKey,
+        10 * web3.LAMPORTS_PER_SOL
+      );
+      await program.provider.connection.confirmTransaction(signature);
+      const traderWallet = new anchor.Wallet(traderKeypair);
+      const traderProvider = new anchor.AnchorProvider(
+        program.provider.connection,
+        traderWallet,
+        {}
+      );
+      traderProgram = new Program<SerumRemote>(
+        IDL,
+        program.programId,
+        traderProvider
+      );
+      const transaction = new web3.Transaction();
+      // Create the OpenOrders accounts
+      const ooIx = await OpenOrders.makeCreateAccountTransaction(
+        program.provider.connection,
+        serumMarket.address,
+        traderKeypair.publicKey,
+        traderOpenOrdersKeypair.publicKey,
+        serumMarket.programId
+      );
+      transaction.add(ooIx);
+      // Create the necessary token accounts. (only need the intermediary account which is USDC)
+      const { instruction, associatedAddress } =
+        await createAssociatedTokenInstruction(traderProvider, USDC_MINT);
+      transaction.add(instruction);
+      traderUsdcKey = associatedAddress;
+
+      await traderProvider.sendAndConfirm(transaction, [
+        traderOpenOrdersKeypair,
+      ]);
+    });
     it("should execute the trade", async () => {
       const boundedStrategy = await program.account.boundedStrategyV2.fetch(
         boundedStrategyKey
@@ -350,20 +328,15 @@ describe("OpenBook + Raydium Trade", () => {
           boundedStrategy.depositAddress
         );
       ////////////////// Get the reamining accounts ////////////
-      const [leg1TradeDestinationAccount, _] = deriveTokenAccount(
-        program,
-        boundedStrategyKey,
-        USDC_MINT
-      );
       const openBookRemainingAccounts = await OpenBookDex.tradeAccounts(
-        program.programId,
         serumMarket,
-        boundedStrategyKey,
         // Becuase this is the first leg, the Trade Source Account is still the collateralAccount
         collateralAccount,
-        // Because this is a multi-leg route, with a following leg, the Trade Destination Account is a derived intermediary account
-        leg1TradeDestinationAccount,
-        USDC_MINT
+        // Because this is a multi-leg route, with a following leg, the Trade Destination Account is an intermediary token account
+        traderUsdcKey,
+        USDC_MINT,
+        traderOpenOrdersKeypair.publicKey,
+        traderKeypair.publicKey
       );
       const raydiumRemainingAccounts = Raydium.tradeAccounts(
         coinMint,
@@ -371,9 +344,9 @@ describe("OpenBook + Raydium Trade", () => {
         USDC_MINT,
         6,
         coinUsdcSerumMarket,
-        boundedStrategyKey,
         // Because this is the second leg, the Trade Source Account must use the leg 1 Trade Destination Account
-        leg1TradeDestinationAccount,
+        traderUsdcKey,
+        traderKeypair.publicKey,
         // Because this is the last leg, the Trade Destination Account is the deposit address
         depositAddress,
         coinMint
@@ -383,21 +356,26 @@ describe("OpenBook + Raydium Trade", () => {
         ...raydiumRemainingAccounts,
       ];
       // Create and send the BoundedTradeV2 transaction
-      const ix = await program.methods
+      const ix = await traderProgram.methods
         .boundedTradeV2(additionalData)
         .accounts({
-          payer: program.provider.publicKey,
+          payer: traderKeypair.publicKey,
           strategy: boundedStrategyKey,
           orderPayer: boundedStrategy.collateralAccount,
           depositAccount: boundedStrategy.depositAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
         })
         .remainingAccounts(remainingAccounts)
         .instruction();
-      ////////////////////// Get the LUT info ///////////////
+      // Create the necessary LUT
+      const lookupTableAddress = await createLookUpTable(
+        traderProgram.provider,
+        remainingAccounts
+      );
       await compileAndSendV0Tx(
-        program.provider,
-        payerKeypair,
-        boundedStrategy.lookupTable,
+        traderProgram.provider,
+        traderKeypair,
+        lookupTableAddress,
         [ix],
         (err) => {
           console.error(err);

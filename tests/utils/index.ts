@@ -9,6 +9,7 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { parseTranactionError } from "../../packages/serum-remote/src";
+import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 
 export const USDC_MINT = new web3.PublicKey(
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
@@ -197,12 +198,20 @@ export const compileAndSendV0Tx = async (
   const transaction = new web3.VersionedTransaction(messageV0);
   try {
     // Create an versioned transaction and send with the ALT
+    const blockHeight = await provider.connection.getBlockHeight("processed");
     transaction.sign([payerKeypair]);
+    const txSig = bs58.encode(transaction.signatures[0]);
+    const confirmationStrategy = {
+      signature: txSig,
+      blockhash: blockhash,
+      lastValidBlockHeight: blockHeight + 50,
+    };
     const txid = await web3.sendAndConfirmRawTransaction(
       provider.connection,
       Buffer.from(transaction.serialize()),
+      confirmationStrategy,
       {
-        skipPreflight: true,
+        skipPreflight: false,
       }
     );
   } catch (error) {

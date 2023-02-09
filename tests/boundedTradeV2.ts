@@ -20,6 +20,7 @@ import {
 } from "./utils";
 import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 /**
  * SerumMarket is in the current state Bids and Asks
@@ -257,6 +258,7 @@ describe("BoundedTradeV2", () => {
               strategy: boundedStrategyKey,
               orderPayer: boundedStrategy.collateralAccount,
               depositAccount: boundedStrategy.depositAddress,
+              tokenProgram: TOKEN_PROGRAM_ID,
             })
             .remainingAccounts(remainingAccounts)
             .instruction();
@@ -333,6 +335,7 @@ describe("BoundedTradeV2", () => {
               strategy: boundedStrategyKey,
               orderPayer: boundedStrategy.collateralAccount,
               depositAccount: boundedStrategy.depositAddress,
+              tokenProgram: TOKEN_PROGRAM_ID,
             })
             .remainingAccounts(remainingAccounts)
             .instruction();
@@ -393,6 +396,7 @@ describe("BoundedTradeV2", () => {
               strategy: boundedStrategyKey,
               orderPayer: boundedStrategy.collateralAccount,
               depositAccount: boundedStrategy.depositAddress,
+              tokenProgram: TOKEN_PROGRAM_ID,
             })
             .remainingAccounts(remainingAccounts)
             .instruction();
@@ -450,6 +454,7 @@ describe("BoundedTradeV2", () => {
               strategy: boundedStrategyKey,
               orderPayer: boundedStrategy.collateralAccount,
               depositAccount: boundedStrategy.depositAddress,
+              tokenProgram: TOKEN_PROGRAM_ID,
             })
             .remainingAccounts(remainingAccounts)
             .instruction();
