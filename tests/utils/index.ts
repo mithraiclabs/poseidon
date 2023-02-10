@@ -8,7 +8,7 @@ import {
   MintLayout,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { parseTranactionError } from "../../packages/serum-remote/src";
+import { parseTranactionError } from "../../packages/poseidon/src";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 
 export const USDC_MINT = new web3.PublicKey(

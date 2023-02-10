@@ -4,9 +4,9 @@ import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Program, web3 } from "@project-serum/anchor";
 import { Market } from "@project-serum/serum";
 import { assert } from "chai";
-import { parseTranactionError } from "../packages/serum-remote/src";
-import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
-import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
+import { parseTranactionError } from "../packages/poseidon/src";
+import OpenBookDex from "../packages/poseidon/src/dexes/openBookDex";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/poseidon/src/pdas";
 import { Poseidon } from "../target/types/poseidon";
 import {
   compileAndSendV0Tx,

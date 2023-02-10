@@ -6,8 +6,8 @@ import { assert } from "chai";
 import {
   BoundedStrategyV2,
   parseTranactionError,
-} from "../packages/serum-remote/src";
-import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
+} from "../packages/poseidon/src";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/poseidon/src/pdas";
 import { Poseidon } from "../target/types/poseidon";
 import {
   compileAndSendV0Tx,
@@ -18,7 +18,7 @@ import {
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
 } from "./utils";
-import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
+import OpenBookDex from "../packages/poseidon/src/dexes/openBookDex";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 

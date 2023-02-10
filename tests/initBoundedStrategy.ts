@@ -5,9 +5,9 @@ import { Program, web3 } from "@project-serum/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { assert } from "chai";
-import { parseTranactionError } from "../packages/serum-remote/src";
-import { initBoundedStrategyIx } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
-import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
+import { parseTranactionError } from "../packages/poseidon/src";
+import { initBoundedStrategyIx } from "../packages/poseidon/src/instructions/initBoundedStrategy";
+import { deriveAllBoundedStrategyKeys } from "../packages/poseidon/src/pdas";
 import { Poseidon } from "../target/types/poseidon";
 import {
   createAssociatedTokenInstruction,

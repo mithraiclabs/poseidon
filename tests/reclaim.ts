@@ -6,10 +6,10 @@ import { assert } from "chai";
 import {
   BoundedStrategy,
   parseTranactionError,
-} from "../packages/serum-remote/src";
-import { reclaimIx } from "../packages/serum-remote/src/instructions";
-import { initializeBoundedStrategy } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
-import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
+} from "../packages/poseidon/src";
+import { reclaimIx } from "../packages/poseidon/src/instructions";
+import { initializeBoundedStrategy } from "../packages/poseidon/src/instructions/initBoundedStrategy";
+import { deriveAllBoundedStrategyKeys } from "../packages/poseidon/src/pdas";
 import { Poseidon } from "../target/types/poseidon";
 import {
   createAssociatedTokenInstruction,

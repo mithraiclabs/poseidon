@@ -6,11 +6,11 @@ import { assert } from "chai";
 import {
   BoundedStrategy,
   parseTranactionError,
-} from "../packages/serum-remote/src";
-import { boundedTradeIx } from "../packages/serum-remote/src/instructions/boundedTrade";
-import { initializeBoundedStrategy } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
-import { srSettleFundsIx } from "../packages/serum-remote/src/instructions/srSettleFunds";
-import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
+} from "../packages/poseidon/src";
+import { boundedTradeIx } from "../packages/poseidon/src/instructions/boundedTrade";
+import { initializeBoundedStrategy } from "../packages/poseidon/src/instructions/initBoundedStrategy";
+import { srSettleFundsIx } from "../packages/poseidon/src/instructions/srSettleFunds";
+import { deriveAllBoundedStrategyKeys } from "../packages/poseidon/src/pdas";
 import { Poseidon } from "../target/types/poseidon";
 import {
   createAssociatedTokenInstruction,

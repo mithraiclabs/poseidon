@@ -4,12 +4,12 @@ import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Program, web3 } from "@project-serum/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
 import { assert } from "chai";
-import { parseTranactionError } from "../packages/serum-remote/src";
-import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
+import { parseTranactionError } from "../packages/poseidon/src";
+import OpenBookDex from "../packages/poseidon/src/dexes/openBookDex";
 import {
   deriveAllBoundedStrategyKeysV2,
   deriveTokenAccount,
-} from "../packages/serum-remote/src/pdas";
+} from "../packages/poseidon/src/pdas";
 import { IDL, Poseidon } from "../target/types/poseidon";
 import {
   compileAndSendV0Tx,
@@ -24,7 +24,7 @@ import {
 } from "./utils";
 import { createRaydiumPool } from "./utils/raydium";
 import { Currency, CurrencyAmount } from "@raydium-io/raydium-sdk";
-import Raydium from "../packages/serum-remote/src/dexes/raydium";
+import Raydium from "../packages/poseidon/src/dexes/raydium";
 import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
 
 let timesRun = 0;

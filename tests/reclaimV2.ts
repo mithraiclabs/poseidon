@@ -3,8 +3,8 @@ import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
-import { BoundedStrategyV2 } from "../packages/serum-remote/src";
-import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
+import { BoundedStrategyV2 } from "../packages/poseidon/src";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/poseidon/src/pdas";
 import { Poseidon } from "../target/types/poseidon";
 import {
   createAssociatedTokenInstruction,
