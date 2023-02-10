@@ -1,6 +1,6 @@
 {
   "name": "@mithraic-labs/poseidon",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -28,7 +28,7 @@
   },
   "peerDependencies": {
     "@coral-xyz/spl-token": "^0.26.0",
-    "@project-serum/anchor": "^0.26.0",
+    "@coral-xyz/anchor": "^0.26.0",
     "@project-serum/serum": "^0.13.61"
   },
   "dependencies": {

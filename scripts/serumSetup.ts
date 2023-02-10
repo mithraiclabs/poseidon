@@ -1,5 +1,5 @@
 import * as os from "os";
-import { web3 } from "@project-serum/anchor";
+import { web3 } from "@coral-xyz/anchor";
 import { DexInstructions, Market, OpenOrders } from "@project-serum/serum";
 import { loadPayer } from "../tests/utils";
 

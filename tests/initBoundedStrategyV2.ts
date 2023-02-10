@@ -1,7 +1,7 @@
-import * as anchor from "@project-serum/anchor";
-import { BN } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
-import { Program, web3 } from "@project-serum/anchor";
+import { Program, web3 } from "@coral-xyz/anchor";
 import { Market } from "@project-serum/serum";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/poseidon/src";

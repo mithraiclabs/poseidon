@@ -1,7 +1,7 @@
-import { BN, Program, web3 } from "@project-serum/anchor";
+import { BN, Program, web3 } from "@coral-xyz/anchor";
 import { Poseidon } from "../poseidon";
 import { deriveAllBoundedStrategyKeys } from "../pdas";
-import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
+import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { BoundedStrategyParams } from "../types";
 import { OpenOrders } from "@project-serum/serum";
 

@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import YAML from "yaml";
-import { BN, Idl, web3 } from "@project-serum/anchor";
+import { BN, Idl, web3 } from "@coral-xyz/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { IdlType } from "./idlTypes";
 

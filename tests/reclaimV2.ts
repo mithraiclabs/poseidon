@@ -1,4 +1,4 @@
-import { BN, Program, web3, workspace } from "@project-serum/anchor";
+import { BN, Program, web3, workspace } from "@coral-xyz/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";

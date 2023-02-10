@@ -1,4 +1,4 @@
-import { Program, web3 } from "@project-serum/anchor";
+import { Program, web3 } from "@coral-xyz/anchor";
 import { Market } from "@project-serum/serum";
 import { BoundedStrategy } from "../types";
 import { Poseidon } from "../poseidon";

@@ -1,4 +1,4 @@
-import { parseIdlErrors, ProgramError, web3 } from "@project-serum/anchor";
+import { parseIdlErrors, ProgramError, web3 } from "@coral-xyz/anchor";
 import { IDL } from "./poseidon";
 import { Bound, OrderSide, SolCluster } from "./types";
 

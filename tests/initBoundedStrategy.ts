@@ -1,7 +1,7 @@
-import * as anchor from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
 import { splTokenProgram } from "@coral-xyz/spl-token";
-import { BN } from "@project-serum/anchor";
-import { Program, web3 } from "@project-serum/anchor";
+import { BN } from "@coral-xyz/anchor";
+import { Program, web3 } from "@coral-xyz/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { assert } from "chai";

@@ -1,4 +1,4 @@
-import { BN, Program, web3 } from "@project-serum/anchor";
+import { BN, Program, web3 } from "@coral-xyz/anchor";
 import { Poseidon } from "./poseidon";
 import { BoundedStrategyParams, BoundedStrategyParamsV2 } from "./types";
 

@@ -1,7 +1,7 @@
-import * as anchor from "@project-serum/anchor";
-import { BN } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
-import { Program, web3 } from "@project-serum/anchor";
+import { Program, web3 } from "@coral-xyz/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/poseidon/src";
@@ -25,7 +25,7 @@ import {
 import { createRaydiumPool } from "./utils/raydium";
 import { Currency, CurrencyAmount } from "@raydium-io/raydium-sdk";
 import Raydium from "../packages/poseidon/src/dexes/raydium";
-import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
+import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
 let timesRun = 0;
 describe("OpenBook + Raydium Trade", () => {
