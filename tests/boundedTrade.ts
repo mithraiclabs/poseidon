@@ -1,17 +1,17 @@
-import * as anchor from "@project-serum/anchor";
-import { BN, Program, web3 } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { BN, Program, web3 } from "@coral-xyz/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Market, DexInstructions } from "@project-serum/serum";
 import { assert } from "chai";
 import {
   BoundedStrategy,
   parseTranactionError,
-} from "../packages/serum-remote/src";
-import { boundedTradeIx } from "../packages/serum-remote/src/instructions/boundedTrade";
-import { initializeBoundedStrategy } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
-import { srSettleFundsIx } from "../packages/serum-remote/src/instructions/srSettleFunds";
-import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
-import { SerumRemote } from "../target/types/serum_remote";
+} from "../packages/poseidon/src";
+import { boundedTradeIx } from "../packages/poseidon/src/instructions/boundedTrade";
+import { initializeBoundedStrategy } from "../packages/poseidon/src/instructions/initBoundedStrategy";
+import { srSettleFundsIx } from "../packages/poseidon/src/instructions/srSettleFunds";
+import { deriveAllBoundedStrategyKeys } from "../packages/poseidon/src/pdas";
+import { Poseidon } from "../target/types/poseidon";
 import {
   createAssociatedTokenInstruction,
   DEX_ID,
@@ -28,7 +28,7 @@ let openOrdersAccount: web3.PublicKey;
 
 describe("BoundedTrade", () => {
   // Configure the client to use the local cluster.
-  const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const program = anchor.workspace.Poseidon as Program<Poseidon>;
 
   const payerKey = program.provider.publicKey;
   const tokenProgram = splTokenProgram({ programId: SPL_TOKEN_PROGRAM_ID });

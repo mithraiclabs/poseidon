@@ -1,14 +1,14 @@
-import * as anchor from "@project-serum/anchor";
-import { BN, Program, web3 } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { BN, Program, web3 } from "@coral-xyz/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { Market, OpenOrders } from "@project-serum/serum";
 import { assert } from "chai";
 import {
   BoundedStrategyV2,
   parseTranactionError,
-} from "../packages/serum-remote/src";
-import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
-import { SerumRemote } from "../target/types/serum_remote";
+} from "../packages/poseidon/src";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/poseidon/src/pdas";
+import { Poseidon } from "../target/types/poseidon";
 import {
   compileAndSendV0Tx,
   createAssociatedTokenInstruction,
@@ -18,7 +18,7 @@ import {
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
 } from "./utils";
-import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
+import OpenBookDex from "../packages/poseidon/src/dexes/openBookDex";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
@@ -29,7 +29,7 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 describe("BoundedTradeV2", () => {
   // Configure the client to use the local cluster.
-  const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const program = anchor.workspace.Poseidon as Program<Poseidon>;
 
   const payerKey = program.provider.publicKey;
   const payerKeypair = loadPayer(process.env.ANCHOR_WALLET);

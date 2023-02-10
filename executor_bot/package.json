@@ -1,5 +1,5 @@
 {
-  "name": "@mithraic-labs/serum-remote",
+  "name": "@mithraic-labs/executor_bot",
   "version": "1.0.0",
   "description": "A node process for monitoring and executing permissionless Serum Remote orders",
   "main": "index.ts",

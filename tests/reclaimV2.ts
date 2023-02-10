@@ -1,15 +1,13 @@
-import { BN, Program, web3, workspace } from "@project-serum/anchor";
+import { BN, Program, web3, workspace } from "@coral-xyz/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { assert } from "chai";
-import { BoundedStrategyV2 } from "../packages/serum-remote/src";
-import { deriveAllBoundedStrategyKeysV2 } from "../packages/serum-remote/src/pdas";
-import { SerumRemote } from "../target/types/serum_remote";
+import { BoundedStrategyV2 } from "../packages/poseidon/src";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/poseidon/src/pdas";
+import { Poseidon } from "../target/types/poseidon";
 import {
-  compileAndSendV0Tx,
   createAssociatedTokenInstruction,
-  createLookUpTable,
   DEX_ID,
   loadPayer,
   SOL_USDC_SERUM_MARKET,
@@ -17,12 +15,11 @@ import {
   wait,
 } from "./utils";
 import { Market } from "@project-serum/serum";
-import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
 import { Transaction } from "@solana/web3.js";
 
 describe("ReclaimV2", () => {
   // Configure the client to use the local cluster.
-  const program = workspace.SerumRemote as Program<SerumRemote>;
+  const program = workspace.Poseidon as Program<Poseidon>;
   const payerKey = program.provider.publicKey;
   const payerKeypair = loadPayer(process.env.ANCHOR_WALLET);
   const tokenProgram = splTokenProgram();

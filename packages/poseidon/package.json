@@ -1,6 +1,6 @@
 {
-  "name": "@mithraic-labs/serum-remote",
-  "version": "0.0.3",
+  "name": "@mithraic-labs/poseidon",
+  "version": "0.0.4",
   "description": "",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -14,7 +14,7 @@
     "build": "tsc",
     "build:package": "yarn clean && yarn copy-idl && rollup -c",
     "clean": "rm -rf ./dist",
-    "copy-idl": "test -e ../../target/types/serum_remote.ts && cp ../../target/types/serum_remote.ts ./src || echo \"Run anchor build first\" >&2",
+    "copy-idl": "test -e ../../target/types/poseidon.ts && cp ../../target/types/poseidon.ts ./src || echo \"Run anchor build first\" >&2",
     "prepublishOnly": "yarn copy-idl && rollup -c",
     "test": "echo \"Error: no test specified\" && exit 1",
     "type-check": "tsc --noEmit"
@@ -28,7 +28,7 @@
   },
   "peerDependencies": {
     "@coral-xyz/spl-token": "^0.26.0",
-    "@project-serum/anchor": "^0.26.0",
+    "@coral-xyz/anchor": "^0.26.0",
     "@project-serum/serum": "^0.13.61"
   },
   "dependencies": {

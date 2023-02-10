@@ -1,4 +1,4 @@
-import { BN, Provider, web3 } from "@project-serum/anchor";
+import { BN, Provider, web3 } from "@coral-xyz/anchor";
 import {
   BigNumberish,
   CurrencyAmount,

@@ -1,16 +1,16 @@
-import * as anchor from "@project-serum/anchor";
-import { BN } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { splTokenProgram, SPL_TOKEN_PROGRAM_ID } from "@coral-xyz/spl-token";
-import { Program, web3 } from "@project-serum/anchor";
+import { Program, web3 } from "@coral-xyz/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
 import { assert } from "chai";
-import { parseTranactionError } from "../packages/serum-remote/src";
-import OpenBookDex from "../packages/serum-remote/src/dexes/openBookDex";
+import { parseTranactionError } from "../packages/poseidon/src";
+import OpenBookDex from "../packages/poseidon/src/dexes/openBookDex";
 import {
   deriveAllBoundedStrategyKeysV2,
   deriveTokenAccount,
-} from "../packages/serum-remote/src/pdas";
-import { IDL, SerumRemote } from "../target/types/serum_remote";
+} from "../packages/poseidon/src/pdas";
+import { IDL, Poseidon } from "../target/types/poseidon";
 import {
   compileAndSendV0Tx,
   createAssociatedTokenInstruction,
@@ -24,13 +24,13 @@ import {
 } from "./utils";
 import { createRaydiumPool } from "./utils/raydium";
 import { Currency, CurrencyAmount } from "@raydium-io/raydium-sdk";
-import Raydium from "../packages/serum-remote/src/dexes/raydium";
-import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
+import Raydium from "../packages/poseidon/src/dexes/raydium";
+import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
 let timesRun = 0;
 describe("OpenBook + Raydium Trade", () => {
   // Configure the client to use the local cluster.
-  const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const program = anchor.workspace.Poseidon as Program<Poseidon>;
   const payerKey = program.provider.publicKey;
   const payerKeypair = loadPayer(process.env.ANCHOR_WALLET);
   const tokenProgram = splTokenProgram();
@@ -276,7 +276,7 @@ describe("OpenBook + Raydium Trade", () => {
     let additionalData: Buffer;
     let traderOpenOrdersKeypair = new web3.Keypair();
     let traderUsdcKey: web3.PublicKey;
-    let traderProgram: Program<SerumRemote>;
+    let traderProgram: Program<Poseidon>;
     before(async () => {
       additionalData = new BN(
         // @ts-ignore
@@ -294,7 +294,7 @@ describe("OpenBook + Raydium Trade", () => {
         traderWallet,
         {}
       );
-      traderProgram = new Program<SerumRemote>(
+      traderProgram = new Program<Poseidon>(
         IDL,
         program.programId,
         traderProvider

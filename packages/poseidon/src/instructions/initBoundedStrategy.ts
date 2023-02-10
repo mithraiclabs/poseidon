@@ -1,12 +1,12 @@
-import { BN, Program, web3 } from "@project-serum/anchor";
-import { SerumRemote } from "../serum_remote";
+import { BN, Program, web3 } from "@coral-xyz/anchor";
+import { Poseidon } from "../poseidon";
 import { deriveAllBoundedStrategyKeys } from "../pdas";
-import { TOKEN_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token";
+import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { BoundedStrategyParams } from "../types";
 import { OpenOrders } from "@project-serum/serum";
 
 export const initBoundedStrategyIx = async (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   dexProgram: web3.PublicKey,
   serumMarket: web3.PublicKey,
   mint: web3.PublicKey,
@@ -58,7 +58,7 @@ export const initBoundedStrategyIx = async (
 };
 
 export const initializeBoundedStrategy = async (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   dexProgramId: web3.PublicKey,
   serumMarket: web3.PublicKey,
   assetMint: web3.PublicKey,

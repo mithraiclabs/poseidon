@@ -1,4 +1,4 @@
-import { BN, web3 } from "@project-serum/anchor";
+import { BN, web3 } from "@coral-xyz/anchor";
 import { Market } from "@project-serum/serum";
 import { getProgramId } from "../utils";
 import { SolCluster } from "../types";

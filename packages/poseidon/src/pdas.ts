@@ -1,11 +1,11 @@
-import { BN, Program, web3 } from "@project-serum/anchor";
-import { SerumRemote } from "./serum_remote";
+import { BN, Program, web3 } from "@coral-xyz/anchor";
+import { Poseidon } from "./poseidon";
 import { BoundedStrategyParams, BoundedStrategyParamsV2 } from "./types";
 
 const textEncoder = new TextEncoder();
 
 export const deriveBoundedStrategy = (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   serumMarket: web3.PublicKey,
   mint: web3.PublicKey,
   boundPrice: BN,
@@ -23,7 +23,7 @@ export const deriveBoundedStrategy = (
   );
 
 export const deriveBoundedStrategyV2 = (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   mint: web3.PublicKey,
   boundPriceNumerator: BN,
   boundPriceDenominator: BN,
@@ -41,7 +41,7 @@ export const deriveBoundedStrategyV2 = (
   );
 
 export const deriveCollateralAccount = (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   strategy: web3.PublicKey
 ) =>
   web3.PublicKey.findProgramAddressSync(
@@ -50,7 +50,7 @@ export const deriveCollateralAccount = (
   );
 
 export const deriveAuthority = (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   strategy: web3.PublicKey
 ) =>
   web3.PublicKey.findProgramAddressSync(
@@ -59,7 +59,7 @@ export const deriveAuthority = (
   );
 
 export const deriveOpenOrders = (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   strategy: web3.PublicKey
 ) =>
   web3.PublicKey.findProgramAddressSync(
@@ -68,7 +68,7 @@ export const deriveOpenOrders = (
   );
 
 export const deriveAllBoundedStrategyKeys = (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   serumMarket: web3.PublicKey,
   mint: web3.PublicKey,
   boundedStrategyParams: BoundedStrategyParams
@@ -88,7 +88,7 @@ export const deriveAllBoundedStrategyKeys = (
 };
 
 export const deriveAllBoundedStrategyKeysV2 = (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   mint: web3.PublicKey,
   boundedStrategyParams: BoundedStrategyParamsV2
 ) => {
@@ -106,7 +106,7 @@ export const deriveAllBoundedStrategyKeysV2 = (
 };
 
 export const deriveTokenAccount = (
-  program: Program<SerumRemote>,
+  program: Program<Poseidon>,
   strategyKey: web3.PublicKey,
   mint: web3.PublicKey
 ): [web3.PublicKey, number] =>

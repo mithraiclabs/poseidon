@@ -1,12 +1,12 @@
 [package]
-name = "serum-remote"
+name = "poseidon"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2018"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "serum_remote"
+name = "poseidon"
 
 [features]
 no-entrypoint = []

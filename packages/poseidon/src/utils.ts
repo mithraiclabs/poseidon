@@ -1,5 +1,5 @@
-import { parseIdlErrors, ProgramError, web3 } from "@project-serum/anchor";
-import { IDL } from "./serum_remote";
+import { parseIdlErrors, ProgramError, web3 } from "@coral-xyz/anchor";
+import { IDL } from "./poseidon";
 import { Bound, OrderSide, SolCluster } from "./types";
 
 const idlErrors = parseIdlErrors(IDL);

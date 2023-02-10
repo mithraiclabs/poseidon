@@ -1,16 +1,16 @@
-import * as anchor from "@project-serum/anchor";
-import { BN, Program, web3 } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { BN, Program, web3 } from "@coral-xyz/anchor";
 import { splTokenProgram } from "@coral-xyz/spl-token";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { assert } from "chai";
 import {
   BoundedStrategy,
   parseTranactionError,
-} from "../packages/serum-remote/src";
-import { reclaimIx } from "../packages/serum-remote/src/instructions";
-import { initializeBoundedStrategy } from "../packages/serum-remote/src/instructions/initBoundedStrategy";
-import { deriveAllBoundedStrategyKeys } from "../packages/serum-remote/src/pdas";
-import { SerumRemote } from "../target/types/serum_remote";
+} from "../packages/poseidon/src";
+import { reclaimIx } from "../packages/poseidon/src/instructions";
+import { initializeBoundedStrategy } from "../packages/poseidon/src/instructions/initBoundedStrategy";
+import { deriveAllBoundedStrategyKeys } from "../packages/poseidon/src/pdas";
+import { Poseidon } from "../target/types/poseidon";
 import {
   createAssociatedTokenInstruction,
   DEX_ID,
@@ -23,7 +23,7 @@ let timesRun = 0;
 
 describe("Reclaim", () => {
   // Configure the client to use the local cluster.
-  const program = anchor.workspace.SerumRemote as Program<SerumRemote>;
+  const program = anchor.workspace.Poseidon as Program<Poseidon>;
   // @ts-ignore: TODO: Remove after anchor npm upgrade
   const payerKey = program.provider.wallet.publicKey;
   const tokenProgram = splTokenProgram();

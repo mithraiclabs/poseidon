@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import { splTokenProgram } from "@coral-xyz/spl-token";
-import { Provider, web3 } from "@project-serum/anchor";
+import { Provider, web3 } from "@coral-xyz/anchor";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
@@ -8,8 +8,8 @@ import {
   MintLayout,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { parseTranactionError } from "../../packages/serum-remote/src";
-import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
+import { parseTranactionError } from "../../packages/poseidon/src";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 export const USDC_MINT = new web3.PublicKey(
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
