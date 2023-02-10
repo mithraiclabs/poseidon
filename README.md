@@ -30,9 +30,9 @@ Finally, if the expiration (`reclaim_date`) has passed, anyone can fire a transa
 
 ## Program Deployments
 
-| Program                          | Devnet                                        | Mainnet Beta                                  |
-| -------------------------------- | --------------------------------------------- | --------------------------------------------- |
-| [Remote](/programs/serum-remote) | `oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK` | `oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK` |
+| Program                      | Devnet                                        | Mainnet Beta                                  |
+| ---------------------------- | --------------------------------------------- | --------------------------------------------- |
+| [Remote](/programs/poseidon) | `oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK` | `oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK` |
 
 ## Development
 
