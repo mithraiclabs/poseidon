@@ -11,7 +11,7 @@ pub mod utils;
 
 use crate::instructions::*;
 
-declare_id!("oBRem4fksRF79j3wRkqMHdJfTzxbEEd73JgN3mFQjSK");
+declare_id!("8TJjyzq3iXc48MgV6TD5DumKKwfWKU14Jr9pwgnAbpzs");
 
 mod address_lut_program {
     anchor_lang::declare_id!("AddressLookupTab1e1111111111111111111111111");
