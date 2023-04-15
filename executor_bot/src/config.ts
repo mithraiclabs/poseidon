@@ -1,4 +1,4 @@
-import { SolCluster } from "@mithraic-labs/serum-remote";
+import { SolCluster } from "@mithraic-labs/poseidon";
 
 export default {
   jsonRpcUrl: process.env.JSON_RPC_URL,

@@ -1,5 +1,12 @@
 ## How to run locally
 
+0. if running using yarn dev:
+
+```
+ rm -rf node_modules/@mithraic-labs/poseidon/node_modules
+ rm -rf node_modules/@raydium-io/raydium-sdk/node_modules
+```
+
 1. Create `.envrc` file in this directory and add the following
 
 ```

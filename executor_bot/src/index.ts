@@ -2,18 +2,17 @@ import * as fs from "fs";
 import * as anchor from "@project-serum/anchor";
 import { AnchorProvider, Program, web3 } from "@project-serum/anchor";
 import {
-  getProgramId,
-  instructions,
-  SerumRemote,
   IDL,
-} from "@mithraic-labs/serum-remote";
+  Poseidon,
+  getProgramId,
+  BoundedStrategyV2,
+  getTradeAccounts,
+  SolCluster,
+} from "@mithraic-labs/poseidon";
 import config from "./config";
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
-import { Market } from "@project-serum/serum";
-import {
-  createAssociatedTokenAccountInstruction,
-  getAssociatedTokenAddress,
-} from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { getQuote } from "./quote";
 
 export const wait = (delayMS: number) =>
   new Promise((resolve) => setTimeout(resolve, delayMS));
@@ -49,83 +48,56 @@ const connection = new web3.Connection(config.jsonRpcUrl);
   const provider = new AnchorProvider(connection, new NodeWallet(payer), {});
   // Create new Serum Remote program
   const serumRemoteProgramId = getProgramId(config.cluster);
-  const program = new Program<SerumRemote>(IDL, serumRemoteProgramId, provider);
+  const program = new Program<Poseidon>(IDL, serumRemoteProgramId, provider);
 
   while (true) {
     // Query get program accounts to all bounded strategies.
-    const boundedStrategies = await program.account.boundedStrategy.all();
-
+    const boundedStrategies = await program.account.boundedStrategyV2.all();
+    console.log({ boundedStrategies });
     const currentTime = new Date().getTime() / 1_000;
     await Promise.all(
       boundedStrategies.map(async (boundedStrategy) => {
-        // Backwards compatibility for old Devnet program. Can be removed April 12, 2022
-        if (
-          boundedStrategy.account.serumDexId.toString() ===
-          web3.SystemProgram.programId.toString()
-        ) {
-          return;
-        }
         const transaction = new web3.Transaction();
+        const strategy = boundedStrategy.account as BoundedStrategyV2;
         // handle reclaiming assets for those that have expired
-        if (boundedStrategy.account.reclaimDate.toNumber() < currentTime) {
-          const ix = instructions.reclaimIx(
-            program,
-            boundedStrategy.publicKey,
-            boundedStrategy.account,
-            boundedStrategy.account.serumDexId
-          );
+        if (strategy.reclaimDate.toNumber() < currentTime) {
+          const ix = program.instruction.reclaimV2({
+            accounts: {
+              receiver: payer.publicKey,
+              strategy: boundedStrategy.publicKey,
+              collateralAccount: strategy.collateralAccount,
+              reclaimAccount: strategy.reclaimAddress,
+              tokenProgram: TOKEN_PROGRAM_ID,
+            },
+          });
           transaction.add(ix);
         } else {
-          const serumMarket = await Market.load(
+          const { marketIds, destinationMint } = await getQuote({
+            boundedStrategy: strategy,
             connection,
-            boundedStrategy.account.serumMarket,
-            {},
-            boundedStrategy.account.serumDexId
-          );
-          // Check the current price to see if the transaction should be sent
-          const [bids, asks] = await Promise.all([
-            serumMarket.loadBids(connection),
-            serumMarket.loadAsks(connection),
-          ]);
-
-          const humanReadableBoundPrice = serumMarket.priceLotsToNumber(
-            boundedStrategy.account.boundedPrice
-          );
-          const lowestAsk = asks.getL2(1)[0];
-          const highestBid = bids.getL2(1)[0];
-
-          if (
-            (boundedStrategy.account.orderSide === 0 &&
-              lowestAsk[0] < humanReadableBoundPrice) ||
-            (boundedStrategy.account.orderSide === 1 &&
-              highestBid[0] > humanReadableBoundPrice)
-          ) {
-            // Check if the referral account exists
-            const referralAddress = await getAssociatedTokenAddress(
-              serumMarket.quoteMintAddress,
-              payer.publicKey
-            );
-            const referralAccount = await connection.getAccountInfo(
-              referralAddress
-            );
-            // add transaction to create the referral account if it does not exist
-            if (!referralAccount) {
-              const createReferralAccountIx =
-                createAssociatedTokenAccountInstruction(
-                  payer.publicKey,
-                  referralAddress,
-                  payer.publicKey,
-                  serumMarket.quoteMintAddress
-                );
-              transaction.add(createReferralAccountIx);
-            }
-            const ix = await instructions.boundedTradeIx(
-              program,
-              boundedStrategy.publicKey,
-              serumMarket,
-              boundedStrategy.account,
-              referralAddress
-            );
+          });
+          if (marketIds.length) {
+            const { remainingAccounts, additionalData } =
+              await getTradeAccounts(
+                connection,
+                process.env.SOLANA_CLUSTER as SolCluster,
+                marketIds,
+                boundedStrategy.publicKey,
+                strategy.collateralAccount,
+                strategy.depositAddress,
+                destinationMint
+              );
+            const ix = await program.methods
+              .boundedTradeV2(additionalData)
+              .accounts({
+                payer: payer.publicKey,
+                strategy: boundedStrategy.publicKey,
+                orderPayer: strategy.collateralAccount,
+                depositAccount: strategy.depositAddress,
+                tokenProgram: TOKEN_PROGRAM_ID,
+              })
+              .remainingAccounts(remainingAccounts)
+              .instruction();
             transaction.add(ix);
           }
 
