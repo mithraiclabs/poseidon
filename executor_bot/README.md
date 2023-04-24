@@ -27,13 +27,9 @@ Example:
 1. Create `.envrc` file in this directory and add the following
 
 ```
-export POSTGRES_DB=executor_bot
-export POSTGRES_USER=user
-export POSTGRES_PASSWORD=pass
-
-export JSON_RPC_URL=http://host.docker.internal:8899
-export GRAPHILE_LOGGER_DEBUG=1
-export SECRET_KEY=NEVER_SHARE_YOUR_SECRET_KEY
+export JSON_RPC_URL=<YOUR_RPC>
+export SOLANA_CLUSTER="mainnet-beta"
+export SOLANA_KEYPAIR_PATH="<PATH_TO_id.json>"
 ```
 
 2. install direnv (macOS: brew, ubuntu: apt) + [hook into shell](https://direnv.net/docs/hook.html)

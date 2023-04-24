@@ -7,7 +7,7 @@ import {
 } from "@mithraic-labs/poseidon";
 import config from "./config";
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token2";
 import { getQuote } from "./quote";
 import { Connection, Transaction, ComputeBudgetProgram } from "@solana/web3.js";
 import {
@@ -26,18 +26,20 @@ const connection = new Connection(config.jsonRpcUrl);
   // Create new Serum Remote program
   const serumRemoteProgramId = getProgramId(config.cluster);
   const program = new Program<Poseidon>(IDL, serumRemoteProgramId, provider);
-  console.log("starting");
+  console.log("starting up...");
   while (true) {
+    console.log("loading bounded strategies...");
     // Query get program accounts to all bounded strategies.
     const boundedStrategies = await program.account.boundedStrategyV2.all();
     console.log({ boundedStrategies });
     const currentTime = new Date().getTime() / 1_000;
     for (let i = 0; i < boundedStrategies.length; i++) {
       const boundedStrategy = boundedStrategies[i];
-      const strategy = boundedStrategy.account as BoundedStrategyV2;
+      // build fails if we don't precast to 'unknown'
+      const strategy = boundedStrategy.account as unknown as BoundedStrategyV2;
       if (strategy.reclaimDate.toNumber() < currentTime) {
         // handle reclaiming assets for those that have expired
-        console.log("reclaim->>>");
+        console.log("reclaiming funds for ", boundedStrategy.publicKey);
         const ix = program.instruction.reclaimV2({
           accounts: {
             receiver: payer.publicKey,
@@ -53,7 +55,7 @@ const connection = new Connection(config.jsonRpcUrl);
         console.log("executed tx for reclaim", { reclaimSignature });
       } else {
         // get all the accounts needed for this trade, in accordance with the max allowed price
-        console.log("getting quote->>>");
+        console.log("getting quote for ", boundedStrategy.publicKey);
         const { remainingAccounts, additionalData } = await getQuote({
           boundedStrategy: strategy,
           connection,
@@ -110,6 +112,8 @@ const connection = new Connection(config.jsonRpcUrl);
           } else {
             console.log("Couldn't complete v2 trade");
           }
+        } else {
+          console.log("No route found");
         }
       }
     }
