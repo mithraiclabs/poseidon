@@ -11,6 +11,7 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { getQuote } from "./quote";
 import { Connection, Transaction, ComputeBudgetProgram } from "@solana/web3.js";
 import {
+  closeOpenOrdersForPayer,
   compileAndSendV0Tx,
   createLookUpTable,
   loadPayer,
@@ -34,8 +35,8 @@ const connection = new Connection(config.jsonRpcUrl);
     for (let i = 0; i < boundedStrategies.length; i++) {
       const boundedStrategy = boundedStrategies[i];
       const strategy = boundedStrategy.account as BoundedStrategyV2;
-      // handle reclaiming assets for those that have expired
       if (strategy.reclaimDate.toNumber() < currentTime) {
+        // handle reclaiming assets for those that have expired
         console.log("reclaim->>>");
         const ix = program.instruction.reclaimV2({
           accounts: {
@@ -46,18 +47,21 @@ const connection = new Connection(config.jsonRpcUrl);
             tokenProgram: TOKEN_PROGRAM_ID,
           },
         });
-        await program.provider.sendAndConfirm(new Transaction().add(ix));
-        console.log("executed tx for reclaim");
+        const reclaimSignature = await program.provider.sendAndConfirm(
+          new Transaction().add(ix)
+        );
+        console.log("executed tx for reclaim", { reclaimSignature });
       } else {
+        // get all the accounts needed for this trade, in accordance with the max allowed price
         console.log("getting quote->>>");
-        const { remainingAccounts, additionalData, createdTokenAccounts } =
-          await getQuote({
-            boundedStrategy: strategy,
-            connection,
-            payer,
-          });
+        const { remainingAccounts, additionalData } = await getQuote({
+          boundedStrategy: strategy,
+          connection,
+          payer,
+        });
 
         if (remainingAccounts.length) {
+          // this would mean that there wasn't a route mathcing the price set by the strategy
           console.log({
             remainingAccounts: remainingAccounts.map((a) =>
               a.pubkey.toString()
@@ -75,6 +79,7 @@ const connection = new Connection(config.jsonRpcUrl);
             })
             .remainingAccounts(remainingAccounts)
             .instruction();
+          // starting at 3 legs, the compute limit will get hit so we adjust that
           const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
             units: 400000,
           });
@@ -91,7 +96,7 @@ const connection = new Connection(config.jsonRpcUrl);
             ],
             payer
           );
-          const tx = await compileAndSendV0Tx(
+          const v2TradeSignature = await compileAndSendV0Tx(
             program.provider,
             payer,
             lookupTableAddress,
@@ -100,29 +105,15 @@ const connection = new Connection(config.jsonRpcUrl);
               console.error(err);
             }
           );
-          if (tx) {
-            console.log(tx, " done with executing v2 trade");
-
-            // if (createdTokenAccounts.length) {
-            //   const closeTx = new Transaction();
-            //   for (let accToClose of createdTokenAccounts) {
-            //     closeTx.add(
-            //       closeAccount({
-            //         source: accToClose,
-            //         destination: payer.publicKey,
-            //         owner: payer.publicKey,
-            //       })
-            //     );
-            //   }
-            //   const closeAccSign = await provider.sendAndConfirm(closeTx, [
-            //     payer,
-            //   ]);
-            //   console.log({ closeAccSign });
-            // }
+          if (v2TradeSignature) {
+            console.log("Done with executing v2 trade", { v2TradeSignature });
+          } else {
+            console.log("Couldn't complete v2 trade");
           }
         }
       }
     }
+    await closeOpenOrdersForPayer(provider, payer);
     await wait(POLL_INTERVAL);
   }
 })();

@@ -32,3 +32,4 @@ export const JUPITER_EXCLUDED_AMMS = {
 };
 // Poll the RPC node for new accounts and execution every 10 min
 export const POLL_INTERVAL = 600 * 1_000;
+export const ONLY_DIRECT_ROUTE = false;

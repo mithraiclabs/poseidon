@@ -5,7 +5,7 @@ import {
 } from "@raydium-io/raydium-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { Market } from "@project-serum/serum";
-import { deriveVaultSigner, OPENBOOK_V3_PROGRAM_ID } from "./openbook";
+import { deriveVaultSigner } from "./openbook";
 
 /**
  * RAYDIUM V4 SWAP ACCOUNT ORDER

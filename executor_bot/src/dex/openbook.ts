@@ -57,7 +57,6 @@ export const openBookTradeAccounts = async (
     { pubkey: TOKEN_PROGRAM_ID, isWritable: false, isSigner: false },
     { pubkey: SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
     // This is the SRM referral account
-    // TODO: Maybe actually implement this?
     { pubkey: SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
     { pubkey: openOrdersOwner, isWritable: false, isSigner: false },
     { pubkey: collateralAccount, isWritable: false, isSigner: false },
@@ -104,7 +103,6 @@ export const openbookData = async (
       openOrdersKey,
       OPENBOOK_V3_PROGRAM_ID
     );
-
     const openOrdersTx = new Transaction().add(createOpenOrdersIx);
 
     const latestBlockHash = await connection.getLatestBlockhash();

@@ -1,4 +1,10 @@
-import { Connection, PublicKey, Keypair, AccountMeta } from "@solana/web3.js";
+import {
+  Connection,
+  PublicKey,
+  Keypair,
+  AccountMeta,
+  Cluster,
+} from "@solana/web3.js";
 import * as Poseidon from "@mithraic-labs/poseidon";
 import { Jupiter } from "@jup-ag/core";
 import {
@@ -7,9 +13,10 @@ import {
   getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token2";
 import JSBI from "jsbi";
-import { JUPITER_EXCLUDED_AMMS } from "./constants";
+import { JUPITER_EXCLUDED_AMMS, ONLY_DIRECT_ROUTE } from "./constants";
 import { openbookData, OPENBOOK_V3_PROGRAM_ID, raydiumTradeAccts } from "./dex";
 import { Market } from "@project-serum/serum";
+import config from "./config";
 
 export const getQuote = async ({
   boundedStrategy: {
@@ -47,30 +54,23 @@ export const getQuote = async ({
   ];
   const numeratorAmount = Number(boundedPriceNumerator) / collateralMultiplier;
   const denominatorAmount = Number(boundedPriceDenominator) / depositMultiplier;
-  console.log({
-    numeratorAmount,
-    denominatorAmount,
-    colDec: collateralMintInfo.decimals,
-  });
 
   const maxPrice = numeratorAmount / denominatorAmount;
   const collateralAmount = Number(collateral.amount) / collateralMultiplier;
-  const amount = collateralAmount / maxPrice;
-  console.log({
-    amount,
-    maxPrice,
-    collateralMultiplier,
-    collateralAmount,
-    colam: collateral.amount.toString(),
-  });
-  // todo change this to be more robust (based on pricelots)
-  const excludeOpenbook = collateralAmount < 1;
-  console.log({ excludeOpenbook });
+  if (!collateralAmount)
+    return {
+      additionalData,
+      remainingAccounts,
+    };
 
+  const amount = collateralAmount / maxPrice;
+
+  // todo change this to be more robust (based on pricelots)
+  const excludeOpenbook = amount < 1;
   const jupiter = await Jupiter.load({
     connection,
-    cluster: "mainnet-beta",
-    user: new PublicKey("8tJa9jb9X18jVkTabpPc7DeNeLhUxfeNh3sZzuGhAT2C"),
+    cluster: config.cluster as Cluster,
+    user: payer.publicKey,
     ammsToExclude: {
       ...JUPITER_EXCLUDED_AMMS,
       ...(excludeOpenbook && {
@@ -79,7 +79,6 @@ export const getQuote = async ({
       }),
     },
   });
-  console.log({ am: amount });
 
   const routes = await jupiter.computeRoutes({
     inputMint: collateralMint,
@@ -87,8 +86,6 @@ export const getQuote = async ({
     amount: JSBI.BigInt((amount * depositMultiplier).toFixed(0)),
     slippageBps: 15,
   });
-  console.log({ routes });
-  let createdTokenAccounts = [];
 
   for (let route of routes.routesInfos) {
     const { inAmount, outAmount, marketInfos } = route;
@@ -131,8 +128,8 @@ export const getQuote = async ({
           );
           outputAccount = tokenAccount.address;
           console.log({ tokenAccount });
-          createdTokenAccounts.push(outputAccount);
         } else outputAccount = new PublicKey(depositAddress);
+
         switch (marketInfo.amm.label) {
           case "Raydium":
             const srmMarket = await Market.load(
@@ -156,7 +153,6 @@ export const getQuote = async ({
               (marketInfo.amm as any).serumProgramId
             );
             remainingAccounts.push(...raydiumRemainingAccounts);
-
             break;
           default:
           case "Openbook":
@@ -180,8 +176,5 @@ export const getQuote = async ({
   return {
     additionalData,
     remainingAccounts,
-    createdTokenAccounts,
   };
 };
-
-const ONLY_DIRECT_ROUTE = false;

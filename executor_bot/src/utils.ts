@@ -1,5 +1,6 @@
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { Provider } from "@project-serum/anchor";
+import { Provider, AnchorProvider } from "@project-serum/anchor";
+import { DexInstructions, OpenOrders } from "@project-serum/serum";
 import {
   Transaction,
   Keypair,
@@ -11,11 +12,8 @@ import {
   AddressLookupTableProgram,
   AccountMeta,
 } from "@solana/web3.js";
-import {
-  getAssociatedTokenAddress,
-  createAssociatedTokenAccountInstruction,
-} from "@solana/spl-token2";
 import * as fs from "fs";
+import { OPENBOOK_V3_PROGRAM_ID } from "./dex";
 
 export const loadPayer = (keypairPath: string): Keypair => {
   if (keypairPath) {
@@ -36,6 +34,40 @@ export const loadPayer = (keypairPath: string): Keypair => {
     throw new Error(
       "You must specify option --keypair or SECRET_KEY env variable"
     );
+  }
+};
+
+export const closeOpenOrdersForPayer = async (
+  provider: AnchorProvider,
+  payer: Keypair
+) => {
+  const allOpenOrders = await OpenOrders.findForOwner(
+    provider.connection,
+    payer.publicKey,
+    OPENBOOK_V3_PROGRAM_ID
+  );
+  const openOrdersTx = new Transaction();
+  for (let _orders of allOpenOrders) {
+    openOrdersTx.add(
+      DexInstructions.closeOpenOrders({
+        market: _orders.market,
+        openOrders: _orders.publicKey,
+        owner: payer.publicKey,
+        solWallet: payer.publicKey,
+        programId: OPENBOOK_V3_PROGRAM_ID,
+      })
+    );
+  }
+  if (openOrdersTx.instructions.length) {
+    console.log(
+      `Closing ${openOrdersTx.instructions.length} open orders accounts...`
+    );
+    try {
+      const closeSign = await provider.sendAndConfirm(openOrdersTx, [payer]);
+      console.log("Successufully closed open orders accounts!", { closeSign });
+    } catch (error) {
+      console.error("Open orders account closing tx failed", { error });
+    }
   }
 };
 
@@ -73,7 +105,6 @@ export const compileAndSendV0Tx = async (
     .getLatestBlockhash()
     .then((res) => res.blockhash);
   const lookupTableAccount = await provider.connection
-    // @ts-ignore: This is actually on the object, the IDE is wrong
     .getAddressLookupTable(lookupTableAddress)
     .then((res) => res.value);
   // Wait until the current slot is greater than the last extended slot
@@ -145,8 +176,6 @@ export const createLookUpTable = async (
       addresses: addressGroup,
     });
     extTx.add(extendInstruction);
-    console.log("sending ", addressGroup.length);
-
     await provider.sendAndConfirm(extTx, [payer], {});
   }
   return Promise.resolve(lookupTableAddress);
