@@ -33,7 +33,11 @@ export const raydiumTradeAccts = async (
   tradeSourceAccount: PublicKey,
   tradeSourceOwner: PublicKey,
   tradeDestinationAccount: PublicKey,
-  serumKeys: any,
+  serumKeys: {
+    serumEventQueue: PublicKey;
+    serumCoinVaultAccount: PublicKey;
+    serumPcVaultAccount: PublicKey;
+  },
   marketId: PublicKey,
   serumMarketKey: PublicKey,
   serumMarket: Market,
