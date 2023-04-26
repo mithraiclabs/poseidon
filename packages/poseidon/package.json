@@ -29,9 +29,7 @@
   "peerDependencies": {
     "@coral-xyz/spl-token": "^0.26.0",
     "@coral-xyz/anchor": "^0.26.0",
-    "@project-serum/serum": "^0.13.61"
-  },
-  "dependencies": {
+    "@project-serum/serum": "^0.13.61",
     "@raydium-io/raydium-sdk": "^1.1.0-beta.55"
   }
 }
