@@ -23,6 +23,8 @@ import { createRaydiumPool } from "./utils/raydium";
 import { Currency, CurrencyAmount } from "@raydium-io/raydium-sdk";
 import { raydiumTradeAccts } from "../packages/poseidon/src/dexes";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
+import { Liquidity } from "@raydium-io/raydium-sdk";
+import { LIQUIDITY_PROGRAM_ID_V4 } from "@raydium-io/raydium-sdk";
 
 let timesRun = 0;
 describe("OpenBook + Raydium Trade", () => {
@@ -334,6 +336,18 @@ describe("OpenBook + Raydium Trade", () => {
         traderOpenOrdersKeypair.publicKey,
         traderKeypair.publicKey
       );
+      // the keys taken from here would come from jupiter
+      const associatedPoolKeys = Liquidity.getAssociatedPoolKeys({
+        version: 4,
+        marketVersion: 5,
+        baseMint: coinMint,
+        quoteMint: USDC_MINT,
+        baseDecimals: 6,
+        quoteDecimals: 6,
+        marketId: serumMarket.address,
+        programId: LIQUIDITY_PROGRAM_ID_V4,
+        marketProgramId: serumMarket.programId,
+      });
       const raydiumRemainingAccounts = await raydiumTradeAccts(
         traderUsdcKey,
         traderKeypair.publicKey,
@@ -346,10 +360,10 @@ describe("OpenBook + Raydium Trade", () => {
         coinUsdcSerumMarket.address, // amm id
         serumMarket.address,
         serumMarket,
-        coinUsdcSerumMarket.decoded.asks, //ammOpenOrders: PublicKey,
-        coinUsdcSerumMarket.decoded.bids, // ammTargetOrders: PublicKey,
-        coinUsdcSerumMarket.decoded.baseVault, //ammBaseVault: PublicKey,
-        coinUsdcSerumMarket.decoded.quoteVault, //ammQuoteVault: PublicKey,
+        associatedPoolKeys.openOrders, //ammOpenOrders: PublicKey,
+        associatedPoolKeys.targetOrders, // ammTargetOrders: PublicKey,
+        associatedPoolKeys.baseVault, //ammBaseVault: PublicKey,
+        associatedPoolKeys.quoteVault, //ammQuoteVault: PublicKey,
         serumMarket.programId
       );
 
