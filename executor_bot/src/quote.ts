@@ -68,7 +68,7 @@ export const getQuote = async ({
   const maxPrice = numeratorAmount / denominatorAmount;
   const collateralAmount = Number(collateral.amount) / collateralMultiplier;
   if (!collateralAmount) {
-    console.log("Empty collateral account...");
+    console.log("Empty collateral account (trade has been executed)...");
 
     return {
       additionalData,
