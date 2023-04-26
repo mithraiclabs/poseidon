@@ -195,7 +195,7 @@ export async function getWalletTokenAccounts({
   return { accounts, rawInfos };
 }
 
-export type Numberish = number | string | bigint | BN;
+export type Numberish = number | string | bigint | BN | Fraction;
 
 export function shakeFractionDecimal(n: Fraction): string {
   const [, sign = "", int = "", dec = ""] =

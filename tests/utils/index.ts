@@ -7,7 +7,7 @@ import {
   getAssociatedTokenAddress,
   MintLayout,
   TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
+} from "@solana/spl-token2";
 import { parseTranactionError } from "../../packages/poseidon/src";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 

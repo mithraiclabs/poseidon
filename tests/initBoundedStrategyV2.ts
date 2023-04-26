@@ -5,7 +5,6 @@ import { Program, web3 } from "@coral-xyz/anchor";
 import { Market } from "@project-serum/serum";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/poseidon/src";
-import OpenBookDex from "../packages/poseidon/src/dexes/openBookDex";
 import { deriveAllBoundedStrategyKeysV2 } from "../packages/poseidon/src/pdas";
 import { Poseidon } from "../target/types/poseidon";
 import {

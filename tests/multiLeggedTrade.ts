@@ -5,11 +5,8 @@ import { Program, web3 } from "@coral-xyz/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/poseidon/src";
-import OpenBookDex from "../packages/poseidon/src/dexes/openBookDex";
-import {
-  deriveAllBoundedStrategyKeysV2,
-  deriveTokenAccount,
-} from "../packages/poseidon/src/pdas";
+import { openBookTradeAccounts } from "../packages/poseidon/src/dexes";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/poseidon/src/pdas";
 import { IDL, Poseidon } from "../target/types/poseidon";
 import {
   compileAndSendV0Tx,
@@ -24,7 +21,7 @@ import {
 } from "./utils";
 import { createRaydiumPool } from "./utils/raydium";
 import { Currency, CurrencyAmount } from "@raydium-io/raydium-sdk";
-import Raydium from "../packages/poseidon/src/dexes/raydium";
+import { raydiumTradeAccts } from "../packages/poseidon/src/dexes";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
 let timesRun = 0;
@@ -328,7 +325,7 @@ describe("OpenBook + Raydium Trade", () => {
           boundedStrategy.depositAddress
         );
       ////////////////// Get the reamining accounts ////////////
-      const openBookRemainingAccounts = await OpenBookDex.tradeAccounts(
+      const openBookRemainingAccounts = await openBookTradeAccounts(
         serumMarket,
         // Becuase this is the first leg, the Trade Source Account is still the collateralAccount
         collateralAccount,
@@ -337,18 +334,25 @@ describe("OpenBook + Raydium Trade", () => {
         traderOpenOrdersKeypair.publicKey,
         traderKeypair.publicKey
       );
-      const raydiumRemainingAccounts = Raydium.tradeAccounts(
-        coinMint,
-        6,
-        USDC_MINT,
-        6,
-        coinUsdcSerumMarket,
-        // Because this is the second leg, the Trade Source Account must use the leg 1 Trade Destination Account
+      const raydiumRemainingAccounts = await raydiumTradeAccts(
         traderUsdcKey,
         traderKeypair.publicKey,
-        // Because this is the last leg, the Trade Destination Account is the deposit address
-        depositAddress
+        depositAddress,
+        {
+          serumCoinVaultAccount: serumMarket.decoded.baseVault,
+          serumEventQueue: serumMarket.decoded.eventQueue,
+          serumPcVaultAccount: serumMarket.decoded.quoteVault,
+        },
+        coinUsdcSerumMarket.address, // amm id
+        serumMarket.address,
+        serumMarket,
+        coinUsdcSerumMarket.decoded.asks, //ammOpenOrders: PublicKey,
+        coinUsdcSerumMarket.decoded.bids, // ammTargetOrders: PublicKey,
+        coinUsdcSerumMarket.decoded.baseVault, //ammBaseVault: PublicKey,
+        coinUsdcSerumMarket.decoded.quoteVault, //ammQuoteVault: PublicKey,
+        serumMarket.programId
       );
+
       const remainingAccounts = [
         ...openBookRemainingAccounts,
         ...raydiumRemainingAccounts,
