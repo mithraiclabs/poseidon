@@ -578,12 +578,10 @@
     snake-case "^3.0.4"
     spok "^1.4.3"
 
-"@mithraic-labs/poseidon@^0.0.5":
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/@mithraic-labs/poseidon/-/poseidon-0.0.5.tgz#68416ec2adf26af6f916cc251f8ad733152ae9f2"
-  integrity sha512-CqpeoDTdeTFuNDfGG2yuEi0XL+dyAmMe8EMOobrTbGl9OtGq48JxRI2lKuV8vL9YiEZ1m8r5hKAoameNBDmVPw==
-  dependencies:
-    "@raydium-io/raydium-sdk" "^1.1.0-beta.55"
+"@mithraic-labs/poseidon@0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@mithraic-labs/poseidon/-/poseidon-0.0.6.tgz#127700a50e71b9a811461be4e432ab0c072deb38"
+  integrity sha512-WufA12hBhD3nqQknaqA8sSZFZEd3+oL5uqZ/r5UOyOl1Ly6LjXo+qom0rvv6s1DrcNlRAQohp362AeiS++Bz4w==
 
 "@noble/ed25519@^1.7.0":
   version "1.7.3"
@@ -937,24 +935,6 @@
     "@solana/spl-token" "^0.3.6"
     "@solana/web3.js" "1.73.0"
     axios "^1.2.2"
-    big.js "^6.2.1"
-    bn.js "^5.2.1"
-    decimal.js "^10.4.3"
-    decimal.js-light "^2.5.1"
-    fecha "^4.2.3"
-    lodash "^4.17.21"
-    toformat "^2.0.0"
-
-"@raydium-io/raydium-sdk@^1.1.0-beta.55":
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/@raydium-io/raydium-sdk/-/raydium-sdk-1.3.0.tgz#faae1df16fa513754d9332d5b2ac7aa64a4d01c0"
-  integrity sha512-aNOQxjcyD7dVu2y0l12/dlnd/tXIzIBDqOVVz9r3P6rLEp0TQxfIm3LUc/CFrVBnRye1T08sXuOzlzr6X4KMTw==
-  dependencies:
-    "@colors/colors" "^1.5.0"
-    "@solana/buffer-layout" "^4.0.1"
-    "@solana/spl-token" "^0.3.7"
-    "@solana/web3.js" "1.73.0"
-    axios "^1.2.6"
     big.js "^6.2.1"
     bn.js "^5.2.1"
     decimal.js "^10.4.3"
@@ -1490,7 +1470,7 @@ axios@^0.27.2:
     follow-redirects "^1.14.9"
     form-data "^4.0.0"
 
-axios@^1.2.1, axios@^1.2.2, axios@^1.2.6:
+axios@^1.2.1, axios@^1.2.2:
   version "1.3.6"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.3.6.tgz#1ace9a9fb994314b5f6327960918406fa92c6646"
   integrity sha512-PEcdkk7JcdPiMDkvM4K6ZBRYq9keuVJsToxm2zQIM70Qqo2WHTdJZMXcG9X+RmRp2VPNUQC8W1RAGbgt6b1yMg==

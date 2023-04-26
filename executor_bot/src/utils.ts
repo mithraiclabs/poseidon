@@ -13,7 +13,7 @@ import {
   AccountMeta,
 } from "@solana/web3.js";
 import * as fs from "fs";
-import { OPENBOOK_V3_PROGRAM_ID } from "./dex";
+import { OPENBOOK_V3_PROGRAM_ID } from "./constants";
 
 export const loadPayer = (keypairPath: string): Keypair => {
   if (keypairPath) {
@@ -151,34 +151,39 @@ export const createLookUpTable = async (
   const payerKey = payer.publicKey;
   const initialTx = new Transaction();
   console.log({ lengtAccs: remainingAccounts.length });
+  try {
+    // Create ALT
+    const slot = await provider.connection.getSlot();
+    const [lookupTableInst, lookupTableAddress] =
+      AddressLookupTableProgram.createLookupTable({
+        authority: payerKey,
+        payer: payerKey,
+        recentSlot: slot,
+      });
+    initialTx.add(lookupTableInst);
+    await provider.sendAndConfirm(initialTx, [payer], {
+      skipPreflight: true,
+    });
+    // extend ALT with chunk of accounts
+    const groups = splitIntoGroups(remainingAccounts.map((x) => x.pubkey));
+    for (let addressGroup of groups) {
+      const extTx = new Transaction();
+      const extendInstruction = AddressLookupTableProgram.extendLookupTable({
+        payer: payerKey,
+        authority: payerKey,
+        lookupTable: lookupTableAddress,
+        addresses: addressGroup,
+      });
+      extTx.add(extendInstruction);
+      await provider.sendAndConfirm(extTx, [payer], {});
+      await wait(10000);
+    }
+    return Promise.resolve(lookupTableAddress);
+  } catch (error) {
+    console.log({ error }, " while creating lookup table");
 
-  // Create ALT
-  const slot = await provider.connection.getSlot();
-  const [lookupTableInst, lookupTableAddress] =
-    AddressLookupTableProgram.createLookupTable({
-      authority: payerKey,
-      payer: payerKey,
-      recentSlot: slot,
-    });
-  initialTx.add(lookupTableInst);
-  await provider.sendAndConfirm(initialTx, [payer], {
-    skipPreflight: true,
-  });
-  // extend ALT with chunk of accounts
-  const groups = splitIntoGroups(remainingAccounts.map((x) => x.pubkey));
-  for (let addressGroup of groups) {
-    await wait(10000);
-    const extTx = new Transaction();
-    const extendInstruction = AddressLookupTableProgram.extendLookupTable({
-      payer: payerKey,
-      authority: payerKey,
-      lookupTable: lookupTableAddress,
-      addresses: addressGroup,
-    });
-    extTx.add(extendInstruction);
-    await provider.sendAndConfirm(extTx, [payer], {});
+    return Promise.reject();
   }
-  return Promise.resolve(lookupTableAddress);
 };
 
 export const wait = (delayMS: number) =>

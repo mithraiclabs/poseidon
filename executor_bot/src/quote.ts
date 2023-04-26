@@ -5,16 +5,23 @@ import {
   AccountMeta,
   Cluster,
 } from "@solana/web3.js";
-import * as Poseidon from "@mithraic-labs/poseidon";
+import {
+  BoundedStrategyV2,
+  raydiumTradeAccts,
+  openbookData,
+} from "@mithraic-labs/poseidon";
 import { Jupiter } from "@jup-ag/core";
 import {
-  getMint,
   AccountLayout,
   getOrCreateAssociatedTokenAccount,
+  MintLayout,
 } from "@solana/spl-token2";
 import JSBI from "jsbi";
-import { JUPITER_EXCLUDED_AMMS, ONLY_DIRECT_ROUTE } from "./constants";
-import { openbookData, OPENBOOK_V3_PROGRAM_ID, raydiumTradeAccts } from "./dex";
+import {
+  JUPITER_EXCLUDED_AMMS,
+  ONLY_DIRECT_ROUTE,
+  OPENBOOK_V3_PROGRAM_ID,
+} from "./constants";
 import { Market } from "@project-serum/serum";
 import config from "./config";
 import { wait } from "./utils";
@@ -30,7 +37,7 @@ export const getQuote = async ({
   connection,
   payer,
 }: {
-  boundedStrategy: Poseidon.BoundedStrategyV2;
+  boundedStrategy: BoundedStrategyV2;
   connection: Connection;
   payer: Keypair;
 }) => {
@@ -44,10 +51,12 @@ export const getQuote = async ({
   const collateral = AccountLayout.decode(collateralAccountBuff.data);
   const deposit = AccountLayout.decode(depositAccountBuff.data);
 
-  const [collateralMintInfo, depositMintInfo] = await Promise.all([
-    getMint(connection, collateral.mint),
-    getMint(connection, deposit.mint),
-  ]);
+  const [collateralMintBuf, depositMintBuf] =
+    await connection.getMultipleAccountsInfo([collateral.mint, deposit.mint]);
+  const [collateralMintInfo, depositMintInfo] = [
+    MintLayout.decode(collateralMintBuf.data),
+    MintLayout.decode(depositMintBuf.data),
+  ];
 
   const [collateralMultiplier, depositMultiplier] = [
     Math.pow(10, collateralMintInfo.decimals),
@@ -69,19 +78,11 @@ export const getQuote = async ({
 
   const amount = collateralAmount / maxPrice;
 
-  // todo change this to be more robust (based on pricelots)
-  const excludeOpenbook = amount < 1;
   const jupiter = await Jupiter.load({
     connection,
     cluster: config.cluster as Cluster,
     user: payer.publicKey,
-    ammsToExclude: {
-      ...JUPITER_EXCLUDED_AMMS,
-      ...(excludeOpenbook && {
-        // don't consider openbook markets for tiny trades
-        Openbook: true,
-      }),
-    },
+    ammsToExclude: JUPITER_EXCLUDED_AMMS,
   });
 
   try {
@@ -167,21 +168,31 @@ export const getQuote = async ({
               break;
             default:
             case "Openbook":
-              const { additionalData: aData, remainingAccounts: rAccounts } =
-                await openbookData(
-                  connection,
-                  ammId,
-                  payer,
-                  outputAccount,
-                  inputAccount
-                );
-              additionalData.push(aData.values());
-              remainingAccounts.push(...rAccounts);
-              break;
+              if (
+                marketInfo.minInAmount < JSBI.BigInt(Number(collateral.amount))
+              ) {
+                const { additionalData: aData, remainingAccounts: rAccounts } =
+                  await openbookData(
+                    connection,
+                    ammId,
+                    payer,
+                    outputAccount,
+                    inputAccount,
+                    // jupiter doesn't have devnet routes
+                    "mainnet-beta"
+                  );
+                additionalData.push(aData.values());
+                remainingAccounts.push(...rAccounts);
+                break;
+              } else {
+                remainingAccounts = [];
+                additionalData = [];
+              }
           }
 
           inputAccount = new PublicKey(outputAccount.toString());
         }
+        if (!remainingAccounts.length) continue;
         return {
           additionalData,
           remainingAccounts,

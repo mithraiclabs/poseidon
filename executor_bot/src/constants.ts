@@ -1,3 +1,5 @@
+import { PublicKey } from "@solana/web3.js";
+
 export const JUPITER_EXCLUDED_AMMS = {
   Aldrin: true,
   Crema: true,
@@ -11,7 +13,6 @@ export const JUPITER_EXCLUDED_AMMS = {
   Marinade: true,
   Mercurial: true,
   Meteora: true,
-  Raydium: false,
   "Raydium CLMM": true,
   Saber: true,
   Serum: true,
@@ -25,11 +26,19 @@ export const JUPITER_EXCLUDED_AMMS = {
   "Saber (Decimals)": true,
   Dradex: true,
   Balansol: true,
-  Openbook: false,
   "Marco Polo": true,
   Phoenix: true,
   Unknown: true,
+  //------------//
+  Raydium: false,
+  Openbook: false,
+  //-----------//
 };
+
+export const OPENBOOK_V3_PROGRAM_ID = new PublicKey(
+  "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
+);
+
 // Poll the RPC node for new accounts and execution every 10 min
 export const POLL_INTERVAL = 600 * 1_000;
 export const ONLY_DIRECT_ROUTE = false;
