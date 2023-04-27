@@ -185,7 +185,7 @@ describe("Reclaim", () => {
       boundedStrategy = await program.account.boundedStrategy.fetch(
         boundedStrategyKey
       );
-      await wait(2_000);
+      await wait(5_000);
     });
     it("should return the assets to the reclaim address", async () => {
       const [reclaimAccountBefore, orderPayerBefore] = await Promise.all([

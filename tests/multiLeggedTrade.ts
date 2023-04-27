@@ -5,11 +5,8 @@ import { Program, web3 } from "@coral-xyz/anchor";
 import { Market, OpenOrders } from "@project-serum/serum";
 import { assert } from "chai";
 import { parseTranactionError } from "../packages/poseidon/src";
-import OpenBookDex from "../packages/poseidon/src/dexes/openBookDex";
-import {
-  deriveAllBoundedStrategyKeysV2,
-  deriveTokenAccount,
-} from "../packages/poseidon/src/pdas";
+import { openBookTradeAccounts } from "../packages/poseidon/src/dexes";
+import { deriveAllBoundedStrategyKeysV2 } from "../packages/poseidon/src/pdas";
 import { IDL, Poseidon } from "../target/types/poseidon";
 import {
   compileAndSendV0Tx,
@@ -24,8 +21,10 @@ import {
 } from "./utils";
 import { createRaydiumPool } from "./utils/raydium";
 import { Currency, CurrencyAmount } from "@raydium-io/raydium-sdk";
-import Raydium from "../packages/poseidon/src/dexes/raydium";
+import { raydiumTradeAccts } from "../packages/poseidon/src/dexes";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
+import { Liquidity } from "@raydium-io/raydium-sdk";
+import { LIQUIDITY_PROGRAM_ID_V4 } from "@raydium-io/raydium-sdk";
 
 let timesRun = 0;
 describe("OpenBook + Raydium Trade", () => {
@@ -328,7 +327,7 @@ describe("OpenBook + Raydium Trade", () => {
           boundedStrategy.depositAddress
         );
       ////////////////// Get the reamining accounts ////////////
-      const openBookRemainingAccounts = await OpenBookDex.tradeAccounts(
+      const openBookRemainingAccounts = await openBookTradeAccounts(
         serumMarket,
         // Becuase this is the first leg, the Trade Source Account is still the collateralAccount
         collateralAccount,
@@ -337,18 +336,37 @@ describe("OpenBook + Raydium Trade", () => {
         traderOpenOrdersKeypair.publicKey,
         traderKeypair.publicKey
       );
-      const raydiumRemainingAccounts = Raydium.tradeAccounts(
-        coinMint,
-        6,
-        USDC_MINT,
-        6,
-        coinUsdcSerumMarket,
-        // Because this is the second leg, the Trade Source Account must use the leg 1 Trade Destination Account
+      // the keys taken from here would come from jupiter
+      const associatedPoolKeys = Liquidity.getAssociatedPoolKeys({
+        version: 4,
+        marketVersion: 3,
+        baseMint: coinMint,
+        quoteMint: USDC_MINT,
+        baseDecimals: 6,
+        quoteDecimals: 6,
+        marketId: coinUsdcSerumMarket.address,
+        programId: LIQUIDITY_PROGRAM_ID_V4,
+        marketProgramId: coinUsdcSerumMarket.programId,
+      });
+      const raydiumRemainingAccounts = await raydiumTradeAccts(
         traderUsdcKey,
         traderKeypair.publicKey,
-        // Because this is the last leg, the Trade Destination Account is the deposit address
-        depositAddress
+        depositAddress,
+        {
+          serumCoinVaultAccount: coinUsdcSerumMarket.decoded.baseVault,
+          serumEventQueue: coinUsdcSerumMarket.decoded.eventQueue,
+          serumPcVaultAccount: coinUsdcSerumMarket.decoded.quoteVault,
+        },
+        associatedPoolKeys.id, // amm id
+        coinUsdcSerumMarket.address,
+        coinUsdcSerumMarket,
+        associatedPoolKeys.openOrders, //ammOpenOrders: PublicKey,
+        associatedPoolKeys.targetOrders, // ammTargetOrders: PublicKey,
+        associatedPoolKeys.baseVault, //ammBaseVault: PublicKey,
+        associatedPoolKeys.quoteVault, //ammQuoteVault: PublicKey,
+        coinUsdcSerumMarket.programId
       );
+
       const remainingAccounts = [
         ...openBookRemainingAccounts,
         ...raydiumRemainingAccounts,
@@ -380,7 +398,7 @@ describe("OpenBook + Raydium Trade", () => {
           assert.ok(false);
         }
       );
-
+      await wait(5000);
       // Validate that the deposit received the amount of SOL
       const depositTokenAccountAfter = await tokenProgram.account.account.fetch(
         boundedStrategy.depositAddress
@@ -388,6 +406,7 @@ describe("OpenBook + Raydium Trade", () => {
       const depositTokenDiff = depositTokenAccountAfter.amount.sub(
         depositTokenAccountBefore.amount
       );
+
       assert.equal(depositTokenDiff.toString(), "236396");
     });
   });

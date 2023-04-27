@@ -146,10 +146,6 @@ Resources:
                 ]
             - Name: JSON_RPC_URL
               Value: !Ref JsonRpcUrl
-            - Name: GRAPHILE_LOGGER_DEBUG
-              Value: !Ref GraphileLoggerDebug
-            - Name: HONEY_BADGER_KEY
-              Value: !Ref HoneybadgerKey
           Essential: true
           Image: docker.io/psyoptions/executor_bot:latest@sha256:08f6686ff6507b9f431595fd92a55e31ea7b40cf9cb8201b5dbf44a43c0d97d1
           LinuxParameters: {}

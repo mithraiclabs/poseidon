@@ -2,9 +2,12 @@ import { BN, web3 } from "@coral-xyz/anchor";
 import { Market } from "@project-serum/serum";
 import { getProgramId } from "../utils";
 import { SolCluster } from "../types";
-import OpenBookDex from "./openBookDex";
-import Raydium, { SERUM_V3_PROGRAM_ID } from "./raydium";
-import { LIQUIDITY_STATE_LAYOUT_V4 } from "@raydium-io/raydium-sdk";
+import { programId as OB_PID } from "./openBookDex";
+import {} from "./raydium";
+import {
+  LIQUIDITY_PROGRAM_ID_V4,
+  LIQUIDITY_STATE_LAYOUT_V4,
+} from "@raydium-io/raydium-sdk";
 
 /**
  *
@@ -25,8 +28,7 @@ export const getTradeAccounts = async (
   // Load the accounts for each market
   const accountInfos = await connection.getMultipleAccountsInfo(marketIds);
 
-  const openBookProgramId = OpenBookDex.programId(cluster);
-  const raydiumProgramId = Raydium.programId(cluster);
+  const openBookProgramId = OB_PID(cluster);
 
   const res: web3.AccountMeta[][] = [];
   const additionalDataArr: Buffer[] = [];
@@ -53,14 +55,14 @@ export const getTradeAccounts = async (
           ).toArrayLike(Buffer, "le", 1);
           break;
         }
-        case raydiumProgramId.toString(): {
+        case LIQUIDITY_PROGRAM_ID_V4.toString(): {
           // Handle Raydium information
           const raydiumV4MarketInfo = LIQUIDITY_STATE_LAYOUT_V4.decode(
             acct.data
           );
           if (
             ![
-              SERUM_V3_PROGRAM_ID.toString(),
+              getProgramId(cluster).toString(),
               openBookProgramId.toString(),
             ].includes(raydiumV4MarketInfo.marketProgramId.toString())
           ) {

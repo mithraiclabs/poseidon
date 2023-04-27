@@ -18,7 +18,7 @@ import {
   SOL_USDC_SERUM_MARKET,
   USDC_MINT,
 } from "./utils";
-import OpenBookDex from "../packages/poseidon/src/dexes/openBookDex";
+import { openBookTradeAccounts } from "../packages/poseidon/src/dexes";
 import { WRAPPED_SOL_MINT } from "@project-serum/serum/lib/token-instructions";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
@@ -169,7 +169,7 @@ describe("BoundedTradeV2", () => {
           reclaimDate,
         });
 
-      const remainingAccounts = await OpenBookDex.tradeAccounts(
+      const remainingAccounts = await openBookTradeAccounts(
         serumMarket,
         collateralAccount,
         depositAddress,
@@ -243,7 +243,7 @@ describe("BoundedTradeV2", () => {
         it("should execute the trade", async () => {
           const depositTokenAccountBefore =
             await tokenProgram.account.account.fetch(baseAddress);
-          const remainingAccounts = await OpenBookDex.tradeAccounts(
+          const remainingAccounts = await openBookTradeAccounts(
             serumMarket,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
@@ -320,7 +320,7 @@ describe("BoundedTradeV2", () => {
           );
         });
         it("should error from bound validation", async () => {
-          const remainingAccounts = await OpenBookDex.tradeAccounts(
+          const remainingAccounts = await openBookTradeAccounts(
             serumMarket,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
@@ -380,7 +380,7 @@ describe("BoundedTradeV2", () => {
           );
         });
         it("should error", async () => {
-          const remainingAccounts = await OpenBookDex.tradeAccounts(
+          const remainingAccounts = await openBookTradeAccounts(
             serumMarket,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,
@@ -436,7 +436,7 @@ describe("BoundedTradeV2", () => {
           const depositTokenAccountBefore =
             await tokenProgram.account.account.fetch(quoteAddress);
           // Create and send the BoundedTrade transaction
-          const remainingAccounts = await OpenBookDex.tradeAccounts(
+          const remainingAccounts = await openBookTradeAccounts(
             serumMarket,
             boundedStrategy.collateralAccount,
             boundedStrategy.depositAddress,

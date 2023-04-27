@@ -4,4 +4,10 @@ export { pdas };
 export { Poseidon, IDL } from "./poseidon";
 export * from "./utils";
 export * from "./types";
-export * from "./dexes";
+export {
+  openBookTradeAccounts,
+  openbookData,
+  deriveVaultSigner,
+  raydiumTradeAccts,
+  programId,
+} from "./dexes";

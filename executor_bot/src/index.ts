@@ -1,140 +1,123 @@
-import * as fs from "fs";
-import * as anchor from "@project-serum/anchor";
-import { AnchorProvider, Program, web3 } from "@project-serum/anchor";
+import { AnchorProvider, Program } from "@project-serum/anchor";
 import {
-  getProgramId,
-  instructions,
-  SerumRemote,
   IDL,
-} from "@mithraic-labs/serum-remote";
+  Poseidon,
+  getProgramId,
+  BoundedStrategyV2,
+} from "@mithraic-labs/poseidon";
 import config from "./config";
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
-import { Market } from "@project-serum/serum";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token2";
+import { getQuote } from "./quote";
+import { Connection, Transaction, ComputeBudgetProgram } from "@solana/web3.js";
 import {
-  createAssociatedTokenAccountInstruction,
-  getAssociatedTokenAddress,
-} from "@solana/spl-token";
+  closeOpenOrdersForPayer,
+  compileAndSendV0Tx,
+  createLookUpTable,
+  loadPayer,
+  wait,
+} from "./utils";
+import { POLL_INTERVAL } from "./constants";
 
-export const wait = (delayMS: number) =>
-  new Promise((resolve) => setTimeout(resolve, delayMS));
-
-// Poll the RPC node for new accounts and execution every 10 min
-const POLL_INTERVAL = 600 * 1_000;
-
-export const loadPayer = (keypairPath: string): anchor.web3.Keypair => {
-  if (keypairPath) {
-    return anchor.web3.Keypair.fromSecretKey(
-      Buffer.from(
-        JSON.parse(
-          fs.readFileSync(keypairPath, {
-            encoding: "utf-8",
-          })
-        )
-      )
-    );
-  } else if (process.env.SECRET_KEY) {
-    return anchor.web3.Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(process.env.SECRET_KEY))
-    );
-  } else {
-    throw new Error(
-      "You must specify option --keypair or SECRET_KEY env variable"
-    );
-  }
-};
-
-const connection = new web3.Connection(config.jsonRpcUrl);
+const connection = new Connection(config.jsonRpcUrl);
 (async () => {
   const payer = loadPayer(config.solanaKeypairPath);
   const provider = new AnchorProvider(connection, new NodeWallet(payer), {});
   // Create new Serum Remote program
   const serumRemoteProgramId = getProgramId(config.cluster);
-  const program = new Program<SerumRemote>(IDL, serumRemoteProgramId, provider);
-
+  const program = new Program<Poseidon>(IDL, serumRemoteProgramId, provider);
+  console.log("starting up...");
   while (true) {
+    console.log("loading bounded strategies...");
     // Query get program accounts to all bounded strategies.
-    const boundedStrategies = await program.account.boundedStrategy.all();
-
+    const boundedStrategies = await program.account.boundedStrategyV2.all();
+    console.log({ boundedStrategies });
     const currentTime = new Date().getTime() / 1_000;
-    await Promise.all(
-      boundedStrategies.map(async (boundedStrategy) => {
-        // Backwards compatibility for old Devnet program. Can be removed April 12, 2022
-        if (
-          boundedStrategy.account.serumDexId.toString() ===
-          web3.SystemProgram.programId.toString()
-        ) {
-          return;
-        }
-        const transaction = new web3.Transaction();
+    for (let i = 0; i < boundedStrategies.length; i++) {
+      const boundedStrategy = boundedStrategies[i];
+      // build fails if we don't precast to 'unknown'
+      const strategy = boundedStrategy.account as unknown as BoundedStrategyV2;
+      if (strategy.reclaimDate.toNumber() < currentTime) {
         // handle reclaiming assets for those that have expired
-        if (boundedStrategy.account.reclaimDate.toNumber() < currentTime) {
-          const ix = instructions.reclaimIx(
-            program,
-            boundedStrategy.publicKey,
-            boundedStrategy.account,
-            boundedStrategy.account.serumDexId
-          );
-          transaction.add(ix);
-        } else {
-          const serumMarket = await Market.load(
-            connection,
-            boundedStrategy.account.serumMarket,
-            {},
-            boundedStrategy.account.serumDexId
-          );
-          // Check the current price to see if the transaction should be sent
-          const [bids, asks] = await Promise.all([
-            serumMarket.loadBids(connection),
-            serumMarket.loadAsks(connection),
-          ]);
+        console.log("reclaiming funds for ", boundedStrategy.publicKey);
+        const ix = program.instruction.reclaimV2({
+          accounts: {
+            receiver: payer.publicKey,
+            strategy: boundedStrategy.publicKey,
+            collateralAccount: strategy.collateralAccount,
+            reclaimAccount: strategy.reclaimAddress,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          },
+        });
+        const reclaimSignature = await program.provider.sendAndConfirm(
+          new Transaction().add(ix)
+        );
+        console.log("executed tx for reclaim", { reclaimSignature });
+      } else {
+        // get all the accounts needed for this trade, in accordance with the max allowed price
+        console.log("getting quote for ", boundedStrategy.publicKey);
+        const { remainingAccounts, additionalData } = await getQuote({
+          boundedStrategy: strategy,
+          connection,
+          payer,
+        });
 
-          const humanReadableBoundPrice = serumMarket.priceLotsToNumber(
-            boundedStrategy.account.boundedPrice
-          );
-          const lowestAsk = asks.getL2(1)[0];
-          const highestBid = bids.getL2(1)[0];
+        if (remainingAccounts.length) {
+          // this would mean that there wasn't a route mathcing the price set by the strategy
+          console.log({
+            remainingAccounts: remainingAccounts.map((a) =>
+              a.pubkey.toString()
+            ),
+          });
 
-          if (
-            (boundedStrategy.account.orderSide === 0 &&
-              lowestAsk[0] < humanReadableBoundPrice) ||
-            (boundedStrategy.account.orderSide === 1 &&
-              highestBid[0] > humanReadableBoundPrice)
-          ) {
-            // Check if the referral account exists
-            const referralAddress = await getAssociatedTokenAddress(
-              serumMarket.quoteMintAddress,
-              payer.publicKey
-            );
-            const referralAccount = await connection.getAccountInfo(
-              referralAddress
-            );
-            // add transaction to create the referral account if it does not exist
-            if (!referralAccount) {
-              const createReferralAccountIx =
-                createAssociatedTokenAccountInstruction(
-                  payer.publicKey,
-                  referralAddress,
-                  payer.publicKey,
-                  serumMarket.quoteMintAddress
-                );
-              transaction.add(createReferralAccountIx);
+          const ix = await program.methods
+            .boundedTradeV2(Buffer.from(additionalData))
+            .accounts({
+              payer: payer.publicKey,
+              strategy: boundedStrategy.publicKey,
+              orderPayer: strategy.collateralAccount,
+              depositAccount: strategy.depositAddress,
+              tokenProgram: TOKEN_PROGRAM_ID,
+            })
+            .remainingAccounts(remainingAccounts)
+            .instruction();
+          // starting at 3 legs, the compute limit will get hit so we adjust that
+          const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
+            units: 400000,
+          });
+          const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+            microLamports: 1,
+          });
+
+          const lookupTableAddress = await createLookUpTable(
+            program.provider,
+            [
+              ...modifyComputeUnits.keys,
+              ...addPriorityFee.keys,
+              ...remainingAccounts,
+            ],
+            payer
+          );
+          const v2TradeSignature = await compileAndSendV0Tx(
+            program.provider,
+            payer,
+            lookupTableAddress,
+            [modifyComputeUnits, addPriorityFee, ix],
+            (err) => {
+              console.error(err);
             }
-            const ix = await instructions.boundedTradeIx(
-              program,
-              boundedStrategy.publicKey,
-              serumMarket,
-              boundedStrategy.account,
-              referralAddress
-            );
-            transaction.add(ix);
+          );
+          if (v2TradeSignature) {
+            console.log("Done with executing v2 trade", { v2TradeSignature });
+          } else {
+            console.log("Couldn't complete v2 trade");
           }
-
-          if (transaction.instructions.length) {
-            await program.provider.sendAndConfirm(transaction);
-          }
+        } else {
+          console.log("No route found");
         }
-      })
-    );
+      }
+    }
+    await closeOpenOrdersForPayer(provider, payer);
     await wait(POLL_INTERVAL);
   }
 })();
