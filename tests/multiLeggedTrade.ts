@@ -406,7 +406,6 @@ describe("OpenBook + Raydium Trade", () => {
       const depositTokenDiff = depositTokenAccountAfter.amount.sub(
         depositTokenAccountBefore.amount
       );
-      console.log({ diff: depositTokenDiff.toString() });
 
       assert.equal(depositTokenDiff.toString(), "236396");
     });
