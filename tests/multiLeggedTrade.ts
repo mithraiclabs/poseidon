@@ -339,32 +339,32 @@ describe("OpenBook + Raydium Trade", () => {
       // the keys taken from here would come from jupiter
       const associatedPoolKeys = Liquidity.getAssociatedPoolKeys({
         version: 4,
-        marketVersion: 5,
+        marketVersion: 3,
         baseMint: coinMint,
         quoteMint: USDC_MINT,
         baseDecimals: 6,
         quoteDecimals: 6,
-        marketId: serumMarket.address,
+        marketId: coinUsdcSerumMarket.address,
         programId: LIQUIDITY_PROGRAM_ID_V4,
-        marketProgramId: serumMarket.programId,
+        marketProgramId: coinUsdcSerumMarket.programId,
       });
       const raydiumRemainingAccounts = await raydiumTradeAccts(
         traderUsdcKey,
         traderKeypair.publicKey,
         depositAddress,
         {
-          serumCoinVaultAccount: serumMarket.decoded.baseVault,
-          serumEventQueue: serumMarket.decoded.eventQueue,
-          serumPcVaultAccount: serumMarket.decoded.quoteVault,
+          serumCoinVaultAccount: coinUsdcSerumMarket.decoded.baseVault,
+          serumEventQueue: coinUsdcSerumMarket.decoded.eventQueue,
+          serumPcVaultAccount: coinUsdcSerumMarket.decoded.quoteVault,
         },
-        coinUsdcSerumMarket.address, // amm id
-        serumMarket.address,
-        serumMarket,
+        associatedPoolKeys.id, // amm id
+        coinUsdcSerumMarket.address,
+        coinUsdcSerumMarket,
         associatedPoolKeys.openOrders, //ammOpenOrders: PublicKey,
         associatedPoolKeys.targetOrders, // ammTargetOrders: PublicKey,
         associatedPoolKeys.baseVault, //ammBaseVault: PublicKey,
         associatedPoolKeys.quoteVault, //ammQuoteVault: PublicKey,
-        serumMarket.programId
+        coinUsdcSerumMarket.programId
       );
 
       const remainingAccounts = [
@@ -398,7 +398,7 @@ describe("OpenBook + Raydium Trade", () => {
           assert.ok(false);
         }
       );
-
+      await wait(5000);
       // Validate that the deposit received the amount of SOL
       const depositTokenAccountAfter = await tokenProgram.account.account.fetch(
         boundedStrategy.depositAddress
@@ -406,6 +406,8 @@ describe("OpenBook + Raydium Trade", () => {
       const depositTokenDiff = depositTokenAccountAfter.amount.sub(
         depositTokenAccountBefore.amount
       );
+      console.log({ diff: depositTokenDiff.toString() });
+
       assert.equal(depositTokenDiff.toString(), "236396");
     });
   });
